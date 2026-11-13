@@ -54,6 +54,8 @@ button:disabled{cursor:not-allowed}
 .top-right{display:flex;align-items:center;gap:8px}
 .chip-led{font-family:var(--f-num);font-size:20px;line-height:1;padding:6px 10px 3px;border-radius:6px;background:#060b14;color:var(--led);border:1px solid #2a2410;text-shadow:0 0 10px rgba(255,196,67,.45);white-space:nowrap}
 .ghost{background:transparent;border:1px solid var(--line);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:13px}
+.settle{border-color:var(--leather);color:var(--leather-hi)}
+@media (max-width:420px){.chip-led{display:none}}
 .ghost:hover{color:var(--chalk);border-color:var(--muted)}
 
 /* ===== grid ===== */
@@ -1832,7 +1834,7 @@ function render(){
   <div class="wrap">
     <header class="top">
       <div class="brand">${ballSVG('brand-ball')}<span>버저비터 <b>라이프</b></span></div>
-      <div class="top-right"><span class="chip-led" aria-label="연도">${s.year}</span><button class="ghost" id="btnNew">새 인생</button></div>
+      <div class="top-right"><span class="chip-led" aria-label="연도">${s.year}</span><button class="ghost settle" id="btnSettle">인생 정산</button><button class="ghost" id="btnNew">새 인생</button></div>
     </header>
     <div class="grid">
       <aside class="rail">
@@ -2005,6 +2007,10 @@ function moneyHTML(s){
 function bindGame(){
   $('#btnNext').onclick=()=>{UI.confirmRetire=false;ageUp(false);};
   const ff=$('#btnFF');if(ff)ff.onclick=()=>{UI.ff=4;ageUp(true);};
+  $('#btnSettle').onclick=()=>{if(UI.modalOpen)return;const s=S,[g,t]=grade(s.legacy);
+    showModal({kicker:`${s.year} · ${s.age}세`,title:'여기서 인생을 정산할까?',
+      body:`<p>지금까지의 기록으로 게임을 끝내고 최종 등급을 매긴다. 정산하면 이 인생은 더 이어갈 수 없다.</p><div class="kv"><div><span>현재 레거시</span><b class="num">${Math.round(s.legacy)}</b></div><div><span>예상 등급</span><b>${g} · ${t}</b></div></div>`,
+      choices:[{label:'정산하고 끝내기',act:()=>{s.settled=true;s.deathYear=s.year;log(s,`${s.age}세, 인생을 정산했다.`,'major');s.alive=false;save();return null;}},{label:'계속 플레이',act:()=>null}]});};
   $('#btnNew').onclick=()=>showModal({kicker:'새 인생',title:'처음부터 다시 시작할까?',body:'<p>지금 인생의 기록은 사라진다.</p>',
     choices:[{label:'새 인생 시작',act:()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}queue=[];closeModal();render();return null;}},{label:'계속 플레이',act:()=>null}]});
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;try{localStorage.setItem(SAVE_KEY+':tab',UI.tab);}catch(e){}render();});
@@ -2108,14 +2114,16 @@ function endHTML(s){
   else if(proChamps>=2)ep=`프로 우승 반지 ${proChamps}개. 이기는 법을 알았던 선수.`;
   else if(s.flags.hof)ep='명예의 전당에 이름을 남겼다.';
   else if(pro.length>=10)ep=`${pro.length}시즌 동안 코트를 지킨 성실한 프로.`;
+  else if(pro.length&&s.settled&&s.stage==='pro')ep=`${pro.length}번째 시즌을 마치고 기록을 멈췄다. 이야기는 아직 진행 중이었다.`;
   else if(pro.length)ep='짧았지만 프로의 꿈을 이뤘다.';
+  else if(s.settled&&['elem','middle','high','college'].includes(s.stage))ep='아직 쓰이지 않은 이야기. 여기서 기록을 멈췄다.';
   else ep='농구 선수의 꿈은 이루지 못했지만, 그 시절의 땀은 남았다.';
   const majors=s.log.filter(e=>e.tone==='major').slice(-14);
   return `<div class="wrap"><div class="end">
     <div class="end-hero">
       <div class="grade">${g}</div>
       <h1>${esc(s.name)}</h1>
-      <div class="life num">${START_YEAR-8} – ${s.deathYear||s.year} · 향년 ${s.age}세 · #${s.number} ${s.pos}</div>
+      <div class="life num">${START_YEAR-8} – ${s.deathYear||s.year} · ${s.settled?`${s.age}세에 정산`:`향년 ${s.age}세`} · #${s.number} ${s.pos}</div>
       <div class="title">${t}</div>
       <p class="epitaph">${esc(ep)}</p>
     </div>
