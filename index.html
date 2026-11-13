@@ -330,6 +330,21 @@ input:focus{outline:none;border-color:var(--leather)}
 .end-av{display:flex;align-items:flex-end;justify-content:center;gap:4px}
 .end-avatar{width:120px;height:130px}
 .end-av .grade{width:64px;height:64px;font-size:40px;margin-bottom:6px}
+/* story */
+.sheet.story .m-kicker{background:linear-gradient(90deg,#3a2a12,#1a1408);color:var(--maple);text-shadow:none;border-bottom-color:#4d3818}
+.sheet.story h2{color:#f4e3c8}
+/* endings */
+.ending{background:linear-gradient(180deg,#1d1608,var(--panel) 70%);border:1px solid #4d3818;border-radius:18px;padding:22px 20px;text-align:center}
+.ending .eno{font-family:var(--f-num);font-size:20px;letter-spacing:.2em;color:var(--maple)}
+.ending h2{font-family:var(--f-disp);font-weight:400;font-size:34px;margin:4px 0 10px;color:#f4e3c8;text-wrap:balance}
+.ending p{max-width:46ch;margin:0 auto 8px;color:#e5dccd;font-size:15.5px;word-break:keep-all}
+.dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.dex div{background:var(--panel-2);border-radius:8px;padding:8px 10px;font-size:12.5px;min-width:0}
+.dex div b{display:block;font-size:13.5px}
+.dex div.lock{opacity:.55}
+.dex div.lock b{letter-spacing:.2em}
+.dex div.now{outline:1px solid var(--maple)}
+.dex small{color:var(--muted);display:block;word-break:keep-all}
 /* news */
 .sheet.news .m-kicker{background:#b3121b;color:#fff;text-shadow:none;border-bottom-color:#7d0c13}
 .sheet.news h2{font-size:23px}
@@ -1150,7 +1165,7 @@ function simSeason(s){
     else if(r<.88)inj={name:pick(['햄스트링 부분 파열','발목 인대 손상','무릎 연골 손상','손목 골절']),frac:R(.2,.4),sev:2};
     else inj={name:pick(['전방십자인대 파열','아킬레스건 파열','발등 피로골절']),frac:R(.5,.85),sev:3};
     gpFrac-=inj.frac;
-    if(inj.sev===3){at(s,'athletic',-R(3,6));at(s,'stamina',-R(1,3));s.injury={name:inj.name,carry:R(.2,.45)};lf(s,'mental',-10);}
+    if(inj.sev===3){st(s).injury={ch:0,name:inj.name};s.flags.lastSevInj=s.age;queue.unshift(()=>injuryStoryNow(s));at(s,'athletic',-R(3,6));at(s,'stamina',-R(1,3));s.injury={name:inj.name,carry:R(.2,.45)};lf(s,'mental',-10);}
     else if(inj.sev===2){at(s,'athletic',-R(0,1.5));lf(s,'mental',-4);}
     lf(s,'health',-inj.sev*8);
     injury=inj;
@@ -1671,7 +1686,7 @@ function collegeChoiceSpec(s,lg){
   return {kicker:`${s.age}세 · ${lg==='ncaa'?'NCAA 장학 제안':'대학 진학'}`,title:lg==='ncaa'?'미국 어느 대학으로 갈까':'어느 대학으로 갈까',
     body:`<p>${lg==='ncaa'?'NCAA 디비전1 프로그램들이 장학금을 제시했다.':'U-리그 대학 농구부에서 연락이 왔다. 명문대는 실력이나 성적이 받쳐 줘야 한다.'}</p>`,
     choices:schoolPickChoices(s,lg,list,lg,reqs,team=>{s.stage='college';s.team=team;
-      if(lg==='ncaa'){lf(s,'fame',6);lf(s,'happy',-4);log(s,`NCAA ${team.name}에 장학생으로 입학했다.`,'major');return {text:'인천공항에서 가족과 오래 안았다.',nolog:true};}
+      if(lg==='ncaa'){if(!st(s).abroad)st(s).abroad={ch:0,lg:'ncaa'};lf(s,'fame',6);lf(s,'happy',-4);log(s,`NCAA ${team.name}에 장학생으로 입학했다.`,'major');return {text:'인천공항에서 가족과 오래 안았다.',nolog:true};}
       const mv=moveAway(s,team.city);log(s,`${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부에 합류했다.${mv}`,nolog:true};})};
 }
 function crossroadSpec(s){
@@ -1737,6 +1752,7 @@ function draftSpec(s,lg){
 function sign(s,c){
   s.contract={team:c.team,salary:Math.round(c.salary/100)*100,years:c.years,practice:!!c.practice,military:!!c.military};
   s.team=c.team;s.stage='pro';joinTeam(s,c.team);
+  if(ABROAD[c.team.league]&&!st(s).abroad)st(s).abroad={ch:0,lg:c.team.league};
 }
 function genOffers(s){
   const o=ovr(s),out=[];
@@ -1863,6 +1879,7 @@ function ageUp(quiet){
   if(s.routine?.on&&s.ap>0)runRoutine(s,!quiet&&!UI.skip);
   else if(UI.skip&&s.ap>0)runRoutine(s,false,skipSlots(s));
   const yr=s.year;
+  try{storyChapters(s).forEach(f=>enqueue(f));}catch(e){console.error(e);}
   if(!quiet){
     const n=s.stage==='pro'?(chance(.55)?2:1):s.age<12?(chance(.6)?1:0):(chance(.3)?2:1);
     pickEvents(s,n).forEach(e=>enqueue(()=>eventSpec(s,e)));
@@ -1963,9 +1980,9 @@ function transitions(s){
     else if(ovr(s)>=LG[domPro(s)].level-5)enqueue(()=>s.stage==='college'?earlyEntrySpec(s):null);
     return;
   }
-  if(s.stage==='army'){enqueue(()=>afterService(s));return;}
+  if(s.stage==='army'){enqueue(()=>dischargeStory(s,false));enqueue(()=>afterService(s));return;}
   if(s.stage==='pro'&&s.contract){
-    if(s.contract.military&&s.contract.years<=0){enqueue(()=>afterService(s));return;}
+    if(s.contract.military&&s.contract.years<=0){enqueue(()=>dischargeStory(s,true));enqueue(()=>afterService(s));return;}
     const due=s.gender==='m'&&!s.flags.served&&!s.flags.exempt&&!s.contract.military&&(a>=28||s.flags.enlistNext);
     if(due){s.flags.enlistNext=false;enqueue(()=>enlistSpec(s));return;}
     if(s.contract.years<=0){enqueue(()=>s.stage==='pro'?faSpec(s):null);return;}
@@ -1977,8 +1994,188 @@ function deathSpec(s){
   const cause=a>=85?'노환':s.life.health<20?pick(['심장마비','뇌졸중','폐렴']):pick(['노환','심부전','갑작스러운 심장마비']);
   log(s,`${cause}으로 세상을 떠났다. 향년 ${a}세.`,'major');
   return {kicker:`${s.year}`,title:'마지막 버저',body:`<p>${J(s.name,'은/는')} ${a}세의 나이로 ${cause}으로 눈을 감았다.</p>`,
-    choices:[{label:'생애 기록 보기',primary:true,act:()=>{s.alive=false;s.deathYear=s.year;save();return null;}}]};
+    choices:[{label:'생애 기록 보기',primary:true,act:()=>{s.alive=false;s.deathYear=s.year;recordEnding(s);save();return null;}}]};
 }
+
+/* ================= sub-stories ================= */
+function st(s){if(!s.story)s.story={};return s.story;}
+const chap=(s,arc,n,total,title,body,choices)=>({kicker:`${arc} · ${n}/${total}화`,title,body:`<p>${body}</p>`,cls:'story',autoPick:0,choices});
+const rivalRel=s=>s.relations.find(r=>r.type==='라이벌'&&!r.dead);
+function addComrade(s){if(s.relations.some(r=>r.type==='전우'))return;const n=koName('m');addRel(s,'전우',n,72,s.age+RI(-2,1));return n;}
+function loveLetter(s,arc,n,total){
+  const p=partner(s);if(!p)return null;
+  return chap(s,arc,n,total,p.type==='배우자'?'아내의 편지':'고무신',
+    `${J(p.name,'이/가')} 보낸 편지가 도착했다. 봉투에서 익숙한 향이 난다. "${p.type==='배우자'?'아이가 아빠 언제 오냐고 물어.':'기다릴게. 대신 편지 자주 써.'}"`.replace('아빠',s.gender==='f'?'엄마':'아빠'),
+    [{label:'매일 밤 답장을 쓴다',sub:'관계 +12',act:()=>{p.bond=clamp(p.bond+12,0,100);lf(s,'happy',5);return '편지지가 모자라서 PX에서 두 묶음을 더 샀다.';}},
+     ...(p.type==='연인'?[{label:'휴가 나가서 청혼한다',sub:p.bond>=60?'성공 가능성 있음':'아직 관계가 약하다',act:()=>{if(p.bond>=60&&chance(.5+p.bond/250)){p.type='배우자';p.bond=clamp(p.bond+10,0,100);lf(s,'happy',15);log(s,`휴가 중에 ${J(p.name,'과/와')} 약혼했다.`,'major');return '군복 차림으로 무릎을 꿇었다. 대답은 "응".';}p.bond=clamp(p.bond-10,0,100);lf(s,'mental',-6);return '"전역하고 다시 말해." 복귀하는 버스가 유난히 길었다.';}}]:[]),
+     {label:'"우리 그만하자"',sub:'관계를 정리한다',act:()=>{p.dead=true;p.gone=true;s.relations=s.relations.filter(x=>x!==p);lf(s,'happy',-10);lf(s,'mental',-4);log(s,`군 복무 중 ${J(p.name,'과/와')} 헤어졌다.`,'bad');return '편지를 부치고 한참 동안 철조망 너머를 봤다.';}}]);
+}
+// 현역 복무: 입대한 해에 몰아서 진행
+function armyStory(s){
+  const A='현역 복무',out=[];const T=partner(s)?4:3;let n=0;
+  out.push(()=>chap(s,A,++n,T,'훈련소의 첫날','머리를 밀고 전투복을 입었다. 조교가 명찰을 보더니 웃는다. "어, 농구선수? 키 큰 놈은 맨 뒤로."',[
+    {label:'특급전사에 도전한다',sub:'체력·정신력 훈련',act:()=>{at(s,'stamina',2.5);at(s,'athletic',1);if(chance(.6)){st(s).armyElite=true;lf(s,'mental',6);log(s,'훈련소에서 특급전사 휘장을 달았다.','good');return '3km를 11분대에 끊었다. 특급전사 휘장을 받았다.';}lf(s,'mental',-2);return '팔굽혀펴기에서 두 개가 모자랐다. 다음 기회를 노린다.';}},
+    {label:'동기들의 고민 상담사가 된다',sub:'평생 갈 전우',act:()=>{const c=addComrade(s);lf(s,'happy',5);at(s,'iq',1);return `불침번마다 ${c||'동기'}와 이야기를 나눴다. 집에서 왔다는 편지를 같이 읽었다.`;}},
+    {label:'조용히 묻어간다',sub:'몸을 아낀다',act:()=>{lf(s,'health',6);lf(s,'happy',2);return '눈에 띄지 않는 것도 기술이다.';}}]));
+  out.push(()=>chap(s,A,++n,T,'자대 배치: 연병장 끝의 농구 골대','녹슨 골대 하나, 그물은 없다. 행정반 선임이 묻는다. "프로 출신이라며? 우리 부대 농구팀 좀 만들어 봐."',[
+    {label:'부대 농구팀을 만든다',sub:'전군 체육대회 출전 목표',act:()=>{st(s).armyTeam=true;tr(s,'iq',1.5);tr(s,'pass',1.2);lf(s,'happy',6);return '취사병, 운전병, 통신병. 가드 셋에 센터 하나짜리 팀이 생겼다.';}},
+    {label:'새벽마다 혼자 슈팅',sub:'감각 유지',act:()=>{tr(s,'shoot',2.5);lf(s,'health',-3);return '기상 나팔 한 시간 전, 그물 없는 림에 500개.';}},
+    {label:'농구는 잠시 잊는다',sub:'군 생활에 집중',act:()=>{lf(s,'mental',6);lf(s,'smarts',4);boostAll(s,-.8);return '분대장 견장을 달았다. 슛 감각은 조금 무뎌졌다.';}}]));
+  if(partner(s))out.push(()=>loveLetter(s,A,++n,T));
+  out.push(()=>st(s).armyTeam?chap(s,A,++n,T,'전군 체육대회 결승','1점 차, 종료 7초 전. 공은 내 손에 있고 사단장이 관중석에 앉아 있다. 이기면 포상휴가 4박 5일.',[
+      {label:'마지막 슛은 내가 쏜다',sub:`성공 확률 ${Math.round(clamp(.45+(s.attr.shoot-60)*.01,.2,.85)*100)}%`,act:()=>{if(chance(clamp(.45+(s.attr.shoot-60)*.01,.2,.85))){st(s).armyHero=true;lf(s,'fame',5);lf(s,'happy',12);s.legacy+=1;log(s,'전군 체육대회 우승, 대회 MVP. 포상휴가를 받았다.','major');addNews(s,s.year,'사회','현역병 '+s.name+', 전군 체육대회 MVP','프로 출신 현역병이 이끈 부대 팀이 전군 체육대회 정상에 올랐다.',false);return '버저와 함께 들어갔다. 동기들이 나를 헹가래 쳤다.';}lf(s,'mental',-4);return '림을 돌고 나왔다. 사단장이 그래도 박수를 쳐 줬다.';}},
+      {label:'취사병 동기에게 패스',sub:'함께 만든 팀이니까',act:()=>{const c=addComrade(s);if(chance(.4)){st(s).armyHero=true;lf(s,'happy',14);log(s,'전군 체육대회 우승. 동기의 버저비터.','major');return `${c||'동기'}의 손을 떠난 공이 그대로 들어갔다. 둘이 부둥켜안고 울었다.`;}lf(s,'happy',4);return '아쉽게 빗나갔다. 그래도 그날 밤 짬밥은 유난히 맛있었다.';}}])
+    :chap(s,A,++n,T,'전역 전야','말년 휴가에서 복귀한 밤. 생활관 불이 꺼지고 동기들이 하나둘 말을 꺼낸다.',[
+      {label:'동기들과 밤새 이야기한다',sub:'평생 갈 전우',act:()=>{const c=addComrade(s);lf(s,'happy',8);return `${c||'동기'}가 말했다. "나가서 너 경기 꼭 보러 갈게."`;}},
+      {label:'복귀 계획을 세운다',sub:'코트로 돌아갈 준비',act:()=>{tr(s,'iq',2);lf(s,'mental',4);return '노트 세 장에 걸쳐 복귀 후 훈련 계획을 적었다.';}}]));
+  return out;
+}
+// 상무: 입대한 시즌 시작 전
+function sangmuStory(s){
+  const A='상무 농구단',out=[];const T=partner(s)?3:2;let n=0;
+  out.push(()=>chap(s,A,++n,T,'문경, 국군체육부대','"필승!" 경례부터 다시 배운다. 같은 생활관에 국가대표 출신 선임이 있다. 이곳에선 이름보다 계급이 먼저다.',[
+    {label:'국가대표 선임을 그림자처럼 따른다',sub:'농구 IQ · 패스',act:()=>{tr(s,'iq',2.5);tr(s,'pass',1.5);lf(s,'mental',3);return '선임은 말이 없었다. 대신 매일 밤 비디오를 같이 봤다.';}},
+    {label:'체력 측정 1등을 노린다',sub:'체력 · 운동능력',act:()=>{tr(s,'stamina',3);tr(s,'athletic',1.5);lf(s,'fame',1);return '부대 체력 측정 기록을 갈아 치웠다.';}},
+    {label:'군인 선수의 루틴에 적응한다',sub:'행복 · 건강',act:()=>{lf(s,'happy',5);lf(s,'health',6);return '점호, 훈련, 경기, 점호. 단순한 하루가 오히려 편했다.';}}]));
+  if(partner(s))out.push(()=>loveLetter(s,A,++n,T));
+  out.push(()=>chap(s,A,++n,T,'국군의 날','국군의 날 행사에서 시범 경기가 잡혔다. 중계 카메라가 돌고, 장병 수천 명이 연병장을 메웠다.',[
+    {label:'덩크쇼로 분위기를 띄운다',sub:s.attr.athletic>=65?'운동능력 충분':'운동능력이 조금 부족하다',act:()=>{if(s.attr.athletic>=65||chance(.3)){lf(s,'fame',5);lf(s,'happy',6);return '360도 덩크에 장병들이 철모를 던졌다. 클립이 SNS에서 퍼졌다.';}lf(s,'fame',-1);return '림에 걸렸다. 그 장면이 더 퍼졌다.';}},
+    {label:'관물대 앞에서 책을 편다',sub:'학업 · 멘탈',act:()=>{lf(s,'smarts',6);lf(s,'mental',5);return '복무 기간에 책 열두 권. 전역 후 인터뷰 때 쓸 말이 늘었다.';}}]));
+  return out;
+}
+function dischargeStory(s,sangmu){
+  return {...chap(s,'','','','전역','마지막 경례를 하고 부대 정문을 나섰다. 바깥 공기가 다르다.',[
+    {label:'동기들과 정문 앞 단체 사진',sub:'행복 +',act:()=>{addComrade(s);lf(s,'happy',8);return '단체 사진을 프로필 사진으로 바꿨다.';}},
+    {label:'그 길로 체육관에 간다',sub:'복귀 준비',act:()=>{tr(s,'shoot',1.2);tr(s,'iq',1.2);lf(s,'mental',3);return '전역모를 벗고 농구화 끈을 묶었다.';}}]),kicker:`${sangmu?'상무 농구단':'현역 복무'} · 에필로그`};
+}
+// 해외 적응기: 첫 해외 리그 진출 후 1~2년
+function abroadStory(s){
+  const ab=st(s).abroad;if(!ab||ab.ch>=3||!s.team||!ABROAD[s.team.league])return [];
+  const lg=s.team.league,cty=ABROAD[lg],A=`${cty} 적응기`,eng=cty==='미국';
+  const ch=ab.ch;ab.ch++;
+  if(ch===0)return [()=>chap(s,A,1,3,eng?'작전 타임의 외국어':'통역 없는 라커룸',`타임아웃. 감독이 빠르게 무언가를 그리며 말한다. 동료들이 고개를 끄덕이는데, 나만 절반도 못 알아들었다.`,[
+    {label:'통역 없이 버틴다',sub:'학업 · IQ',act:()=>{lf(s,'smarts',7);tr(s,'iq',1.5);lf(s,'mental',-3);return eng?'단어장에 농구 용어만 300개를 적었다. "Ice it", "Switch", "Weak side".':'경기 영상을 보며 일본어 작전 용어를 외웠다.';}},
+    {label:'통역을 고용한다',sub:'2,000만 원 · 멘탈 +',act:()=>{s.money-=2000;lf(s,'mental',5);return '통역사가 생기자 감독과 처음으로 농담을 주고받았다.';}},
+    {label:'농구로 말한다',sub:'인기 · 슈팅',act:()=>{tr(s,'shoot',1.2);lf(s,'fame',2);return '말 대신 3점 세 방. 다음 날부터 동료들이 내 이름을 제대로 불렀다.';}}])];
+  if(ch===1)return [()=>chap(s,A,2,3,'김치찌개가 그리운 밤',`원정 경기 후 호텔방. 휴대폰에 엄마의 메시지가 와 있다. "밥은 먹고 다니니?" 갑자기 모든 게 낯설다.`,[
+    {label:'동료들에게 한식 파티를 연다',sub:'팀 케미 +',act:()=>{bondTeam(s,12);s.money-=100;lf(s,'happy',6);return '불고기와 떡볶이. 동료들이 매운 걸 먹고 땀을 흘리며 웃었다.';}},
+    {label:'가족을 불러온다',sub:'1,500만 원 · 행복 +',act:()=>{s.money-=1500;parents(s).forEach(p=>p.bond=clamp(p.bond+10,0,100));lf(s,'happy',9);return '어머니가 냉장고를 반찬으로 채워 놓고 가셨다.';}},
+    {label:'혼자 버틴다',sub:'멘탈 단련',act:()=>{lf(s,'mental',-5);tr(s,'iq',1);lf(s,'smarts',2);return '창밖 낯선 야경을 오래 봤다. 그래도 내일 연습은 간다.';}}])];
+  return [()=>chap(s,A,3,3,'"아시아 출신이 통할까?"',`현지 스포츠 채널 패널이 내 이름을 두고 토론한다. 한국에서는 새벽마다 내 경기 중계를 본다는 기사가 났다.`,[
+    {label:'"실력으로 증명하겠다"',sub:'승부욕',act:()=>{s.flags.clutchBoost=(s.flags.clutchBoost||0)+.02;lf(s,'fame',4);lf(s,'mental',3);st(s).abroadDone=true;return '그 주에 커리어 하이를 찍었다. 패널은 다음 주에 말을 바꿨다.';}},
+    {label:'한국 팬들에게 영상 편지',sub:'국내 인기 +',act:()=>{lf(s,'fame',7);lf(s,'happy',4);st(s).abroadDone=true;return '"새벽에 봐 주셔서 감사합니다." 조회수 300만.';}}])];
+}
+// 부상 재활기
+function injuryStoryNow(s){
+  const ij=st(s).injury;if(!ij||ij.ch!==0)return null;ij.ch=1;
+  return chap(s,'재활 일지',1,3,'수술대 앞에서',`MRI 판독지에 '${ij.name}'라고 적혀 있다. 의사가 말을 고른다. "복귀까지 최소 9개월입니다."`,[
+    {label:'미국 최고 권위자에게 수술받는다',sub:'8,000만 원 · 회복 빨라짐',act:()=>{s.money-=8000;if(s.injury)s.injury.carry=Math.max(0,s.injury.carry-.15);at(s,'athletic',1.5);ij.us=true;return 'LA의 수술실. 마취 직전 의사가 말했다. "You will dunk again."';}},
+    {label:'국내 팀 닥터에게 맡긴다',sub:'비용 없음',act:()=>{lf(s,'mental',2);return '익숙한 의료진, 익숙한 병실. 수술은 잘 끝났다.';}},
+    {label:'수술 없이 재활로 버틴다',sub:'빠른 복귀 · 재부상 위험',act:()=>{if(s.injury)s.injury.carry=Math.max(0,s.injury.carry-.1);ij.risky=true;return '보조기를 차고 다음 날부터 재활실에 출근했다.';}}]);
+}
+function injuryStory(s){
+  const ij=st(s).injury;if(!ij||ij.ch<1||ij.ch>=3)return [];
+  if(ij.ch===1){ij.ch=2;return [()=>chap(s,'재활 일지',2,3,'재활 9개월 차','고정 자전거, 밴드, 다시 고정 자전거. 거울 속 다리가 반대쪽보다 눈에 띄게 가늘다. 팀은 내 없이도 이기고 있다.',[
+    {label:'조기 복귀를 요청한다',sub:'바로 뛴다 · 위험',act:()=>{if(s.injury)s.injury.carry=0;lf(s,'health',-8);if(ij.risky||chance(.3)){at(s,'athletic',-2);lf(s,'mental',-4);return '복귀 2주 만에 다시 통증이 왔다. 조금 더 기다렸어야 했다.';}return '감독이 고개를 끄덕였다. 코트 냄새가 반가웠다.';}},
+    {label:'완벽해질 때까지 기다린다',sub:'운동능력 회복',act:()=>{at(s,'athletic',2.5);lf(s,'mental',3);if(s.injury)s.injury.carry=Math.min(.5,s.injury.carry+.05);return '한 달을 더 버텼다. 점프할 때 더는 무섭지 않다.';}},
+    {label:'스포츠 심리 상담을 받는다',sub:'멘탈 +12',act:()=>{lf(s,'mental',12);return '"다시 다칠까 봐 무서운 건 당연한 겁니다." 그 말에 처음으로 울었다.';}}])];}
+  if(ij.ch===2&&!s.injury&&isPlaying(s)){ij.ch=3;return [()=>chap(s,'재활 일지',3,3,'복귀전','장내 아나운서가 내 이름을 부르자 관중석이 일어섰다. 1년 넘게 기다린 박수다.',[
+    {label:'첫 슛을 던진다',sub:`슈팅 ${Math.round(s.attr.shoot)}`,act:()=>{if(chance(clamp(.4+(s.attr.shoot-60)*.01,.2,.8))){lf(s,'fame',5);lf(s,'mental',10);st(s).comeback=true;log(s,'부상을 딛고 복귀전에서 첫 득점.','major');return '그물이 출렁였다. 벤치의 동료들이 전부 코트로 뛰어나올 뻔했다.';}lf(s,'mental',2);return '빗나갔다. 그래도 박수는 멈추지 않았다.';}},
+    {label:'수비부터 한다',sub:'팀 플레이',act:()=>{bondTeam(s,8);lf(s,'mental',6);st(s).comeback=true;return '첫 수비에서 몸을 날려 공을 걷어냈다. 그걸로 충분했다.';}}])];}
+  return [];
+}
+// 라이벌 연대기
+function rivalStory(s){
+  const r=rivalRel(s);if(!r)return [];
+  const rv=st(s).rival||(st(s).rival={ch:0,d:RI(-4,4)});
+  const rO=()=>ovr(s)+rv.d+(s.age>30?RI(-2,2):0);
+  const A=`라이벌 ${r.name}`,out=[];
+  if(rv.ch===0&&s.stage==='high'&&s.age>=17){rv.ch=1;out.push(()=>chap(s,A,1,4,'고교 최강자전',`전국대회 결승. 상대 에이스는 ${r.name}. 3년 전의 그 말, "다음엔 더 세게 해 와"가 아직 귀에 남아 있다.`,[
+    {label:'1대1로 정면 승부',sub:'내 실력으로',act:()=>{if(chance(clamp(.5+(ovr(s)-rO())*.04,.15,.85))){rv.w=(rv.w||0)+1;lf(s,'fame',5);lf(s,'mental',5);r.bond=clamp(r.bond+5,0,100);return `${r.name}의 마지막 슛을 블록했다. 경기 후 그가 먼저 손을 내밀었다.`;}lf(s,'mental',-4);boostAll(s,.6);return `${r.name}에게 결승 득점을 내줬다. 시상식 내내 은메달을 만지작거렸다.`;}},
+    {label:'팀 수비로 묶는다',sub:'농구 IQ',act:()=>{if(chance(clamp(.5+(s.attr.iq-rO())*.03,.2,.8))){rv.w=(rv.w||0)+1;lf(s,'fame',3);tr(s,'iq',1);return `더블팀으로 ${r.name}을 12점에 묶었다. 우승.`;}lf(s,'mental',-2);return '그래도 막을 수 없는 선수가 있다는 걸 배웠다.';}}]));}
+  else if(rv.ch===1&&s.stage==='pro'){rv.ch=2;const rlg=s.team.league;const tm=pick(TEAMS[rlg==='sangmu'?'kbl':rlg]||['다른 팀']);rv.team=tm;out.push(()=>chap(s,A,2,4,'같은 무대',`${J(r.name,'도')} 프로에 입성했다. 소속은 ${tm}. 기자들이 벌써 "세대 라이벌"이라는 제목을 뽑았다.`.replace('도도','도'),[
+    {label:'축하 메시지를 보낸다',sub:'관계 +',act:()=>{r.bond=clamp(r.bond+12,0,100);return `"코트에서 보자." 짧은 답장이 왔다.`;}},
+    {label:'보란 듯이 이기겠다',sub:'승부욕',act:()=>{s.flags.clutchBoost=(s.flags.clutchBoost||0)+.015;lf(s,'mental',3);return '시즌 일정표에서 그 팀과의 경기에 빨간 동그라미를 쳤다.';}}]));}
+  else if(rv.ch===2&&s.stage==='pro'&&s.age>=25){rv.ch=3;out.push(()=>chap(s,A,3,4,'라이벌 매치',`정규리그 1위 결정전. 상대는 ${r.name}의 ${rv.team||'팀'}. 전국 생중계, 시청률이 올 시즌 최고다.`,[
+    {label:'끝까지 1대1',sub:'내가 막고 내가 넣는다',act:()=>{if(chance(clamp(.5+(ovr(s)-rO())*.04,.15,.85))){rv.w=(rv.w||0)+1;lf(s,'fame',6);s.flags.clutchBoost=(s.flags.clutchBoost||0)+.02;s.legacy+=1;return `${r.name}과의 매치업에서 32점. 하이라이트 첫 장면은 내 몫이었다.`;}lf(s,'mental',-5);return `${r.name}이 그날의 주인공이었다. 인정할 수밖에 없다.`;}},
+    {label:'팀을 믿는다',sub:'팀 케미',act:()=>{bondTeam(s,8);if(chance(.5)){rv.w=(rv.w||0)+1;return '동료들이 고르게 터졌다. 이겼다.';}return '접전 끝에 졌다. 다음 시즌을 기약했다.';}}]));}
+  else if(rv.ch===3&&s.stage==='retired'){rv.ch=4;out.push(()=>chap(s,A,4,4,'마지막 맞대결',`${J(r.name,'이/가')} 은퇴 경기에 나를 불렀다. "우리 마지막으로 한 번 더 붙자." 상대 전적은 ${rv.w||0}승. 이제 숫자는 중요하지 않다.`,[
+    {label:'함께 코트에 선다',sub:'관계 최대',act:()=>{r.bond=100;r.type='라이벌';lf(s,'happy',12);st(s).rivalPeace=true;log(s,`${J(r.name,'과/와')} 은퇴 경기에서 마지막으로 맞붙었다.`,'major');return '경기가 끝나고 둘이 센터 서클에 누워 천장을 봤다. "고마웠다." 동시에 말했다.';}},
+    {label:'객석에서 박수를 보낸다',sub:'조용한 존중',act:()=>{r.bond=clamp(r.bond+15,0,100);lf(s,'happy',5);return '그가 객석의 나를 찾아 손가락으로 가리켰다.';}}]));}
+  return out;
+}
+function storyChapters(s){
+  const out=[];
+  if(s.stage==='army'&&!st(s).armyDone){st(s).armyDone=true;out.push(...armyStory(s));}
+  if(s.contract?.military&&!st(s).sangmuDone){st(s).sangmuDone=true;out.push(...sangmuStory(s));}
+  out.push(...abroadStory(s));
+  out.push(...injuryStory(s));
+  out.push(...rivalStory(s));
+  return out;
+}
+
+/* ================= endings ================= */
+const ENDKEY=SAVE_KEY+':endings';
+function endingStats(s){
+  const pro=s.seasons.filter(x=>LG[x.lg].kind==='pro'&&x.lg!=='sangmu');
+  const cnt=k=>s.awards.filter(a=>a.key===k).length;
+  const top=pro.filter(x=>x.lg==='nba'||x.lg==='wnba');
+  const teams=new Set(pro.map(x=>x.team));
+  const kids=s.relations.filter(r=>r.type==='자녀').length;
+  return {pro,top,teams,kids,mvp:cnt('mvp'),champ:s.awards.filter(a=>a.key==='champ'&&LG[a.lg]?.kind==='pro').length,
+    topStar:s.awards.some(a=>(a.lg==='nba'||a.lg==='wnba')&&(a.key==='allstar'||a.key==='mvp')),married:s.relations.some(r=>r.type==='배우자'),net:netWorth(s)};
+}
+const ENDINGS=[
+  {id:'banned',t:'몰락한 별',hint:'유혹에 넘어가 리그에서 쫓겨난다',ok:(s)=>s.flags.banned,
+    story:(s,e)=>[`한때 ${s.name}의 이름은 체육관 전광판에 걸려 있었다. 그러나 단 한 번의 선택이 모든 것을 바꿨다.`,`영구 제명 이후 그는 동네 코트에서 아이들에게만 슛을 가르쳤다. 아무도 그가 누구였는지 묻지 않았다.`]},
+  {id:'goat',t:'코트의 신',hint:'레거시 520 이상, MVP 3회 이상',ok:(s,e)=>s.legacy>=520&&e.mvp>=3,
+    story:(s,e)=>[`MVP ${e.mvp}회, 우승 ${e.champ}회. 통계로는 설명되지 않는 선수였다.`,`그가 은퇴한 뒤에도 사람들은 논쟁했다. 누가 역대 최고인가. 그리고 그 논쟁의 끝에는 늘 ${s.name}의 이름이 있었다.`]},
+  {id:'olympic',t:'기적의 메달',hint:'올림픽에서 메달을 딴다',ok:s=>s.awards.some(a=>a.key==='olympic'),
+    story:s=>[`${s.awards.find(a=>a.key==='olympic').name}. 한국 농구가 수십 년 동안 꿈꾸던 장면이었다.`,`시상대 위에서 들은 애국가를, ${s.name}은 평생 잊지 못했다.`]},
+  {id:'pacific',t:'태평양을 건넌 전설',hint:'NBA·WNBA에서 5시즌 이상 뛰고 올스타나 MVP를 따낸다',ok:(s,e)=>e.top.length>=5&&e.topStar,
+    story:(s,e)=>[`${e.top.length}시즌. 세계 최고의 리그에서 ${s.name}은 손님이 아니라 주인공이었다.`,`그의 경기가 있는 새벽이면 한국의 편의점 야간 아르바이트생들도 휴대폰을 세워 두고 중계를 봤다.`]},
+  {id:'dynasty',t:'왕조의 심장',hint:'프로에서 4번 이상 우승한다',ok:(s,e)=>e.champ>=4,
+    story:(s,e)=>[`우승 반지 ${e.champ}개. 그가 있는 팀은 늘 마지막까지 살아남았다.`,`라커룸 벽에는 그가 남긴 한 문장이 아직 걸려 있다. "이기는 건 습관이다."`]},
+  {id:'lawmaker',t:'코트에서 국회로',hint:'국회의원에 당선된다',ok:s=>s.flags.elected==='nat',
+    story:s=>[`은퇴한 농구선수가 국회의원 배지를 달았을 때 다들 반짝 인기라고 했다.`,`그러나 ${s.name}이 발의한 '생활체육 시설 확충법'은 전국에 농구 코트 천 개를 만들었다.`]},
+  {id:'owner',t:'구단주',hint:'프로농구단을 인수한다',ok:s=>s.assets.some(a=>a.eff==='owner'),
+    story:s=>[`드래프트 날 모자를 쓰던 선수가 이제는 드래프트 테이블에 앉는다.`,`${s.name}은 매년 적자를 내면서도 말했다. "선수들에게 내가 받지 못한 걸 주고 싶었다."`]},
+  {id:'coach',t:'명장',hint:'감독으로 우승한다',ok:s=>s.awards.some(a=>a.key==='coach_champ'),
+    story:s=>[`선수 시절보다 감독 시절이 더 빛났다는 평가를 받았다.`,`작전판 위의 ${s.name}은 늘 한 수 앞을 봤고, 제자들은 그를 "선생님"이라고 불렀다.`]},
+  {id:'tycoon',t:'농구 재벌',hint:'순자산 500억 원을 넘긴다',ok:(s,e)=>e.net>=5000000,
+    story:(s,e)=>[`순자산 ${fmtMoney(e.net)}. 경제지는 그를 "가장 성공한 운동선수 출신 사업가"로 꼽았다.`,`그래도 그의 집무실 한쪽에는 낡은 농구공 하나가 놓여 있었다. 여덟 살 때 아버지가 사 오신 바로 그 공이었다.`]},
+  {id:'hof',t:'명예의 전당',hint:'은퇴 후 명예의 전당에 헌액된다',ok:s=>s.flags.hof,
+    story:s=>[`헌액식 연설은 3분이었다. 그중 2분은 부모님 이야기였다.`,`${s.name}의 동판은 지금도 그 자리에서 후배들을 내려다보고 있다.`]},
+  {id:'actor',t:'스크린의 스타',hint:'드라마 오디션에 합격한다',ok:s=>s.flags.actor,
+    story:s=>[`"농구선수 출신 배우"라는 꼬리표는 몇 작품 만에 사라졌다.`,`시상식 무대에서 ${s.name}은 말했다. "코트에서 배운 건 결국 타이밍이었습니다."`]},
+  {id:'soldier',t:'군필 에이스',hint:'현역으로 복무하며 전군 체육대회 MVP가 된다',ok:s=>s.story?.armyHero,
+    story:s=>[`프로 선수가 현역으로 간다는 소식에 다들 커리어가 끝났다고 했다.`,`그러나 연병장의 녹슨 골대에서 다시 시작한 ${s.name}은 전역 후 더 단단한 선수가 되어 돌아왔다.`]},
+  {id:'rivals',t:'영원한 라이벌',hint:'라이벌과 마지막 맞대결까지 함께한다',ok:s=>s.story?.rivalPeace,
+    story:s=>{const r=s.relations.find(x=>x.type==='라이벌');return [`열네 살에 처음 만난 ${r?r.name:'그'}. 둘은 평생 서로의 가장 큰 적이자 가장 큰 동력이었다.`,`장례식장에 가장 먼저 도착한 사람도 그였다. 영정 앞에 농구공 하나를 놓고 갔다.`];}},
+  {id:'dream',t:'꿈의 무대',hint:'NBA·WNBA 코트를 밟는다',ok:(s,e)=>e.top.length>=1,
+    story:(s,e)=>[`세계 최고의 리그에서 ${e.top.length}시즌. 화려하진 않았지만, 그 무대에 섰다는 사실은 누구도 지울 수 없다.`,`그가 뛰었던 경기 티켓은 고향 집 액자 속에 지금도 걸려 있다.`]},
+  {id:'comeback',t:'부서진 날개, 다시',hint:'큰 부상을 이겨내고 복귀한다',ok:s=>s.story?.comeback,
+    story:s=>[`수술대 위에서 모두가 끝이라고 말했다.`,`복귀전 기립 박수를 받던 그날, ${s.name}은 농구가 아니라 자기 자신을 이겼다.`]},
+  {id:'oneclub',t:'원클럽맨',hint:'한 팀에서만 10시즌 이상 뛴다',ok:(s,e)=>e.pro.length>=10&&e.teams.size===1,
+    story:(s,e)=>[`${[...e.teams][0]}에서만 ${e.pro.length}시즌.`,`그의 등번호 ${s.number}번은 영구결번이 됐다. 다른 팀의 더 큰 제안이 있었다는 건, 은퇴 후에야 알려졌다.`]},
+  {id:'journey',t:'저니맨',hint:'프로에서 5개 이상의 팀을 거친다',ok:(s,e)=>e.teams.size>=5,
+    story:(s,e)=>[`${e.teams.size}개의 팀, ${e.teams.size}번의 짐 싸기.`,`어디서든 필요한 순간에 필요한 선수였다. 그의 휴대폰에는 리그 거의 모든 선수의 번호가 저장돼 있었다.`]},
+  {id:'family',t:'가장 따뜻한 승리',hint:'결혼하고 자녀 둘 이상, 행복 70 이상으로 생을 마친다',ok:(s,e)=>e.married&&e.kids>=2&&s.life.happy>=70,
+    story:(s,e)=>[`트로피 진열장보다 냉장고에 붙은 아이들 그림이 더 많았다.`,`${s.name}의 마지막 날, 병실은 가족들로 가득했다. 그게 그가 거둔 가장 큰 승리였다.`]},
+  {id:'otherpath',t:'다른 길',hint:'농구를 그만두고 새 인생을 산다',ok:s=>s.stage==='civil',
+    story:s=>[`열아홉의 갈림길에서 ${s.name}은 농구공을 내려놓았다.`,`그래도 주말 아침이면 동네 코트에 나갔다. 그곳에선 여전히 가장 높이 뛰는 사람이었다.`]},
+  {id:'early',t:'너무 이른 버저',hint:'50세가 되기 전에 생을 마친다',ok:s=>!s.settled&&s.age<50,
+    story:s=>[`${s.age}세. 경기 시간이 너무 빨리 끝났다.`,`추모 경기에서 팀 동료들은 그의 등번호를 단 채 뛰었다.`]},
+  {id:'paused',t:'멈춘 이야기',hint:'30세 전에 인생을 정산한다',ok:s=>s.settled&&s.age<30,
+    story:s=>[`이야기는 ${s.age}세에서 멈췄다.`,`그 뒤의 페이지는 비어 있다. 어떤 결말이었을지는 아무도 모른다.`]},
+  {id:'broke',t:'빈털터리',hint:'빚을 진 채로 생을 마친다',ok:(s,e)=>e.net<0,
+    story:s=>[`벌었던 돈은 다 어디로 갔을까.`,`그래도 ${s.name}을 기억하는 팬들은 그의 통장 잔고가 아니라 그가 넣은 버저비터를 기억했다.`]},
+  {id:'ordinary',t:'평범한 영웅',hint:'특별한 조건 없이 생을 마친다',ok:()=>true,
+    story:s=>[`대단한 기록은 없었다. 그러나 ${s.name}은 매일 체육관에 가장 먼저 나왔고 가장 늦게 떠났다.`,`누군가에게는 그것만으로 충분히 영웅이었다.`]},
+];
+function pickEnding(s){const e=endingStats(s);return ENDINGS.find(x=>{try{return x.ok(s,e);}catch(_){return false;}})||ENDINGS[ENDINGS.length-1];}
+function endingsSeen(){try{return JSON.parse(localStorage.getItem(ENDKEY)||'[]');}catch(e){return [];}}
+function recordEnding(s){if(!s.endingId)s.endingId=pickEnding(s).id;const seen=endingsSeen();if(!seen.includes(s.endingId)){seen.push(s.endingId);try{localStorage.setItem(ENDKEY,JSON.stringify(seen));}catch(e){}}return s.endingId;}
 
 /* ================= time skip ================= */
 function skipStart(s){return {age:s.age,year:s.year,o:ovr(s),money:netWorth(s),legacy:s.legacy,fame:s.life.fame};}
@@ -1992,6 +2189,7 @@ function skipMenuSpec(s){
 }
 function skipSlots(s){return isPlaying(s)?['shoot','weight','defense','rest','film']:['pickup','health','work'];}
 function autoResolve(spec){
+  if(spec.autoPick!=null&&spec.choices[spec.autoPick]){let r;try{r=spec.choices[spec.autoPick].act();}catch(e){console.error(e);r=null;}return absorb(spec,r);}
   if(spec.auto){let r;try{r=spec.auto();}catch(e){console.error(e);r=null;}return absorb(spec,r);}
   const ch=spec.choices.filter(c=>!c.disabled);
   if(ch.length!==1)return false;
@@ -2009,7 +2207,7 @@ function absorb(spec,r){
 function skipSummarySpec(s,st,why){
   const yrs=s.age-st.age,o=ovr(s);
   const aw=s.awards.filter(a=>a.year>=st.year).map(a=>a.name);
-  const majors=s.log.filter(e=>e.year>=st.year&&e.tone==='major').slice(-12);
+  const majors=s.log.filter(e=>e.year>=st.year&&e.tone==='major').sort((a,b)=>(a.text.startsWith('[속보]'))-(b.text.startsWith('[속보]'))).slice(0,12);
   const d=(a,b,f=x=>Math.round(x))=>`<b class="num">${f(a)} → ${f(b)}</b>`;
   return {kicker:`${yrs}년 건너뛰기 · ${st.year} → ${s.year}`,title:why==='decision'?'중요한 결정 앞에서 멈췄다':'건너뛰기 완료',
     body:`<div class="kv" style="margin-bottom:10px">
@@ -2239,6 +2437,7 @@ const REL_ACTS={
   '자녀':[{id:'play',t:'놀아주기'},{id:'teach',t:'농구 가르치기'}],
   '손주':[{id:'play',t:'놀아주기'}],
   '반려견':[{id:'walk',t:'산책하기'}],
+  '전우':[{id:'talk',t:'연락하기'},{id:'dinner',t:'술 한잔'}],
   '라이벌':[{id:'duel',t:'1대1 대결'},{id:'talk',t:'연락하기'}],
   '팀 동료':[{id:'night',t:'야간 훈련 같이'},{id:'dinner',t:'밥 사기'},{id:'advice',t:'조언 구하기'}],
 };
@@ -2652,7 +2851,7 @@ function bindGame(){
   $('#btnSettle').onclick=()=>{if(UI.modalOpen)return;const s=S,[g,t]=grade(s.legacy);
     showModal({kicker:`${s.year} · ${s.age}세`,title:'여기서 인생을 정산할까?',
       body:`<p>지금까지의 기록으로 게임을 끝내고 최종 등급을 매긴다. 정산하면 이 인생은 더 이어갈 수 없다.</p><div class="kv"><div><span>현재 레거시</span><b class="num">${Math.round(s.legacy)}</b></div><div><span>예상 등급</span><b>${g} · ${t}</b></div></div>`,
-      choices:[{label:'정산하고 끝내기',act:()=>{s.settled=true;s.deathYear=s.year;log(s,`${s.age}세, 인생을 정산했다.`,'major');s.alive=false;save();return null;}},{label:'계속 플레이',act:()=>null}]});};
+      choices:[{label:'정산하고 끝내기',act:()=>{s.settled=true;s.deathYear=s.year;recordEnding(s);log(s,`${s.age}세, 인생을 정산했다.`,'major');s.alive=false;save();return null;}},{label:'계속 플레이',act:()=>null}]});};
   $('#btnNew').onclick=()=>showModal({kicker:'새 인생',title:'처음부터 다시 시작할까?',body:'<p>지금 인생의 기록은 사라진다.</p>',
     choices:[{label:'새 인생 시작',act:()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}queue=[];closeModal();render();return null;}},{label:'계속 플레이',act:()=>null}]});
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;try{localStorage.setItem(SAVE_KEY+':tab',UI.tab);}catch(e){}render();});
@@ -2719,7 +2918,7 @@ function startHTML(){
       ${lookEditorHTML(d.look,d.gender,'lk')}</div>
     </div>
     <button class="cta" id="btnStart">8살, 첫 시즌 시작</button>
-    <div class="panel how"><b>플레이 방법</b><br>매년 정해진 <b>행동</b>으로 훈련, 휴식, 공부를 고르고 <b>시즌 진행</b>을 누른다. 시즌 중에는 클러치 순간과 사건이 찾아오고, 고교 졸업 뒤엔 대학 · NCAA · 고졸 드래프트 중 길을 고른다. 프로가 되면 FA 협상과 해외 진출, 남자 선수는 병역(상무 · 아시안게임 금메달 면제)까지 겪는다. 은퇴 후에도 인생은 이어지며, 생을 마치면 레거시 등급이 매겨진다.<br><br><b>직접 하는 것들</b><br>슈팅 챌린지 · 매 시즌 빅매치 4쿼터 지휘 · 클러치 슛 타이밍 · 올스타 3점슛/덩크 콘테스트 · FA 연봉 협상 · 기자회견 · 트레이드 행선지 선택 · 팀 동료와의 케미<br><br><span style="color:var(--dim)">KBL·WKBL·NBA·WNBA·B.리그·W리그 팀과 일부 선수는 실제 이름을 쓴다(2025-26 시즌 기준). 능력치는 게임용 추정치이며 이후 이적과 은퇴는 반영되지 않았다. 각 리그·구단과 무관한 팬 게임이다.</span></div>
+    <div class="panel how"><b>엔딩 도감 ${endingsSeen().length} / ${ENDINGS.length}</b> · 인생의 갈래마다 다른 엔딩이 기다린다.<br><br><b>플레이 방법</b><br>매년 정해진 <b>행동</b>으로 훈련, 휴식, 공부를 고르고 <b>시즌 진행</b>을 누른다. 시즌 중에는 클러치 순간과 사건이 찾아오고, 고교 졸업 뒤엔 대학 · NCAA · 고졸 드래프트 중 길을 고른다. 프로가 되면 FA 협상과 해외 진출, 남자 선수는 병역(상무 · 아시안게임 금메달 면제)까지 겪는다. 은퇴 후에도 인생은 이어지며, 생을 마치면 레거시 등급이 매겨진다.<br><br><b>직접 하는 것들</b><br>슈팅 챌린지 · 매 시즌 빅매치 4쿼터 지휘 · 클러치 슛 타이밍 · 올스타 3점슛/덩크 콘테스트 · FA 연봉 협상 · 기자회견 · 트레이드 행선지 선택 · 팀 동료와의 케미<br><br><span style="color:var(--dim)">KBL·WKBL·NBA·WNBA·B.리그·W리그 팀과 일부 선수는 실제 이름을 쓴다(2025-26 시즌 기준). 능력치는 게임용 추정치이며 이후 이적과 은퇴는 반영되지 않았다. 각 리그·구단과 무관한 팬 게임이다.</span></div>
   </div></div>`;
 }
 const HMIN={m:165,f:155},HMAX={m:226,f:206};
@@ -2789,7 +2988,12 @@ function endHTML(s){
   else if(pro.length)ep='짧았지만 프로의 꿈을 이뤘다.';
   else if(s.settled&&['elem','middle','high','college'].includes(s.stage))ep='아직 쓰이지 않은 이야기. 여기서 기록을 멈췄다.';
   else ep='농구 선수의 꿈은 이루지 못했지만, 그 시절의 땀은 남았다.';
-  const majors=s.log.filter(e=>e.tone==='major').slice(-14);
+  const majors=s.log.filter(e=>e.tone==='major'&&!e.text.startsWith('[속보]')).slice(-14);
+  const eid=recordEnding(s),E=ENDINGS.find(x=>x.id===eid)||ENDINGS[ENDINGS.length-1],eNo=ENDINGS.indexOf(E)+1;
+  let story=[];try{story=E.story(s,endingStats(s));}catch(_){}
+  const seen=endingsSeen();
+  const endingBlock=`<section class="ending" aria-label="엔딩"><div class="eno">ENDING ${String(eNo).padStart(2,'0')} / ${ENDINGS.length}</div><h2>${esc(E.t)}</h2>${story.map(p=>`<p>${esc(p)}</p>`).join('')}</section>`;
+  const dex=`<div class="panel"><h3>엔딩 도감 <em>${seen.length} / ${ENDINGS.length} 발견 · 이 브라우저 기준</em></h3><div class="dex">${ENDINGS.map((x,i)=>{const got=seen.includes(x.id);return `<div class="${got?'':'lock'} ${x.id===eid?'now':''}"><b>${String(i+1).padStart(2,'0')} · ${got?esc(x.t):'???'}</b><small>${esc(x.hint)}</small></div>`;}).join('')}</div></div>`;
   return `<div class="wrap"><div class="end">
     <div class="end-hero">
       <div class="end-av">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor((s.flags.lastTeam||{}).name),number:s.number,cls:'avatar end-avatar'})}<div class="grade">${g}</div></div>
@@ -2798,6 +3002,7 @@ function endHTML(s){
       <div class="title">${t}</div>
       <p class="epitaph">${esc(ep)}</p>
     </div>
+    ${endingBlock}
     <div class="panel"><h3>커리어 요약</h3><div class="kv">
       <div><span>프로 시즌</span><b class="num">${pro.length}</b></div>
       <div><span>프로 통산 득점</span><b class="num">${tot('pts').toLocaleString('ko-KR')}</b></div>
@@ -2809,6 +3014,7 @@ function endHTML(s){
       <div><span>최고 능력치</span><b class="num">${Math.max(...s.ovrHist.map(p=>p.o))}</b></div>
     </div></div>
     <div class="panel"><h3>결정적 순간들</h3><div class="feed">${majors.map(e=>`<div class="yr"><div class="yr-age num">${e.age}세<small>${e.year}</small></div><ul><li class="major">${esc(e.text)}</li></ul></div>`).join('')}</div></div>
+    ${dex}
     <button class="cta" id="btnAgain">새 인생 시작</button>
   </div></div>`;
 }
