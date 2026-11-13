@@ -601,9 +601,9 @@ const TEAMS_BASE=JSON.parse(JSON.stringify(TEAMS));
 function T(s,lg){if(lg==='uleague'||lg==='ncaa')return COLLEGE[s.gender][lg];return TEAMS[lg]||[];}
 /* ===== schools nationwide: [name, city, tier(3 강호/2 중위/1 약체)] ===== */
 const SCHOOLS={
-  middle:[['한빛중','서울',3],['새솔중','서울',2],['청람중','인천',2],['다온중','수원',3],['가람중','성남',2],['누리중','대전',2],['해밀중','광주',2],['미르중','대구',2],['라온중','부산',3],['도담중','울산',1],['온누리중','전주',1],['은빛중','춘천',1],['푸른솔중','창원',2],['한울중','제주',1],['솔빛중','강릉',1],['새길중','포항',1],['장안중','서울',2]],
-  high:{m:[['용산고','서울',3],['휘문고','서울',3],['경복고','서울',2],['양정고','서울',2],['홍대부고','서울',2],['명지고','서울',1],['삼일상고','수원',3],['안양고','안양',2],['낙생고','성남',2],['송도고','인천',2],['제물포고','인천',2],['군산고','군산',2],['전주고','전주',1],['여수화양고','여수',1],['마산고','창원',1],['부산중앙고','부산',2],['무룡고','울산',2],['서현고','성남',2],['대진고','서울',2]],
-    f:[['숙명여고','서울',3],['선일여고','서울',2],['분당경영고','성남',2],['인성여고','인천',2],['온양여고','아산',3],['청주여고','청주',2],['수피아여고','광주',2],['동주여고','부산',2],['상주여고','상주',1],['춘천여고','춘천',1],['서현고','성남',2]]},
+  middle:[['한빛중','서울',3],['새솔중','서울',2],['청람중','인천',2],['다온중','수원',3],['가람중','성남',2],['누리중','대전',2],['해밀중','광주',2],['미르중','대구',2],['라온중','부산',3],['도담중','울산',1],['온누리중','전주',1],['은빛중','춘천',1],['푸른솔중','창원',2],['한울중','제주',1],['솔빛중','강릉',1],['새길중','포항',1],['장안중','성남',4]],
+  high:{m:[['용산고','서울',3],['휘문고','서울',3],['경복고','서울',2],['양정고','서울',2],['홍대부고','서울',2],['명지고','서울',1],['삼일상고','수원',3],['안양고','안양',2],['낙생고','성남',2],['송도고','인천',2],['제물포고','인천',2],['군산고','군산',2],['전주고','전주',1],['여수화양고','여수',1],['마산고','창원',1],['부산중앙고','부산',2],['무룡고','울산',2],['서현고','성남',4],['대진고','성남',4]],
+    f:[['숙명여고','서울',3],['선일여고','서울',2],['분당경영고','성남',2],['인성여고','인천',2],['온양여고','아산',3],['청주여고','청주',2],['수피아여고','광주',2],['동주여고','부산',2],['상주여고','상주',1],['춘천여고','춘천',1],['서현고','성남',4],['대진고','성남',4]]},
   uleague:{m:[['고려대','서울',3],['연세대','서울',3],['중앙대','서울',2],['경희대','용인',2],['성균관대','수원',2],['한양대','서울',2],['동국대','서울',1],['건국대','서울',2],['단국대','용인',2],['명지대','서울',1]],
     f:[['단국대','용인',3],['부산대','부산',2],['광주대','광주',2],['수원대','화성',2],['용인대','용인',2],['한림성심대','춘천',1]]},
   ncaa:{m:[['듀크','더럼',3],['켄터키','렉싱턴',3],['캔자스','로런스',3],['노스캐롤라이나','채플힐',3],['UConn','스토스',3],['UCLA','로스앤젤레스',2],['곤자가','스포캔',2],['미시간 주립대','이스트랜싱',2],['빌라노바','필라델피아',2],['데이비슨','데이비슨',1]],
@@ -809,7 +809,9 @@ function ovr(s){
   return clamp(Math.round(o+hb),1,99);
 }
 const potStars=p=>clamp(Math.round((p-45)/10),1,5);
-const starStr=n=>'★'.repeat(n)+'☆'.repeat(5-n);
+const starStr=n=>'★'.repeat(n)+'☆'.repeat(Math.max(0,5-n));
+const WC_SCHOOLS=new Set(['장안중','서현고','대진고']);
+const atWC=s=>!!(s.team&&WC_SCHOOLS.has(s.team.name));
 function lf(s,k,d){
   if(k==='fame'&&d>0&&has(s,'showman'))d*=1.5;
   if(k==='mental'&&d<0&&has(s,'fragile'))d*=1.4;
@@ -824,6 +826,7 @@ function tr(s,k,base){
   if(has(s,'grinder'))g*=1.3;
   if(has(s,'lazy'))g*=.75;
   if(s.life.health<30)g*=.7;
+  if(atWC(s))g*=1.35;
   s.attr[k]=Math.min(99,v+g);
   return g;
 }
@@ -842,7 +845,7 @@ function log(s,text,tone=''){
 const isPlaying=s=>['elem','middle','high','college','pro'].includes(s.stage)&&!!s.team;
 const lvl=s=>s.team?LG[s.team.league].level:LG[domPro(s)].level;
 function roleLabel(o,str){const d=o-str;return d>=8?'에이스':d>=2?'주전':d>=-4?'로테이션':'벤치 멤버';}
-function teamStars(str,lg){return clamp(Math.round((str-LG[lg].level+10)/4),1,5);}
+function teamStars(str,lg){return clamp(Math.round((str-LG[lg].level+10)/4),1,7);}
 function famBudget(s){return s.flags.famBudget??0;}
 function spend(s,amt){ // returns false if unaffordable
   if(s.age<19){ if(famBudget(s)<amt)return false; s.flags.famBudget-=amt; return true; }
@@ -885,13 +888,13 @@ function schoolTeam(stage,tier='mid',g='m',avoid,city){
   const pool=list.filter(x=>x[2]===want);const sc=pick(pool.length?pool:list);
   return {name:sc[0],league:stage,str:Math.round(L.level+off),city:sc[1]};
 }
-function schoolStr(L,tier){return Math.round(L.level+(tier===3?R(6,10):tier===2?R(-1,4):R(-8,-3)));}
+function schoolStr(L,tier){return Math.round(L.level+(tier===4?R(17.5,19):tier===3?R(6,10):tier===2?R(-1,4):R(-8,-3)));}
 function moveAway(s,city){if(city&&s.home&&city!==s.home){lf(s,'happy',-3);parents(s).forEach(p=>p.bond=clamp(p.bond-4,0,100));return ' 고향을 떠나 기숙사 생활을 시작했다.';}return '';}
 function schoolPickChoices(s,stage,list,lg,reqs,onPick){
   const L=LG[lg],o=ovr(s),home=s.home;
   const rows=list.map(([n,c,t])=>({n,c,t,str:schoolStr(L,t)})).sort((a,b)=>(b.c===home)-(a.c===home)||b.t-a.t||b.str-a.str);
   return rows.map(r=>{const req=reqs(r.t);const ok=req.ok;
-    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호'][r.t]} · 예상 역할 ${roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
+    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?'NBA 스카우트 상주 · 졸업 시 NBA 직행 오퍼':'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
       disabled:!ok,reason:`${r.c} · ${req.why}`,act:()=>onPick({name:r.n,league:lg,str:r.str,city:ABROAD[lg]?null:r.c})};});
 }
 function newGame(o){
@@ -1182,7 +1185,7 @@ function simSeason(s){
   gpFrac=clamp(gpFrac,0,1);
   const shortF=(s.world&&s.world.short&&s.world.short[lg]===s.year)?.6:1;
   const games=Math.round(L.games*shortF),gp=Math.round(games*gpFrac*R(.93,1));
-  const depth=Math.max(0,s.team.str-o);
+  const depth=atWC(s)?0:Math.max(0,s.team.str-o);
   let min=clamp(21+rel*1.3+(A.stamina-lv)*.1-depth*.7-(s.flags.loadMgmt?4:0),3,37.5);
   if(s.contract?.practice)min=Math.min(min,12);
   const m=min/36,vary=()=>R(.88,1.12);
@@ -1686,7 +1689,7 @@ function schoolChoiceSpec(s,stage){
   return {kicker:`${s.age}세 · 진학 · 전국 ${list.length}개 학교`,title:`${kname} 농구부를 고르자`,
     body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>`,
     choices:schoolPickChoices(s,stage,list,stage,t=>t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
-      team=>{s.stage=stage;s.team=team;lf(s,'happy',3);const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};})};
+      team=>{s.stage=stage;s.team=team;lf(s,'happy',3);if(WC_SCHOOLS.has(team.name)){s.flags.wc=true;s.flags.wcPot=s.flags.wcPot||{};if(!s.flags.wcPot[team.name]){s.flags.wcPot[team.name]=1;s.pot=Math.min(99,s.pot+5);}lf(s,'fame',8);addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 입학`,`NBA 스카우트가 상주하는 ${team.name}에 ${J(s.name,'이/가')} 입학했다. 해외 언론도 주목하고 있다.`,false);}const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};})};
 }
 function collegeChoiceSpec(s,lg){
   const L=LG[lg],o=ovr(s),list=SCHOOLS[lg][s.gender];
@@ -1698,12 +1701,26 @@ function collegeChoiceSpec(s,lg){
       if(lg==='ncaa'){if(!st(s).abroad)st(s).abroad={ch:0,lg:'ncaa'};lf(s,'fame',6);lf(s,'happy',-4);log(s,`NCAA ${team.name}에 장학생으로 입학했다.`,'major');return {text:'인천공항에서 가족과 오래 안았다.',nolog:true};}
       const mv=moveAway(s,team.city);log(s,`${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부에 합류했다.${mv}`,nolog:true};})};
 }
+function wcOfferSpec(s){
+  const lg=topPro(s),L=LG[lg],used=[];
+  const offers=[1,2,3].map(()=>{let t;do{t=pick(TEAMS[lg]);}while(used.includes(t));used.push(t);const no=RI(1,5);
+    const sal=lg==='nba'?300000+(31-no)*45000:9000+(13-no)*400;return {team:makeTeam(lg,t,s.year,s.gender,-3),no,sal};}).sort((a,b)=>a.no-b.no);
+  return {kicker:`${s.year} · ${L.name} 오퍼`,title:'NBA가 먼저 찾아왔다'.replace('NBA',L.name),
+    body:`<p>졸업식 다음 날, ${L.name} 구단 세 곳의 단장이 한국에 왔다. 모두 드래프트 상위 지명을 약속했다.</p>`,
+    choices:[...offers.map(of=>{const st=teamStar(lg,of.team.name,s.year,s.gender);return {label:of.team.name,sub:`${of.no}순위 지명 약속 · 루키 계약 ${fmtMoney(of.sal)} × 4년${st?` · 에이스 ${st.name}`:''}`,tag:`#${of.no}`,
+      act:()=>{sign(s,{team:of.team,salary:of.sal,years:4});lf(s,'fame',18*(FAME_M[lg]||1));lf(s,'happy',15);s.legacy+=5;
+        log(s,`${s.year} ${L.name} 드래프트 1라운드 ${of.no}순위로 ${J(of.team.name,'에')} 지명됐다. 고교 졸업 후 직행.`,'major');
+        addNews(s,s.year,'드래프트',`[${L.short}] 한국 고졸 ${s.name}, ${of.no}순위로 ${of.team.name} 직행`,`월드클래스 명문 출신 ${J(s.name,'이/가')} 대학을 거치지 않고 ${L.name}에 입성했다. 한국 농구 역사상 처음이다.`,true);
+        return {text:'드래프트 무대 위에서 구단 모자를 썼다. 어머니가 객석에서 손으로 입을 막고 울고 계셨다.',nolog:true};}};}),
+      {label:'← 다른 길 보기',act:()=>({spec:crossroadSpec(s)})}]};
+}
 function crossroadSpec(s){
   const o=ovr(s),dp=LG[domPro(s)].name;
   const ncaaOk=s.flags.ncaaOffer&&s.life.smarts>=55;
   return {kicker:`${s.age}세 · 고교 졸업`,title:'인생의 갈림길',
     body:`<p>고등학교 마지막 시즌이 끝났다. 현재 종합 능력치 <b class="num" style="font-size:20px">${o}</b>. ${dp} 평균 주전 수준은 ${LG[domPro(s)].level}이다.</p>`,
     choices:[
+      ...(s.flags.wc?[{label:`${LG[topPro(s)].name} 직행 오퍼`,sub:'월드클래스 학교 출신 특전 · 1라운드 상위 지명 보장',act:()=>({spec:wcOfferSpec(s)})}]:[]),
       {label:'국내 대학 진학',sub:'U-리그에서 4년간 성장한 뒤 드래프트 · 전국 대학 중 선택',act:()=>({spec:collegeChoiceSpec(s,'uleague')})},
       {label:'NCAA 유학',sub:ncaaOk?'미국 디비전1 장학생으로 간다':'',disabled:!ncaaOk,reason:s.flags.ncaaOffer?'학업 55 필요':'제안 없음',
         act:()=>({spec:collegeChoiceSpec(s,'ncaa')})},
@@ -1917,7 +1934,7 @@ function yearEnd(s,yr){
   const a=s.age;
   for(const k of ATTRS){
     const c=cap(s,k),v=s.attr[k];let d=0;
-    if(v<c){d=(c-v)*(a<13?.05:a<19?.07:a<23?.05:a<28?.022:0);if(has(s,'genius'))d*=1.3;}
+    if(v<c){d=(c-v)*(a<13?.05:a<19?.07:a<23?.05:a<28?.022:0);if(has(s,'genius'))d*=1.3;if(atWC(s))d*=1.7;else if(s.flags.wc&&a<=24&&s.team&&(s.team.league==='nba'||s.team.league==='wnba'))d*=1.5;}
     if(a>=30){const dec={athletic:1.6,stamina:1.3,inside:.6,rebound:.7,defense:.8,handle:.5,shoot:.2,pass:.1,iq:-.4}[k]*(1+(a-30)*.18);d-=dec*R(.6,1.3);}
     if(s.stage==='army')d-=R(1,2.5);
     s.attr[k]=clamp(v+d*R(.7,1.25),1,99);
@@ -1936,6 +1953,7 @@ function yearEnd(s,yr){
   if(s.age>=20){const living=Math.round(1500+Math.max(0,s.contract?.salary||s.career2?.income||0)*.12);s.money-=living;}
   if(s.flags.endorse){if(s.life.fame<25||s.stage!=='pro'){log(s,'광고 계약이 종료됐다.');s.flags.endorse=0;}else{s.money+=s.flags.endorse;}}
   financeYear(s);
+  if(atWC(s)&&isPlaying(s)){lf(s,'fame',6);log(s,`${s.team.name}: 월드클래스 코칭. 오늘도 NBA 스카우트가 연습을 지켜봤다.`,'good');}
   if((s.stage==='retired'||s.stage==='civil')&&s.career2&&a<66){
     let inc=s.career2.income;if(s.career2.risky)inc=Math.round(inc*R(.3,1.8));
     if(s.career2.id==='creator')s.career2.income=Math.round(Math.max(1500,s.life.fame*s.life.fame*2));
