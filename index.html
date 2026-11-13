@@ -358,6 +358,20 @@ input:focus{outline:none;border-color:var(--leather)}
 .news-meta .num{font-size:15px}
 .ntag{font-weight:900;color:var(--info);letter-spacing:.04em}
 .nbig{background:#b3121b;color:#fff;border-radius:4px;padding:0 6px;font-weight:900}
+/* signature */
+.sig-wrap{margin:16px 0 4px}
+.sig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.sig-card{background:var(--panel-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;min-width:0;border:1px solid transparent}
+.sig-card>span{font-size:11.5px;color:var(--muted);letter-spacing:.06em;font-weight:700}
+.sig-card>b{font-size:16px;color:var(--leather-hi);word-break:keep-all}
+.sig-card>small{font-size:12px;color:var(--muted);word-break:keep-all;margin-bottom:4px}
+.sig-card .btn{align-self:flex-start;padding:6px 12px;font-size:12.5px}
+.sig-card.lock>b{color:var(--dim)}
+.shoe{display:block}
+.shoe.sm{width:150px;height:auto;margin:0 auto}
+.shoe.big{width:min(280px,100%);height:auto;margin:0 auto}
+.shoe-prev{background:radial-gradient(circle at 50% 60%,#24406a,#0e1a2e);border-radius:12px;padding:8px}
+.shoe-sw{display:flex;flex-wrap:wrap;gap:5px}
 /* trade panel */
 .trade{background:#0e1a2e;border:1px solid var(--line);border-radius:12px;padding:12px}
 .amt-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -1289,7 +1303,7 @@ function simSeason(s){
   let fame=(Math.max(0,rel)*.22+pts*.12)*fm;
   aw.forEach(([k])=>fame+=({mvp:8,fmvp:5,champ:4,allstar:2,scoring:2,dpoy:1.5,roy:3}[k]||0)*fm);
   lf(s,'fame',fame);
-  if(champ)lf(s,'mental',8),lf(s,'happy',10);
+  if(champ){lf(s,'mental',8);lf(s,'happy',10);const c=celebrate(s);if(c)log(s,`우승 확정 순간,${c.replace(' 그리고','')}`,'good');}
   if(aw.some(a=>a[0]==='mvp'))lf(s,'mental',6);
   if(rel<-5&&isPro)lf(s,'mental',-6),lf(s,'happy',-4);
   if(min<10&&isPro)lf(s,'happy',-5);
@@ -1347,7 +1361,7 @@ const LOSE_TXT={shot:'림을 한 바퀴 돈 공이 밖으로 튀어나왔다.',d
 function seasonClutch(s){
   const fm=FAME_M[s.team.league]||1;
   return clutchSpec(s,{title:'1점 차, 종료 4초 전',body:`${J(opp(s),'과/와')}의 경기. 타임아웃 후 감독이 작전판에 내 이름을 적었다.`,
-    win:(s,o)=>{lf(s,'fame',3*fm+1);lf(s,'mental',6);s.flags.clutchBoost=.025;s.flags.clutchMakes=(s.flags.clutchMakes||0)+1;s.legacy+=LG[s.team.league].mult;return WIN_TXT[o.kind];},
+    win:(s,o)=>{lf(s,'fame',3*fm+1);lf(s,'mental',6);s.flags.clutchBoost=.025;s.flags.clutchMakes=(s.flags.clutchMakes||0)+1;s.legacy+=LG[s.team.league].mult;return (sigBonus(s,o.kind==='pass'?'pass':o.kind)?`시그니처 「${s.sig.move.name}」! `:'')+WIN_TXT[o.kind]+celebrate(s);},
     lose:(s,o)=>{lf(s,'mental',-5);s.flags.clutchBoost=-.015;return LOSE_TXT[o.kind];}});
 }
 
@@ -1391,7 +1405,8 @@ function bmDefense(s,M){
 function bmApplyOff(s,M,o,ok,q){
   if(ok){let pts=o.pts;if(o.k==='kick'&&chance(.4))pts=3;if(o.k==='drive'&&q==='perfect')pts=3;
     M.my+=pts;if(o.k==='kick')M.ast++;else M.pts+=pts;
-    M.last=o.k==='kick'?`킥아웃 패스, 동료의 ${pts}점!`:o.k==='drive'&&pts===3?'파울 당하며 레이업 성공, 앤드원!':`${o.t} 성공, ${pts}점.`;}
+    M.last=o.k==='kick'?`킥아웃 패스, 동료의 ${pts}점!`:o.k==='drive'&&pts===3?'파울 당하며 레이업 성공, 앤드원!':`${o.t} 성공, ${pts}점.`;
+    if(sigBonus(s,o.k))M.last=`시그니처 「${s.sig.move.name}」 작렬! `+M.last;}
   else M.last={three:'3점슛이 림을 맞고 나왔다.',drive:'돌파가 블록에 막혔다.',post:'훅슛이 짧았다.',kick:'패스가 끊겼다. 턴오버.'}[o.k];
   M.step++;
 }
@@ -1428,12 +1443,13 @@ function bmEndSpec(s,M){
   let ot='';
   if(M.my===M.them){const w=chance(clamp(.5+(s.team.str-M.lv)*.02+(ovr(s)-M.oppO)*.01,.2,.8));const a=RI(4,9),b=RI(1,4);if(w){M.my+=a;M.them+=a-b;}else{M.them+=a;M.my+=a-b;}ot=' (연장)';}
   const win=M.my>M.them,fm=FAME_M[s.team.league]||1;
-  if(win){lf(s,'fame',2.5*fm+1);lf(s,'mental',6);lf(s,'happy',4);s.flags.clutchBoost=.03;s.legacy+=LG[s.team.league].mult*.3;}
+  let cel='';
+  if(win){lf(s,'fame',2.5*fm+1);lf(s,'mental',6);lf(s,'happy',4);s.flags.clutchBoost=.03;s.legacy+=LG[s.team.league].mult*.3;cel=celebrate(s);}
   else{lf(s,'mental',-4);s.flags.clutchBoost=-.015;}
   const line=`빅매치 vs ${M.opp} ${M.my}-${M.them}${ot} ${win?'승리':'패배'} · 4쿼터 ${M.pts}득점 ${M.ast}어시스트 ${M.stops}스톱`;
   log(s,line,win?'good':'');
   return {kicker:`경기 종료${ot}`,title:win?'승리!':'패배',board:bmBoard(s,{...M,step:5}).replace('4Q 0:06','FINAL'),
-    body:`${M.last?`<p class="pbp">${esc(M.last)}</p>`:''}<p>${win?`${esc(M.opp)}${J(M.opp,'을/를').slice(M.opp.length)} 꺾었다. 라커룸에서 물세례를 받았다.`:'고개를 숙이고 코트를 빠져나왔다.'}</p><p class="sb-note">4쿼터 ${M.pts}득점 · ${M.ast}어시스트 · 수비 성공 ${M.stops}회</p>`,
+    body:`${M.last?`<p class="pbp">${esc(M.last)}</p>`:''}<p>${win?`${esc(M.opp)}${J(M.opp,'을/를').slice(M.opp.length)} 꺾었다.${esc(cel)} 라커룸에서 물세례를 받았다.`:'고개를 숙이고 코트를 빠져나왔다.'}</p><p class="sb-note">4쿼터 ${M.pts}득점 · ${M.ast}어시스트 · 수비 성공 ${M.stops}회</p>`,
     choices:[{label:'계속',primary:true,act:()=>null}]};
 }
 
@@ -1855,7 +1871,7 @@ function doLesson(s,L){
   log(s,`레전드 레슨 · ${L.n}: ${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} ${n}회 차`);
   return {text:txt,nolog:true,next:s.ap>0?legendSpec(s):null};
 }
-const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?.07:0),0);
+const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?.07:0),0)+sigBonus(s,kind);
 
 /* ================= world-class entrance exam ================= */
 const WC_EXAM={
@@ -1890,6 +1906,95 @@ function enterSchool(s,stage,team,pre){
     addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 합격`,`입학 실기까지 통과한 ${J(s.name,'이/가')} ${team.name}에 들어간다. 해외 언론도 주목하고 있다.`,false);}
   const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');
   return {text:`${pre?pre+' ':''}${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};
+}
+
+/* ================= my signature: move · celebration · shoe · nickname ================= */
+const SIG_KINDS={shot:{n:'점퍼 · 3점',ks:['shot','three'],attr:'shoot',ex:'스텝백'},drive:{n:'돌파 · 덩크',ks:['drive'],attr:'athletic',ex:'토마호크'},post:{n:'포스트 무브',ks:['post','drive'],attr:'inside',ex:'훅슛'},pass:{n:'패스',ks:['pass','kick'],attr:'pass',ex:'비하인드 백 패스'},def:{n:'수비',ks:['deny','rim','steal'],attr:'defense',ex:'체이스 다운 블록'}};
+const CELEBS=['활시위 당기기','"쉿" 손가락','세 손가락 눈에 대기','팔짱 끼고 관중석 응시','양손 하트','거수경례','슬리퍼 던지는 시늉','농구공 위에 앉기','무릎 꿇고 하늘 가리키기','가슴 엠블럼 두드리기'];
+const SHOE_C=['#f4f4f4','#151515','#d9362b','#ef6620','#ffc443','#2f6fd6','#1f9d6b','#7b3fe4','#e85d9c','#8a5a2b','#9aa3ad','#0f2a4d'];
+const BRANDS=['라이트스텝','에어포그','코트킹','점프라인'];
+function sig(s){if(!s.sig)s.sig={};return s.sig;}
+function sigMoveReq(s){const mx=Math.max(...ATTRS.map(k=>s.attr[k]));if(mx>=78||(s.skills||[]).length>=2||(s.stage==='pro'&&ovr(s)>=72))return null;return `능력치 하나가 78 이상이거나, 레전드 무브 2개 이상, 또는 프로 종합 72 이상 (현재 최고 능력치 ${Math.round(mx)})`;}
+function shoeReq(s){if(s.life.fame<50)return `인기 50 필요 (현재 ${Math.round(s.life.fame)})`;if(s.stage!=='pro'&&!s.sig?.shoe)return '프로 선수만 출시할 수 있다';return null;}
+function nickIdeas(s){
+  const A=s.attr,out=[];
+  out.push(`${s.home||'서울'} 폭격기`);
+  if(A.shoot>=75)out.push('저격수');if(A.athletic>=75)out.push('인간 탄력');if(A.pass>=75)out.push('코트의 마법사');if(A.defense>=75)out.push('자물쇠');
+  if(A.rebound>=75)out.push('리바운드 청소기');if(has(s,'clutch')||(s.flags.clutchMakes||0)>=3)out.push('4쿼터의 사나이'.replace('사나이',s.gender==='f'?'여왕':'사나이'));
+  if(s.flags.wc)out.push('분당의 기적');if((s.skills||[]).length)out.push(`${MOVES[s.skills[0]].n} 장인`);
+  if(s.seasons.some(x=>x.lg==='nba'||x.lg==='wnba'))out.push('코리안 드림');
+  out.push(`#${s.number}`,`${s.name.slice(-2)} 매직`);
+  return [...new Set(out)].slice(0,8);
+}
+function celebrate(s){const c=sig(s).celeb;if(!c)return '';lf(s,'fame',1);return ` 그리고 시그니처 세리머니 「${c}」.`;}
+function sigBonus(s,kind){const m=s.sig&&s.sig.move;return m&&SIG_KINDS[m.kind]&&SIG_KINDS[m.kind].ks.includes(kind)?.1:0;}
+function shoeSVG(sh,cls='shoe'){
+  const [a,b,c]=[sh.c1||'#f4f4f4',sh.c2||'#151515',sh.c3||'#ef6620'];
+  return `<svg class="${cls}" viewBox="0 0 220 110" aria-hidden="true">
+    <path d="M14 78 Q12 92 26 94 L196 94 Q212 94 210 80 L208 72 Z" fill="${b}"/>
+    <path d="M18 76 Q16 50 40 44 L72 40 Q86 22 104 18 L132 16 Q140 30 150 40 Q176 48 196 56 Q210 62 208 74 L18 78Z" fill="${a}" stroke="#00000033"/>
+    <path d="M60 70 Q110 40 182 56 Q130 56 96 74 Z" fill="${c}"/>
+    <path d="M104 18 L132 16 L138 30 L108 32Z" fill="${c}" opacity=".85"/>
+    <g stroke="${b}" stroke-width="2.4" stroke-linecap="round" opacity=".8">${[0,1,2,3].map(i=>`<path d="M${92+i*9} ${30+i*4} L${104+i*9} ${26+i*4}"/>`).join('')}</g>
+    <path d="M20 86 L204 86" stroke="#ffffff55" stroke-width="2" stroke-dasharray="6 5"/>
+    <text x="170" y="70" font-family="Teko,sans-serif" font-size="16" fill="${b}" text-anchor="middle">${esc(String(sh.ver||1))}</text>
+  </svg>`;
+}
+function sigPanelHTML(s){
+  const g=sig(s);const mr=sigMoveReq(s),sr=shoeReq(s);
+  const card=(title,val,sub,btn,lock,extra='')=>`<div class="sig-card ${lock?'lock':''}"><span>${title}</span>${extra}<b>${val?esc(val):'—'}</b><small>${esc(lock||sub)}</small>${btn}</div>`;
+  const shoeYear=g.shoe&&s.flags.yearly?.shoe;
+  return `<h3 style="margin-top:4px">내 시그니처</h3><div class="sig-grid">
+    ${card('별명',g.nick?`"${g.nick}"`:'',g.nick?'중계 캐스터가 이렇게 부른다':'팬들이 부를 이름을 정하자',`<button class="btn" data-sig="nick">${g.nick?'바꾸기':'정하기'}</button>`,'')}
+    ${card('시그니처 무브',g.move?.name,g.move?`${SIG_KINDS[g.move.kind].n} · 클러치·빅매치 성공률 +10%p`:'나만의 기술을 이름 붙여 완성한다',`<button class="btn" data-sig="move" ${mr&&!g.move?'disabled':''}>${g.move?'다듬기':'만들기'}</button>`,g.move?'':mr)}
+    ${card('세리머니',g.celeb,g.celeb?'클러치 · 빅매치 승리 · 우승 때 펼친다 (인기 +)':'결정적인 순간의 내 동작',`<button class="btn" data-sig="celeb">${g.celeb?'바꾸기':'정하기'}</button>`,s.age<13?'13세부터':'')}
+    ${card('시그니처 농구화',g.shoe?`${g.shoe.brand} ${g.shoe.name} ${g.shoe.ver}`:'',g.shoe?`누적 판매 수익 ${fmtMoney(g.shoe.sold||0)} · 매년 시즌 뒤 정산`:'내 이름을 건 농구화 라인',
+      g.shoe?`<div class="btn-row" style="margin:6px 0 0"><button class="btn" data-sig="shoe">디자인</button><button class="btn hot" data-sig="shoenew" ${shoeYear||UI.modalOpen?'disabled':''}>${shoeYear?'올해 출시 완료':`${g.shoe.ver+1} 출시`}</button></div>`:`<button class="btn" data-sig="shoe" ${sr?'disabled':''}>디자인하기</button>`,g.shoe?'':sr,g.shoe?shoeSVG(g.shoe,'shoe sm'):'')}
+  </div>`;
+}
+function sigForm(kind){
+  const s=S,g=sig(s);queue=[];
+  const chips=(name,opts,cur)=>`<div class="look-row" style="grid-template-columns:1fr"><div>${opts.map(([v,l])=>`<button type="button" class="chipb" data-f="${name}" data-v="${esc(v)}" aria-pressed="${cur===v}">${esc(l)}</button>`).join('')}</div></div>`;
+  const bindChips=()=>document.querySelectorAll('#mBody [data-f]').forEach(b=>b.onclick=()=>{document.querySelectorAll(`#mBody [data-f="${b.dataset.f}"]`).forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');
+    const inp=document.getElementById('sigText');if(b.dataset.f==='idea'||b.dataset.f==='celebp'){if(inp)inp.value=b.dataset.v;}
+    if(b.dataset.f==='kind'&&inp&&!inp.dataset.touched)inp.value=`${s.name.slice(-2)}표 ${SIG_KINDS[b.dataset.v].ex}`;
+    if(b.dataset.f.startsWith('c'))refreshShoe();});
+  const val=f=>{const b=document.querySelector(`#mBody [data-f="${f}"][aria-pressed="true"]`);return b?b.dataset.v:null;};
+  const txt=()=>{const i=document.getElementById('sigText');return i?i.value.trim().slice(0,16):'';};
+  function refreshShoe(){const pv=document.getElementById('shoePrev');if(pv)pv.innerHTML=shoeSVG({c1:val('c1'),c2:val('c2'),c3:val('c3'),ver:g.shoe?.ver||1},'shoe big');}
+  const textInput=(ph,v)=>`<input type="text" id="sigText" maxlength="16" placeholder="${esc(ph)}" value="${esc(v||'')}" style="margin-top:8px">`;
+  let spec;
+  if(kind==='nick')spec={title:'별명 정하기',body:`<p>추천 별명을 누르거나 직접 써도 된다. (최대 16자)</p>${chips('idea',nickIdeas(s).map(n=>[n,n]),g.nick)}${textInput('직접 입력',g.nick)}`,
+    save:()=>{const t=txt();if(!t)return null;g.nick=t;lf(s,'fame',2);log(s,`별명이 "${t}"로 굳어졌다.`,'good');addNews(s,s.year,'사회',`"${t}" ${s.name}`,`팬들 사이에서 ${J(s.name,'의')} 별명이 "${t}"로 자리 잡았다.`.replace('의의','의'),false);return `오늘부터 중계에서 "${t}" ${s.name}.`;}};
+  else if(kind==='move')spec={title:'시그니처 무브 만들기',body:`<p>어떤 플레이를 내 것으로 만들까? 고른 종류의 클러치·빅매치 성공률이 +10%p 오르고, 성공할 때마다 이름이 불린다.</p>${chips('kind',Object.entries(SIG_KINDS).map(([k,v])=>[k,v.n]),g.move?.kind||'shot')}${textInput('기술 이름 (예: 분당 스텝백)',g.move?.name||`${s.name.slice(-2)}표 ${SIG_KINDS[g.move?.kind||'shot'].ex}`)}`,
+    save:()=>{const k=val('kind')||'shot',t=txt()||`${s.name.slice(-2)}표 ${SIG_KINDS[k].ex}`;const first=!g.move;g.move={kind:k,name:t};if(first){tr(s,SIG_KINDS[k].attr,3);lf(s,'fame',3);log(s,`시그니처 무브 「${t}」를 완성했다.`,'major');}return `수천 번의 반복 끝에 「${t}」가 완성됐다. 이제 이 동작은 내 이름으로 불린다.`;}};
+  else if(kind==='celeb')spec={title:'세리머니 정하기',body:`<p>결정적인 순간에 펼칠 동작. 직접 써도 된다.</p>${chips('celebp',CELEBS.map(c=>[c,c]),g.celeb)}${textInput('직접 입력',g.celeb)}`,
+    save:()=>{const t=txt();if(!t)return null;g.celeb=t;return `거울 앞에서 「${t}」를 50번 연습했다.`;}};
+  else if(kind==='shoe'){const sh=g.shoe||{name:`${s.name.slice(-2)} 1`.replace(' 1',''),brand:pick(BRANDS),c1:'#f4f4f4',c2:'#151515',c3:SHOE_C[3],ver:1};
+    const sw=(f,cur)=>`<div class="shoe-sw">${SHOE_C.map(c=>`<button type="button" class="sw" data-f="${f}" data-v="${c}" aria-pressed="${cur===c}" style="background:${c}"></button>`).join('')}</div>`;
+    spec={title:g.shoe?'농구화 디자인 수정':'시그니처 농구화 디자인',body:`<div id="shoePrev" class="shoe-prev">${shoeSVG(sh,'shoe big')}</div>
+      <p class="sb-note" style="margin:6px 0">브랜드</p>${chips('brand',BRANDS.map(b=>[b,b]),sh.brand)}
+      <p class="sb-note" style="margin:8px 0 4px">갑피</p>${sw('c1',sh.c1)}<p class="sb-note" style="margin:8px 0 4px">밑창</p>${sw('c2',sh.c2)}<p class="sb-note" style="margin:8px 0 4px">포인트 컬러</p>${sw('c3',sh.c3)}
+      ${textInput('모델 이름 (예: 분당 1)',sh.name)}`,
+      save:()=>{const first=!g.shoe;const nm=(txt()||sh.name||s.name).replace(/\s*\d+$/,'')||s.name;g.shoe={...sh,name:nm,brand:val('brand')||sh.brand,c1:val('c1')||sh.c1,c2:val('c2')||sh.c2,c3:val('c3')||sh.c3,ver:sh.ver||1,sold:sh.sold||0};
+        if(first){lf(s,'fame',5);log(s,`시그니처 농구화 「${g.shoe.brand} ${nm}」 출시.`,'major');addNews(s,s.year,'사회',`${s.name} 시그니처 농구화 「${g.shoe.brand} ${nm}」 출시`,`발매 첫날 온라인 판매처 서버가 30분 동안 멈췄다.`,true);}
+        return first?`매장 앞에 새벽부터 줄이 늘어섰다. 「${g.shoe.brand} ${nm}」 출시!`:'디자인을 바꿨다. 다음 모델부터 적용된다.';}};}
+  showModal({kicker:'내 시그니처',title:spec.title,body:spec.body,cls:'story',
+    choices:[{label:'저장',primary:true,act:()=>spec.save()},{label:'취소',act:()=>null}],onShow:()=>{bindChips();const i=document.getElementById('sigText');if(i)i.addEventListener('input',()=>{i.dataset.touched='1';});}});
+}
+function shoeNew(){
+  const s=S,g=sig(s);if(!g.shoe||UI.modalOpen)return;s.flags.yearly=s.flags.yearly||{};if(s.flags.yearly.shoe)return;
+  s.flags.yearly.shoe=1;g.shoe.ver++;g.shoe.hype=1.25;lf(s,'fame',2);
+  log(s,`시그니처 농구화 「${g.shoe.brand} ${g.shoe.name} ${g.shoe.ver}」 출시.`,'good');
+  toast('신모델 출시',`${g.shoe.brand} ${g.shoe.name} ${g.shoe.ver}. 올해 판매량이 늘어난다.`,'');save();render();
+}
+function shoeYear(s){
+  const g=s.sig;if(!g||!g.shoe)return 0;
+  const last=s.seasons[s.seasons.length-1];const top=s.team&&(s.team.league==='nba'||s.team.league==='wnba');
+  let sale=(s.life.fame*s.life.fame*3+(last&&last.year===s.year-1?last.pts*200:0))*(top?2.5:1)*(last&&last.champ?1.3:1)*(g.shoe.hype||1)*(isPlaying(s)?1:.4);
+  sale=Math.round(sale*R(.8,1.2)/100)*100;g.shoe.hype=1;g.shoe.sold=(g.shoe.sold||0)+sale;s.money+=sale;
+  if(sale>=50000&&!s.flags.soldout){s.flags.soldout=1;addNews(s,s.year-1,'사회',`「${g.shoe.brand} ${g.shoe.name}」 완판 행진`,`${J(s.name,'의')} 시그니처 농구화가 출시하는 족족 품절이다. 리셀가는 정가의 세 배.`.replace('의의','의'),true);}
+  return sale;
 }
 
 /* ================= transitions ================= */
@@ -2860,6 +2965,7 @@ function financeYear(s){
     if(x.eff==='owner'){const loss=Math.round(R(10000,40000));s.money-=loss;biz-=loss;
       if(chance(.12)){s.awards.push({year:s.year-1,age:s.age-1,key:'owner_champ',name:`${s.year-1} 구단주 우승`,lg:'owner'});s.legacy+=12;lf(s,'fame',8);lf(s,'happy',12);log(s,'구단주로서 챔피언결정전 우승 트로피를 들었다!','major');}}
   });
+  const shoe=shoeYear(s);if(shoe){biz+=shoe;log(s,`시그니처 농구화 판매 수익 ${fmtMoney(shoe)}.`,'good');}
   const pets=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length;if(pets){s.money-=pets*200;up+=pets*200;}
   if(rent||biz||up||inv)log(s,`자산 정산 · 임대 ${sgn(rent)} · 사업 ${sgn(biz)} · 투자 ${sgn(inv)} · 유지비 -${fmtMoney(up)}`,(rent+biz+inv-up)>=0?'good':'bad');
 }
@@ -2935,7 +3041,7 @@ function render(){
             <span class="pos-badge">${s.pos}</span>
             ${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar card-av'})}
             <div class="card-name">${esc(s.name)}</div>
-            <div class="card-sub">${s.age}세 · ${s.height.toFixed(1)}cm · ${POS[s.pos].ko}</div>
+            <div class="card-sub">${s.sig?.nick?`"${esc(s.sig.nick)}" · `:''}${s.age}세 · ${s.height.toFixed(1)}cm · ${POS[s.pos].ko}</div>
           </div>
           <div class="card-body">
             <div class="ovr-row">
@@ -2947,7 +3053,7 @@ function render(){
                 ${s.flags.nat?'<span style="color:var(--led)">국가대표</span>':''}
               </div>
             </div>
-            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${(s.skills||[]).map(k=>`<span class="trait" style="border-color:var(--led);color:var(--led)">무브 · ${MOVES[k].n}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
+            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${s.sig?.move?`<span class="trait" style="border-color:var(--leather);color:var(--leather-hi);font-weight:700">시그니처 · ${esc(s.sig.move.name)}</span>`:''}${(s.skills||[]).map(k=>`<span class="trait" style="border-color:var(--led);color:var(--led)">무브 · ${MOVES[k].n}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
           </div>
         </div>
         ${mapPanelHTML(s)}
@@ -3022,7 +3128,7 @@ function actHTML(s){
     return `<button class="act" data-act="${a.id}" ${s.ap<=0||used||poor||UI.modalOpen?'disabled':''}><strong>${a.name}</strong><p>${typeof a.sub==='function'?a.sub(s):a.sub}</p><div class="tags">${a.tags.map(t=>`<i>${t}</i>`).join('')}</div>${cost?`<span class="cost">${fmtMoney(cost)}${poor?' · 부족':''}</span>`:''}${used?'<span class="cost">올해 이미 참가</span>':''}</button>`;}).join('')}</div>`;
 }
 function careerHTML(s){
-  const o=ovr(s);
+  const o=ovr(s);const sigBlock=s.age>=12?`<div class="sig-wrap">${sigPanelHTML(s)}</div>`:'';
   const pro=s.seasons.filter(x=>LG[x.lg].kind==='pro');
   const tot=(arr,k)=>arr.reduce((a,x)=>a+x[k]*x.gp,0),gp=pro.reduce((a,x)=>a+x.gp,0);
   const avg=k=>gp?(tot(pro,k)/gp).toFixed(1):'—';
@@ -3048,6 +3154,7 @@ function careerHTML(s){
     <div><span>프로 통산</span><b>${gp?`${gp}경기 · ${avg('pts')}점 ${avg('reb')}리바 ${avg('ast')}어시`:'—'}</b></div>
   </div>
   ${btns.length?`<div class="btn-row">${btns.join('')}</div>`:''}
+  ${sigBlock}
   ${rosterHTML(s)}
   <h3 style="margin-top:18px">종합 능력치 추이</h3>
   ${sparkSVG(s)}
@@ -3134,6 +3241,7 @@ function bindGame(){
   }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>buyItem(b.dataset.item));
+  document.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>{if(UI.modalOpen)return;b.dataset.sig==='shoenew'?shoeNew():sigForm(b.dataset.sig);});
   document.querySelectorAll('[data-ntag]').forEach(b=>b.onclick=()=>{UI.ntag=b.dataset.ntag;render();});
   document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
   document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
@@ -3279,7 +3387,8 @@ function endHTML(s){
       <div class="end-av">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor((s.flags.lastTeam||{}).name),number:s.number,cls:'avatar end-avatar'})}<div class="grade">${g}</div></div>
       <h1>${esc(s.name)}</h1>
       <div class="life num">${START_YEAR-8} – ${s.deathYear||s.year} · ${s.settled?`${s.age}세에 정산`:`향년 ${s.age}세`} · #${s.number} ${s.pos}</div>
-      <div class="title">${t}</div>
+      <div class="title">${t}</div>${s.sig?.nick?`<div class="sb-note" style="margin-top:4px">"${esc(s.sig.nick)}"${s.sig.move?` · 시그니처 「${esc(s.sig.move.name)}」`:''}${s.sig.celeb?` · 세리머니 「${esc(s.sig.celeb)}」`:''}</div>`:''}
+      ${s.sig?.shoe?`<div style="margin-top:8px">${shoeSVG(s.sig.shoe,'shoe sm')}<div class="sb-note">${esc(s.sig.shoe.brand)} ${esc(s.sig.shoe.name)} 1~${s.sig.shoe.ver} · 누적 ${fmtMoney(s.sig.shoe.sold||0)}</div></div>`:''}
       <p class="epitaph">${esc(ep)}</p>
     </div>
     ${endingBlock}
