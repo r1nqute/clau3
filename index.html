@@ -894,7 +894,7 @@ function schoolPickChoices(s,stage,list,lg,reqs,onPick){
   const L=LG[lg],o=ovr(s),home=s.home;
   const rows=list.map(([n,c,t])=>({n,c,t,str:schoolStr(L,t)})).sort((a,b)=>(b.c===home)-(a.c===home)||b.t-a.t||b.str-a.str);
   return rows.map(r=>{const req=reqs(r.t);const ok=req.ok;
-    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?'NBA 스카우트 상주 · 졸업 시 NBA 직행 오퍼':'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
+    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`입학 테스트 통과 · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
       disabled:!ok,reason:`${r.c} · ${req.why}`,act:()=>onPick({name:r.n,league:lg,str:r.str,city:ABROAD[lg]?null:r.c})};});
 }
 function newGame(o){
@@ -1749,13 +1749,20 @@ function newsHTML(s){
 }
 
 /* ================= transitions ================= */
+// 월드클래스 3교 입학 기준: 실력 + 재능을 모두 본다. 장안중 출신은 고교 기준이 조금 낮다.
+function wcReq(s,stage){
+  const o=ovr(s),needO=stage==='middle'?37:(s.flags.wc?50:54),needP=70;
+  const ok=o>=needO&&s.pot>=needP;
+  const miss=[o<needO?`종합 ${needO} 필요 (현재 ${o})`:'',s.pot<needP?`잠재력 ★★★ 이상 필요 (현재 ${starStr(potStars(s.pot))})`:''].filter(Boolean).join(' · ');
+  return {ok,why:`입학 테스트 탈락 · ${miss}`};
+}
 function schoolChoiceSpec(s,stage){
   const L=LG[stage],o=ovr(s);
   const list=stage==='middle'?SCHOOLS.middle:SCHOOLS.high[s.gender];
   const kname={middle:'중학교',high:'고등학교'}[stage];
   return {kicker:`${s.age}세 · 진학 · 전국 ${list.length}개 학교`,title:`${kname} 농구부를 고르자`,
-    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>`,
-    choices:schoolPickChoices(s,stage,list,stage,t=>t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
+    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 입학 테스트가 있다. ${stage==='middle'?'종합 37':'종합 54 (장안중 출신은 50)'} 이상, 잠재력 ★★★ 이상.</p>`:''}`,
+    choices:schoolPickChoices(s,stage,list,stage,t=>t===4?wcReq(s,stage):t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
       team=>{s.stage=stage;s.team=team;lf(s,'happy',3);if(WC_SCHOOLS.has(team.name)){s.flags.wc=true;s.flags.wcPot=s.flags.wcPot||{};if(!s.flags.wcPot[team.name]){s.flags.wcPot[team.name]=1;s.pot=Math.min(99,s.pot+5);}lf(s,'fame',8);addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 입학`,`NBA 스카우트가 상주하는 ${team.name}에 ${J(s.name,'이/가')} 입학했다. 해외 언론도 주목하고 있다.`,false);}const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};})};
 }
 function collegeChoiceSpec(s,lg){
