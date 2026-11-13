@@ -358,6 +358,10 @@ input:focus{outline:none;border-color:var(--leather)}
 .news-meta .num{font-size:15px}
 .ntag{font-weight:900;color:var(--info);letter-spacing:.04em}
 .nbig{background:#b3121b;color:#fff;border-radius:4px;padding:0 6px;font-weight:900}
+/* limit break */
+.t-break{background:linear-gradient(90deg,var(--led),#ff5ad1,#7b8bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.attr.brk span{color:var(--led)}
+.brk-chip{border-color:#ff5ad1;color:#ffb3ec;font-weight:700}
 /* signature */
 .sig-wrap{margin:16px 0 4px}
 .sig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
@@ -806,6 +810,7 @@ const has=(s,t)=>s.traits.includes(t);
 const posBase=s=>POS[s.pos].h-(s.gender==='f'?13:0);
 const domPro=s=>s.gender==='m'?'kbl':'wkbl';
 const topPro=s=>s.gender==='m'?'nba':'wnba';
+const maxFor=(s,k)=>(s.breaks&&s.breaks[k])||99;
 function cap(s,k){
   const w=POS[s.pos].w[k]??0.1;
   let c=s.pot+(k==='stamina'?3:(w-0.11)*45);
@@ -815,13 +820,14 @@ function cap(s,k){
   if(k==='iq'&&has(s,'family'))c+=5;
   if(s.strengths&&s.strengths.includes(k))c+=5;
   if(s.skills)s.skills.forEach(m=>{if(MOVES[m]&&MOVES[m].k===k)c+=4;});
-  return clamp(Math.round(c),25,99);
+  if(s.breaks&&s.breaks[k])c=Math.max(c,s.breaks[k]);
+  return clamp(Math.round(c),25,maxFor(s,k));
 }
 function ovr(s){
   const P=POS[s.pos];let o=0;
   for(const k in P.w)o+=s.attr[k]*P.w[k];
   const hb=clamp((s.height-posBase(s)*gfrac(s.age))*0.32,-9,5);
-  return clamp(Math.round(o+hb),1,99);
+  return clamp(Math.round(o+hb),1,130);
 }
 const potStars=p=>clamp(Math.round((p-45)/10),1,5);
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(Math.max(0,5-n));
@@ -832,7 +838,7 @@ function lf(s,k,d){
   if(k==='mental'&&d<0&&has(s,'fragile'))d*=1.4;
   s.life[k]=clamp(s.life[k]+d,0,100);
 }
-function at(s,k,d){s.attr[k]=clamp(s.attr[k]+d,1,99);}
+function at(s,k,d){s.attr[k]=clamp(s.attr[k]+d,1,maxFor(s,k));}
 function tr(s,k,base){
   const c=cap(s,k),v=s.attr[k];
   const room=clamp((c-v)/20,0.05,1.3);
@@ -842,7 +848,7 @@ function tr(s,k,base){
   if(has(s,'lazy'))g*=.75;
   if(s.life.health<30)g*=.7;
   if(atWC(s))g*=1.35;
-  s.attr[k]=Math.min(99,v+g);
+  s.attr[k]=Math.min(maxFor(s,k),v+g);
   return g;
 }
 function boostAll(s,d){for(const k of ATTRS)at(s,k,d*R(.6,1.25));}
@@ -1783,44 +1789,44 @@ const MOVES={
 // [이름, 국내/해외, 주특기 능력치 2개, 시그니처, 레슨비(만 원), 요구 조건]
 const LEGENDS={
   m:[
-    ['문경은','KR',['shoot','iq'],'stepback',300,{age:12}],
-    ['김승현','KR',['pass','handle'],'nolook',300,{age:12}],
-    ['양동근','KR',['defense','iq'],'lock',300,{age:12}],
-    ['서장훈','KR',['inside','rebound'],'power',400,{age:13}],
-    ['김주성','KR',['defense','rebound'],'lock',400,{age:13}],
-    ['현주엽','KR',['inside','pass'],'power',400,{age:13}],
-    ['이상민','KR',['pass','iq'],'nolook',400,{age:13}],
-    ['허재','KR',['shoot','athletic'],'killer',600,{age:14,fame:15}],
-    ['레이 앨런','US',['shoot','stamina'],'stepback',5000,{age:16,ovr:60}],
-    ['스티브 내시','US',['pass','shoot'],'nolook',5000,{age:16,ovr:60}],
-    ['앨런 아이버슨','US',['handle','athletic'],'cross',6000,{age:16,ovr:62}],
-    ['빈스 카터','US',['athletic','inside'],'air',6000,{age:16,ovr:62}],
-    ['덕 노비츠키','US',['shoot','iq'],'fade',7000,{age:17,ovr:65}],
-    ['팀 던컨','US',['defense','inside'],'bank',8000,{age:17,ovr:66}],
-    ['하킴 올라주원','US',['inside','defense'],'dream',8000,{age:17,ovr:66}],
-    ['샤킬 오닐','US',['inside','rebound'],'power',8000,{age:17,ovr:66}],
-    ['마이클 조던','US',['shoot','defense'],'killer',100000,{age:19,ovr:80,fame:70}],
+    ['문경은','KR',['shoot','iq'],'stepback',300,{age:12},{n:'람보 슈터',b:{shoot:104}}],
+    ['김승현','KR',['pass','handle'],'nolook',300,{age:12},{n:'매직 핸즈',b:{pass:105}}],
+    ['양동근','KR',['defense','iq'],'lock',300,{age:12},{n:'철벽 가드',b:{defense:104}}],
+    ['서장훈','KR',['inside','rebound'],'power',400,{age:13},{n:'국보급 센터',b:{inside:105}}],
+    ['김주성','KR',['defense','rebound'],'lock',400,{age:13},{n:'블록 장인',b:{defense:105}}],
+    ['현주엽','KR',['inside','pass'],'power',400,{age:13},{n:'매직 히포',b:{inside:104}}],
+    ['이상민','KR',['pass','iq'],'nolook',400,{age:13},{n:'컴퓨터 가드',b:{iq:106}}],
+    ['허재','KR',['shoot','athletic'],'killer',600,{age:14,fame:15},{n:'농구 대통령',b:{shoot:106,iq:104}}],
+    ['레이 앨런','US',['shoot','stamina'],'stepback',5000,{age:16,ovr:60},{n:'퓨어 슈터',b:{shoot:110}}],
+    ['스티브 내시','US',['pass','shoot'],'nolook',5000,{age:16,ovr:60},{n:'패스 마스터',b:{pass:110}}],
+    ['앨런 아이버슨','US',['handle','athletic'],'cross',6000,{age:16,ovr:62},{n:'앤서',b:{handle:110}}],
+    ['빈스 카터','US',['athletic','inside'],'air',6000,{age:16,ovr:62},{n:'하프맨 하프어메이징',b:{athletic:112}}],
+    ['덕 노비츠키','US',['shoot','iq'],'fade',7000,{age:17,ovr:65},{n:'원풋 페이더',b:{shoot:108,iq:104}}],
+    ['팀 던컨','US',['defense','inside'],'bank',8000,{age:17,ovr:66},{n:'빅 펀더멘털',b:{iq:110,defense:106}}],
+    ['하킴 올라주원','US',['inside','defense'],'dream',8000,{age:17,ovr:66},{n:'더 드림',b:{inside:110}}],
+    ['샤킬 오닐','US',['inside','rebound'],'power',8000,{age:17,ovr:66},{n:'디젤',b:{inside:112,rebound:108}}],
+    ['마이클 조던','US',['shoot','defense'],'killer',100000,{age:19,ovr:80,fame:70},{n:'GOAT',b:{shoot:115,athletic:115,defense:112}}],
   ],
   f:[
-    ['변연하','KR',['shoot','iq'],'stepback',300,{age:12}],
-    ['이미선','KR',['pass','defense'],'nolook',300,{age:12}],
-    ['정선민','KR',['inside','shoot'],'fade',400,{age:13}],
-    ['박찬숙','KR',['inside','rebound'],'power',600,{age:14,fame:15}],
-    ['수 버드','US',['pass','handle'],'nolook',5000,{age:16,ovr:58}],
-    ['캔디스 파커','US',['inside','pass'],'bank',6000,{age:16,ovr:60}],
-    ['리사 레슬리','US',['inside','athletic'],'air',7000,{age:17,ovr:62}],
-    ['다이애나 타우라시','US',['shoot','handle'],'killer',8000,{age:17,ovr:64}],
-    ['마야 무어','US',['shoot','defense'],'fade',8000,{age:17,ovr:64}],
+    ['변연하','KR',['shoot','iq'],'stepback',300,{age:12},{n:'국보 슈터',b:{shoot:104}}],
+    ['이미선','KR',['pass','defense'],'nolook',300,{age:12},{n:'코트의 지휘자',b:{pass:104}}],
+    ['정선민','KR',['inside','shoot'],'fade',400,{age:13},{n:'바스켓 퀸',b:{inside:105}}],
+    ['박찬숙','KR',['inside','rebound'],'power',600,{age:14,fame:15},{n:'원조 레전드',b:{rebound:106}}],
+    ['수 버드','US',['pass','handle'],'nolook',5000,{age:16,ovr:58},{n:'플로어 제너럴',b:{pass:110}}],
+    ['캔디스 파커','US',['inside','pass'],'bank',6000,{age:16,ovr:60},{n:'올라운더',b:{iq:108}}],
+    ['리사 레슬리','US',['inside','athletic'],'air',7000,{age:17,ovr:62},{n:'첫 덩크',b:{athletic:110}}],
+    ['다이애나 타우라시','US',['shoot','handle'],'killer',8000,{age:17,ovr:64},{n:'화이트 맘바',b:{shoot:110}}],
+    ['마야 무어','US',['shoot','defense'],'fade',8000,{age:17,ovr:64},{n:'위너',b:{defense:108,shoot:104}}],
   ],
 };
 const POS_SPEC={PG:[['pass','handle'],'nolook'],SG:[['shoot','handle'],'stepback'],SF:[['shoot','defense'],'fade'],PF:[['inside','rebound'],'power'],C:[['inside','defense'],'dream']};
 function legendList(s){
-  const base=LEGENDS[s.gender].map(([n,o,ks,mv,fee,req])=>({n,o,ks,mv,fee,req}));
+  const base=LEGENDS[s.gender].map(([n,o,ks,mv,fee,req,sk])=>({n,o,ks,mv,fee,req,sk}));
   // 게임 속에서 은퇴한 실제 스타들도 레슨을 연다
   const w=s.world,extra=[];
   if(w&&w.ret)allPlayers().forEach(p=>{if(!w.ret[p.n]||p.gen)return;const L=LG[p.lg];if(!L||p.o<L.level+8)return;
     const [ks,mv]=POS_SPEC[p.pos]||POS_SPEC.SF;const intl=L.level>=76;
-    extra.push({n:p.n,o:intl?'US':'KR',ks,mv,fee:intl?Math.round(4000+(p.o-L.level)*600):Math.round(300+(p.o-L.level)*40),req:{age:intl?16:13,ovr:intl?60:0},fresh:true});});
+    extra.push({n:p.n,o:intl?'US':'KR',ks,mv,fee:intl?Math.round(4000+(p.o-L.level)*600):Math.round(300+(p.o-L.level)*40),req:{age:intl?16:13,ovr:intl?60:0},fresh:true,sk:{n:`${p.n}의 유산`,b:{[ks[0]]:100+clamp(Math.round((p.o-L.level)/2),2,10)}}});});
   return base.concat(extra);
 }
 function legendReq(s,L){
@@ -1835,9 +1841,9 @@ function legendReq(s,L){
 function legendSpec(s){
   const list=legendList(s);s.lessons=s.lessons||{};s.skills=s.skills||[];
   return {kicker:`레전드 클래스 · 행동 ${s.ap}/${s.apMax}`,title:'은퇴 레전드에게 배우기',
-    body:`<p>은퇴한 레전드들이 1대1 레슨을 연다. 레슨 1회에 행동 1번. 세 번째 레슨부터 그 레전드의 <b>시그니처 무브</b>를 전수받을 수 있다.</p><p class="sb-note">시그니처 무브: 관련 능력치 한계치 +4, 클러치·빅매치에서 해당 플레이 성공률 +7%p · 보유 ${s.skills.length?s.skills.map(k=>MOVES[k].n).join(', '):'없음'}</p>`,
-    choices:[...list.map(L=>{const why=legendReq(s,L),n=s.lessons[L.n]||0,mv=MOVES[L.mv],got=s.skills.includes(L.mv);
-      return {label:`${L.n}${L.fresh?' · 최근 은퇴':''}`,sub:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · 시그니처 「${mv.n}」${got?' (습득)':''} · 레슨 ${n}회 · ${fmtMoney(L.fee)}`,tag:L.o==='US'?'NBA':'KBL',
+    body:`<p>은퇴한 레전드들이 1대1 레슨을 연다. 레슨 1회에 행동 1번. <b>3회 차</b>부터 시그니처 무브, <b>5회 차</b>부터 능력치 한계를 100 너머로 여는 <b>시그니처 스킬</b>을 전수받을 수 있다.</p><p class="sb-note">무브: 관련 능력치 한계치 +4, 클러치·빅매치 해당 플레이 +7%p · 보유 ${s.skills.length?s.skills.map(k=>MOVES[k].n).join(', '):'없음'}<br>스킬: 해당 능력치 최대치 99 → 104~115 · 보유 ${(s.sskills||[]).length?s.sskills.join(', '):'없음'}</p>`,
+    choices:[{label:'시그니처 거래소',sub:'레슨 없이 돈으로 산다 · 엄청 비싸다',tag:'₩',act:()=>({spec:sigShopSpec(s)})},...list.map(L=>{const why=legendReq(s,L),n=s.lessons[L.n]||0,mv=MOVES[L.mv],got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);
+      return {label:`${L.n}${L.fresh?' · 최근 은퇴':''}`,sub:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · 무브 「${mv.n}」${got?' ✓':''}${L.sk?` · 스킬 「${L.sk.n}」 ${skDesc(L.sk)}${gotS?' ✓':''}`:''} · 레슨 ${n}회 · ${fmtMoney(L.fee)}`,tag:L.o==='US'?'NBA':'KBL',
         disabled:!!why,reason:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · ${why}`,act:()=>doLesson(s,L)};}),
       {label:'닫기',act:()=>null}]};
 }
@@ -1868,8 +1874,46 @@ function doLesson(s,L){
     log(s,`${L.n}에게서 시그니처 무브 「${MOVES[L.mv].n}」를 전수받았다.`,'major');
     txt+=` 레슨이 끝나고 ${J(L.n,'이/가')} 말했다. "이제 이건 네 거다." 시그니처 무브 「${MOVES[L.mv].n}」 습득!`;
   }
+  if(n>=5&&L.sk&&!(s.sskills||[]).includes(L.sk.n)&&chance(n===5?.5:.8)){learnSkill(s,L);txt+=` 마지막에 ${J(L.n,'이/가')} 아무에게도 안 가르쳐 준 것을 꺼냈다. 시그니처 스킬 「${L.sk.n}」 습득! ${skDesc(L.sk)}`;}
   log(s,`레전드 레슨 · ${L.n}: ${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} ${n}회 차`);
   return {text:txt,nolog:true,next:s.ap>0?legendSpec(s):null};
+}
+const skDesc=sk=>Object.entries(sk.b).map(([k,v])=>`${ATTR_KO[k]} 한계 ${v}`).join(' · ');
+function learnSkill(s,L){
+  s.breaks=s.breaks||{};s.sskills=s.sskills||[];
+  for(const k in L.sk.b){s.breaks[k]=Math.max(s.breaks[k]||99,L.sk.b[k]);at(s,k,2);}
+  s.sskills.push(L.sk.n);lf(s,'fame',5);lf(s,'mental',6);
+  log(s,`${L.n}의 시그니처 스킬 「${L.sk.n}」 습득 · ${skDesc(L.sk)} (한계 돌파)`,'major');
+}
+/* ---- 시그니처 거래소: 레슨 없이 돈으로 산다 ---- */
+function sigPrice(s,base){return Math.round(base*Math.pow(1.25,s.flags.sigBuys||0)/1000)*1000;}
+function legendBase(L){return L.n==='마이클 조던'?10000000:L.o==='US'?1500000:300000;}
+function sigShopSpec(s){
+  s.skills=s.skills||[];s.sskills=s.sskills||[];
+  const list=legendList(s),adult=s.age>=19;
+  const lic=sigPrice(s,500000);
+  return {kicker:`시그니처 거래소 · 현금 ${fmtMoney(s.money)}`,title:'돈으로 사는 전설',
+    body:`<p>레전드 측과 직접 계약해 시그니처를 산다. 비싸고, 살수록 다음 가격이 25%씩 오른다.</p><p class="sb-note">국내 레전드 무브 30억 · NBA 150억 · 조던 1,000억 / 시그니처 스킬은 무브 가격의 두 배${adult?'':' · 19세부터 거래 가능'}</p>`,
+    choices:[
+      {label:'나만의 시그니처 무브 개발권',sub:sig(s).move||s.flags.sigLicense?'이미 해금됨':`해금 조건 없이 바로 나만의 무브를 만든다 · ${fmtMoney(lic)}`,tag:fmtMoney(lic).replace(' 원',''),disabled:!adult||!!(sig(s).move||s.flags.sigLicense)||s.money<lic,reason:!adult?'19세부터':sig(s).move||s.flags.sigLicense?'이미 해금됨':'돈 부족',
+        act:()=>{s.money-=lic;s.flags.sigLicense=true;s.flags.sigBuys=(s.flags.sigBuys||0)+1;log(s,`시그니처 무브 개발권을 ${fmtMoney(lic)}에 샀다.`,'major');return {text:'전담 스킬 트레이너 팀이 꾸려졌다. 커리어 탭에서 나만의 무브를 만들 수 있다.',nolog:true,next:sigShopSpec(s)};}},
+      ...list.map(L=>{const got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);const pm=sigPrice(s,legendBase(L));
+        return {label:L.n,sub:`무브 「${MOVES[L.mv].n}」 ${got?'보유':fmtMoney(pm)}${L.sk?` · 스킬 「${L.sk.n}」 ${gotS?'보유':fmtMoney(pm*2)}`:''}`,tag:L.o==='US'?'NBA':'KBL',disabled:!adult||(got&&(gotS||!L.sk)),reason:!adult?'19세부터':'모두 보유',
+          act:()=>({spec:sigBuySpec(s,L)})};}),
+      {label:'← 레전드 클래스',act:()=>({spec:legendSpec(s)})}]};
+}
+function sigBuySpec(s,L){
+  s.skills=s.skills||[];s.sskills=s.sskills||[];
+  const pm=sigPrice(s,legendBase(L)),ps=pm*2,got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);
+  const buy=(price,fn)=>{s.money-=price;s.flags.sigBuys=(s.flags.sigBuys||0)+1;fn();};
+  return {kicker:`시그니처 거래소 · 현금 ${fmtMoney(s.money)}`,title:`${L.n}와의 계약`.replace(/([가-힣])와의/,(m,c)=>hasBatchim(c)?c+'과의':c+'와의'),
+    body:`<p>${L.n} 측 변호사가 계약서를 내밀었다. "기술 전수 기간은 비공개, 언론 보도는 사후 승인."</p>`,
+    choices:[
+      {label:`무브 「${MOVES[L.mv].n}」`,sub:got?'이미 보유':`${ATTR_KO[MOVES[L.mv].k]} 한계 +4 · 클러치·빅매치 +7%p`,tag:fmtMoney(pm).replace(' 원',''),disabled:got||s.money<pm,reason:got?'이미 보유':`돈 부족 (${fmtMoney(pm)})`,
+        act:()=>{buy(pm,()=>{s.skills.push(L.mv);lf(s,'fame',3);});log(s,`${L.n}의 시그니처 무브 「${MOVES[L.mv].n}」를 ${fmtMoney(pm)}에 샀다.`,'major');return {text:`비공개 캠프 2주. 「${MOVES[L.mv].n}」가 몸에 붙었다.`,nolog:true,next:sigShopSpec(s)};}},
+      ...(L.sk?[{label:`스킬 「${L.sk.n}」 · 한계 돌파`,sub:gotS?'이미 보유':skDesc(L.sk),tag:fmtMoney(ps).replace(' 원',''),disabled:gotS||s.money<ps,reason:gotS?'이미 보유':`돈 부족 (${fmtMoney(ps)})`,
+        act:()=>{buy(ps,()=>learnSkill(s,L));addNews(s,s.year,'사회',`${s.name}, ${L.n}의 비기 「${L.sk.n}」 전수 계약`,`계약 금액은 비공개지만 업계에서는 ${fmtMoney(ps)} 안팎으로 본다.`,false);return {text:`${J(L.n,'이/가')} 마지막 날 말했다. "이제 네 몸이 내 기록을 깰 거다." ${skDesc(L.sk)}`,nolog:true,next:sigShopSpec(s)};}}]:[]),
+      {label:'← 거래소 목록',act:()=>({spec:sigShopSpec(s)})}]};
 }
 const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?.07:0),0)+sigBonus(s,kind);
 
@@ -1914,7 +1958,7 @@ const CELEBS=['활시위 당기기','"쉿" 손가락','세 손가락 눈에 대�
 const SHOE_C=['#f4f4f4','#151515','#d9362b','#ef6620','#ffc443','#2f6fd6','#1f9d6b','#7b3fe4','#e85d9c','#8a5a2b','#9aa3ad','#0f2a4d'];
 const BRANDS=['라이트스텝','에어포그','코트킹','점프라인'];
 function sig(s){if(!s.sig)s.sig={};return s.sig;}
-function sigMoveReq(s){const mx=Math.max(...ATTRS.map(k=>s.attr[k]));if(mx>=78||(s.skills||[]).length>=2||(s.stage==='pro'&&ovr(s)>=72))return null;return `능력치 하나가 78 이상이거나, 레전드 무브 2개 이상, 또는 프로 종합 72 이상 (현재 최고 능력치 ${Math.round(mx)})`;}
+function sigMoveReq(s){if(s.flags.sigLicense)return null;const mx=Math.max(...ATTRS.map(k=>s.attr[k]));if(mx>=78||(s.skills||[]).length>=2||(s.stage==='pro'&&ovr(s)>=72))return null;return `능력치 하나가 78 이상이거나, 레전드 무브 2개 이상, 또는 프로 종합 72 이상 (현재 최고 능력치 ${Math.round(mx)})`;}
 function shoeReq(s){if(s.life.fame<50)return `인기 50 필요 (현재 ${Math.round(s.life.fame)})`;if(s.stage!=='pro'&&!s.sig?.shoe)return '프로 선수만 출시할 수 있다';return null;}
 function nickIdeas(s){
   const A=s.attr,out=[];
@@ -1944,7 +1988,7 @@ function sigPanelHTML(s){
   const g=sig(s);const mr=sigMoveReq(s),sr=shoeReq(s);
   const card=(title,val,sub,btn,lock,extra='')=>`<div class="sig-card ${lock?'lock':''}"><span>${title}</span>${extra}<b>${val?esc(val):'—'}</b><small>${esc(lock||sub)}</small>${btn}</div>`;
   const shoeYear=g.shoe&&s.flags.yearly?.shoe;
-  return `<h3 style="margin-top:4px">내 시그니처</h3><div class="sig-grid">
+  return `<h3 style="margin-top:4px">내 시그니처 <em><button class="btn" data-sig="shop" style="padding:4px 10px;font-size:12px">시그니처 거래소</button></em></h3><div class="sig-grid">
     ${card('별명',g.nick?`"${g.nick}"`:'',g.nick?'중계 캐스터가 이렇게 부른다':'팬들이 부를 이름을 정하자',`<button class="btn" data-sig="nick">${g.nick?'바꾸기':'정하기'}</button>`,'')}
     ${card('시그니처 무브',g.move?.name,g.move?`${SIG_KINDS[g.move.kind].n} · 클러치·빅매치 성공률 +10%p`:'나만의 기술을 이름 붙여 완성한다',`<button class="btn" data-sig="move" ${mr&&!g.move?'disabled':''}>${g.move?'다듬기':'만들기'}</button>`,g.move?'':mr)}
     ${card('세리머니',g.celeb,g.celeb?'클러치 · 빅매치 승리 · 우승 때 펼친다 (인기 +)':'결정적인 순간의 내 동작',`<button class="btn" data-sig="celeb">${g.celeb?'바꾸기':'정하기'}</button>`,s.age<13?'13세부터':'')}
@@ -2253,7 +2297,7 @@ function yearEnd(s,yr){
     if(v<c){d=(c-v)*(a<13?.05:a<19?.07:a<23?.05:a<28?.022:0);if(has(s,'genius'))d*=1.3;if(atWC(s))d*=1.7;else if(s.flags.wc&&a<=24&&s.team&&(s.team.league==='nba'||s.team.league==='wnba'))d*=1.5;}
     if(a>=30){const dec={athletic:1.6,stamina:1.3,inside:.6,rebound:.7,defense:.8,handle:.5,shoot:.2,pass:.1,iq:-.4}[k]*(1+(a-30)*.18);d-=dec*R(.6,1.3);}
     if(s.stage==='army')d-=R(1,2.5);
-    s.attr[k]=clamp(v+d*R(.7,1.25),1,99);
+    s.attr[k]=clamp(v+d*R(.7,1.25),1,maxFor(s,k));
   }
   // life drift
   const maxH=clamp(100-Math.max(0,a-40)*.9,20,100);
@@ -3053,7 +3097,7 @@ function render(){
                 ${s.flags.nat?'<span style="color:var(--led)">국가대표</span>':''}
               </div>
             </div>
-            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${s.sig?.move?`<span class="trait" style="border-color:var(--leather);color:var(--leather-hi);font-weight:700">시그니처 · ${esc(s.sig.move.name)}</span>`:''}${(s.skills||[]).map(k=>`<span class="trait" style="border-color:var(--led);color:var(--led)">무브 · ${MOVES[k].n}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
+            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${s.sig?.move?`<span class="trait" style="border-color:var(--leather);color:var(--leather-hi);font-weight:700">시그니처 · ${esc(s.sig.move.name)}</span>`:''}${(s.skills||[]).map(k=>`<span class="trait" style="border-color:var(--led);color:var(--led)">무브 · ${MOVES[k].n}</span>`).join('')}${(s.sskills||[]).map(n=>`<span class="trait brk-chip">스킬 · ${esc(n)}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
           </div>
         </div>
         ${mapPanelHTML(s)}
@@ -3068,7 +3112,7 @@ function render(){
         <div class="panel p-attr">
           <h3>능력치 <em>| 표시는 현재 한계치</em></h3>
           <div class="attrs">
-            ${ATTRS.map(k=>{const v=Math.round(s.attr[k]),c=cap(s,k);return `<div class="attr"><span>${ATTR_KO[k]}</span><div class="track"><i style="width:${v}%;background:${v>=80?'var(--led)':v>=65?'var(--good)':v>=45?'#7f97bd':'#4b5f84'}"></i><u style="left:${c}%"></u></div><b class="${tierCls(v)}">${v}</b></div>`;}).join('')}
+            ${ATTRS.map(k=>{const v=Math.round(s.attr[k]),c=cap(s,k),brk=maxFor(s,k)>99;return `<div class="attr ${brk?'brk':''}" title="${brk?`한계 돌파 · 최대 ${maxFor(s,k)}`:''}"><span>${ATTR_KO[k]}${brk?' ⚡':''}</span><div class="track"><i style="width:${Math.min(100,v)}%;background:${v>99?'linear-gradient(90deg,var(--led),#ff5ad1,#7b8bff)':v>=80?'var(--led)':v>=65?'var(--good)':v>=45?'#7f97bd':'#4b5f84'}"></i><u style="left:${Math.min(99.5,c)}%"></u></div><b class="${v>99?'t-break':tierCls(v)}">${v}</b></div>`;}).join('')}
           </div>
         </div>
       </aside>
@@ -3241,7 +3285,7 @@ function bindGame(){
   }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>buyItem(b.dataset.item));
-  document.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>{if(UI.modalOpen)return;b.dataset.sig==='shoenew'?shoeNew():sigForm(b.dataset.sig);});
+  document.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>{if(UI.modalOpen)return;b.dataset.sig==='shoenew'?shoeNew():b.dataset.sig==='shop'?(queue=[],showModal(sigShopSpec(S))):sigForm(b.dataset.sig);});
   document.querySelectorAll('[data-ntag]').forEach(b=>b.onclick=()=>{UI.ntag=b.dataset.ntag;render();});
   document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
   document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
