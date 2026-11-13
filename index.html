@@ -330,6 +330,15 @@ input:focus{outline:none;border-color:var(--leather)}
 .end-av{display:flex;align-items:flex-end;justify-content:center;gap:4px}
 .end-avatar{width:120px;height:130px}
 .end-av .grade{width:64px;height:64px;font-size:40px;margin-bottom:6px}
+/* economy */
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.own-list{display:flex;flex-direction:column;gap:8px}
+.own-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel-2);border-radius:10px;padding:10px 12px}
+.own-row>div:first-child{min-width:0;flex:1 1 200px}
+.own-row b{display:block;font-size:14.5px}
+.own-row small{display:block;font-size:12px;color:var(--muted);word-break:keep-all}
+.own-btns{display:flex;flex-wrap:wrap;gap:6px}
+.own-btns .btn{padding:6px 10px;font-size:12.5px}
 /* routine */
 .routine{background:#0e1a2e;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
 .rt-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -1113,7 +1122,7 @@ function simSeason(s){
   const lg=s.team.league,L=LG[lg],lv=L.level,o=ovr(s),rel=o-lv,A=s.attr;
   let gpFrac=1,injury=null;
   if(s.injury){gpFrac-=s.injury.carry;injury={name:s.injury.name+' (재활)',sev:0};s.injury=null;}
-  let p=.06+(s.life.health<45?.08:0)+(s.life.health<25?.12:0)+(has(s,'glass')?.09:0)-(has(s,'iron')?.04:0)+(s.age>=31?.04:0)+(s.age>=34?.05:0)-(s.flags.loadMgmt?.04:0);
+  let p=.06+(s.life.health<45?.08:0)+(s.life.health<25?.12:0)+(has(s,'glass')?.09:0)-(has(s,'iron')?.04:0)+(s.age>=31?.04:0)+(s.age>=34?.05:0)-(s.flags.loadMgmt?.04:0)-(s.assets.some(a=>a.eff==='medical')?.04:0);
   if(gpFrac>.3&&chance(p)){
     const r=rnd();let inj;
     if(r<.55)inj={name:pick(['발목 염좌','손가락 탈구','허벅지 타박상','허리 근육 경련']),frac:R(.05,.15),sev:1};
@@ -1645,11 +1654,15 @@ function career2Spec(s,civil){
     {id:'teacher',t:'체육 교사',sub:'학업 50 이상',income:5000,ok:s.life.smarts>=50},
     {id:'shop',t:'자영업',sub:'수입 변동이 크다',income:4500,ok:true,risky:1},
     {id:'trainer',t:'생활체육 농구 코치',sub:'동네 아이들을 가르친다',income:3500,ok:true},
+    {id:'startup',t:'스타트업 창업',sub:'학업 60 이상 · 대박 아니면 쪽박',income:9000,ok:s.life.smarts>=60,risky:1},
+    {id:'consult',t:'경영 컨설턴트',sub:'MBA 필요',income:11000,ok:!!s.flags.mba},
   ]:[
     {id:'coach',t:'지도자의 길',sub:'농구 IQ 55 이상 · 코치에서 감독까지',income:9000,ok:s.attr.iq>=55},
     {id:'caster',t:'해설위원',sub:'인기 30 이상',income:8000+Math.round(s.life.fame*80),ok:s.life.fame>=30},
     {id:'creator',t:'방송인 · 유튜버',sub:'인기 45 이상 · 수입 변동 큼',income:Math.round(s.life.fame*s.life.fame*2),ok:s.life.fame>=45,risky:1},
     {id:'academy',t:'농구 아카데미 창업',sub:'초기 자금 3억 원 필요',income:15000,ok:s.money>=30000,cost:30000,risky:1},
+    {id:'gm',t:'프로 구단 단장',sub:'MBA 필요 · 농구 IQ 50 이상',income:20000,ok:!!s.flags.mba&&s.attr.iq>=50},
+    {id:'agency_ceo',t:'스포츠 에이전시 대표',sub:'MBA 필요 · 수입 변동 큼',income:14000,ok:!!s.flags.mba,risky:1},
     {id:'normal',t:'평범한 직장인',sub:'코트 밖의 삶',income:4500,ok:true},
   ];
   return {kicker:`${s.age}세 · 새 출발`,title:civil?'어떤 일을 할까?':'은퇴 후 무엇을 할까?',body:`<p>${civil?'농구 밖에도 인생은 길다.':'유니폼을 벗어도 인생은 이어진다.'}</p>`,
@@ -1746,20 +1759,21 @@ function yearEnd(s,yr){
   if(s.age<19)s.flags.famBudget=Math.min((s.flags.famBudget||0)+(has(s,'rich')?3000:600),has(s,'rich')?9000:1500);
   if(s.age>=20){const living=Math.round(1500+Math.max(0,s.contract?.salary||s.career2?.income||0)*.12);s.money-=living;}
   if(s.flags.endorse){if(s.life.fame<25||s.stage!=='pro'){log(s,'광고 계약이 종료됐다.');s.flags.endorse=0;}else{s.money+=s.flags.endorse;}}
-  if(s.invest>0){const r=R(-.35,.5);const back=Math.round(s.invest*(1+r));s.money+=back;log(s,`투자 정산: ${fmtMoney(s.invest)} → ${fmtMoney(back)} (${r>=0?'+':''}${Math.round(r*100)}%)`,r>=0?'good':'bad');s.invest=0;}
-  s.assets.forEach(x=>{if(x.grow)x.value=Math.round(x.value*(1+R(-.02,x.grow)));if(x.upkeep)s.money-=x.upkeep;});
+  financeYear(s);
   if((s.stage==='retired'||s.stage==='civil')&&s.career2&&a<66){
     let inc=s.career2.income;if(s.career2.risky)inc=Math.round(inc*R(.3,1.8));
     if(s.career2.id==='creator')s.career2.income=Math.round(Math.max(1500,s.life.fame*s.life.fame*2));
     s.money+=inc;
     if(s.flags.headCoach&&chance(clamp((s.attr.iq-55)*.012+.06,.03,.3))){s.awards.push({year:s.year-1,age:a-1,key:'coach_champ',name:`${s.year-1} 감독 우승`,lg:'coach'});s.legacy+=8;lf(s,'fame',6);lf(s,'happy',10);log(s,'감독으로서 챔피언결정전 우승을 차지했다!','major');}
   }
+  if(s.career2?.id==='politician'&&a>=s.career2.term){log(s,`${s.career2.title} 임기를 마쳤다.`,'good');s.career2=s.career2.prev||{id:'normal',title:'평범한 직장인',income:4500};}
   if(a===66&&s.career2){log(s,'일에서 은퇴했다. 이제는 쉬어도 된다.');}
   if(a>=66)s.money+=Math.round(1200+(s.flags.pensionBonus||0));
   // relations
   s.flags.relDone={};
   s.relations.forEach(r=>{if(r.dead)return;r.age++;r.bond=clamp(r.bond-(r.type==='라이벌'?1:2),0,100);
     if(r.type==='아버지'||r.type==='어머니'){if(r.age>=68&&chance(.012*Math.exp((r.age-68)/6))){r.dead=true;lf(s,'happy',-22);lf(s,'mental',-10);log(s,`${r.type} ${J(r.name,'이/가')} 세상을 떠나셨다. 향년 ${r.age}세.`,'bad');}}
+    if(r.type==='반려견'&&r.age>=12&&chance(.25)){r.dead=true;lf(s,'happy',-15);log(s,`반려견 ${J(r.name,'이/가')} 무지개다리를 건넜다. ${r.age}살.`,'bad');}
     if(r.type==='연인'&&r.bond<25&&chance(.45)){r.dead=true;r.gone=true;lf(s,'happy',-10);log(s,`${J(r.name,'과/와')} 헤어졌다.`,'bad');}
   });
   s.relations=s.relations.filter(r=>!(r.gone));
@@ -1976,6 +1990,7 @@ const REL_ACTS={
   '배우자':[{id:'date',t:'함께 시간 보내기'},{id:'baby',t:'아이 갖기'}],
   '자녀':[{id:'play',t:'놀아주기'},{id:'teach',t:'농구 가르치기'}],
   '손주':[{id:'play',t:'놀아주기'}],
+  '반려견':[{id:'walk',t:'산책하기'}],
   '라이벌':[{id:'duel',t:'1대1 대결'},{id:'talk',t:'연락하기'}],
   '팀 동료':[{id:'night',t:'야간 훈련 같이'},{id:'dinner',t:'밥 사기'},{id:'advice',t:'조언 구하기'}],
 };
@@ -1994,6 +2009,7 @@ function relAct(rid,aid){
     case 'night':{bump(RI(7,11));const k=pick(['shoot','handle','defense','iq','pass']);tr(s,k,1.2);lf(s,'health',-2);txt=`${J(r.name,'과/와')} 텅 빈 체육관에 남았다. ${ATTR_KO[k]} 감각이 좋아졌다.`;break;}
     case 'dinner':{const amt=s.age>=19?(s.contract?.salary>20000?200:50):0;s.money-=amt;bump(12);lf(s,'happy',3);txt=`${r.name}에게 고기를 샀다. 코트 밖 이야기를 처음 나눴다.`;break;}
     case 'advice':{const p=PLAYERS.find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
+    case 'walk':bump(8);lf(s,'happy',5);lf(s,'health',3);txt=`${J(r.name,'과/와')} 공원을 한 바퀴 돌았다. 꼬리가 멈추지 않는다.`;break;
     case 'play':bump(10);lf(s,'happy',7);txt='바닥에 같이 누워 한참을 웃었다.';break;
     case 'teach':bump(8);lf(s,'happy',5);txt=r.age<5?'공이 자기 몸보다 크다. 그래도 던지려고 한다.':'레이업 스텝을 알려줬다. 자세가 제법이다.';break;
     case 'duel':{const p=clamp(.5+(ovr(s)-(s.flags.rivalO||ovr(s)+RI(-4,4)))*.04,.15,.85);if(chance(p)){lf(s,'mental',6);lf(s,'fame',1);txt=`${J(r.name,'을/를')} 11대 8로 이겼다.`;}else{lf(s,'mental',-4);boostAll(s,.3);txt=`${r.name}에게 졌다. 분해서 잠이 안 온다.`;}bump(3);break;}
@@ -2009,30 +2025,174 @@ function findLove(){
   else{lf(s,'happy',-2);toast('새로운 인연','이번엔 인연이 닿지 않았다.','');}
   save();render();
 }
-const SHOP=[
-  {id:'watch',name:'고급 시계',price:2000,once:1,desc:'계약 기념 선물',fx:s=>{lf(s,'happy',5);}},
-  {id:'car',name:'스포츠카',price:15000,once:1,desc:'유지비 연 500만 원',upkeep:500,value:9000,fx:s=>{lf(s,'happy',8);lf(s,'fame',2);}},
-  {id:'parents_home',name:'부모님 집 선물',price:40000,once:1,desc:'효도의 끝판왕',fx:s=>{parents(s).forEach(p=>p.bond=100);lf(s,'happy',15);log(s,'부모님께 집을 사 드렸다.','major');}},
-  {id:'apt',name:'서울 아파트',price:150000,once:1,desc:'시세가 오를 수도 있다',value:150000,grow:.06,fx:s=>{lf(s,'happy',10);}},
-  {id:'donate',name:'모교 농구부 기부',price:5000,desc:'인기와 레거시 상승',fx:s=>{lf(s,'fame',4);lf(s,'happy',6);s.legacy+=1.5;}},
-  {id:'foundation',name:'유소년 농구 재단 설립',price:100000,once:1,desc:'평생의 유산',fx:s=>{lf(s,'fame',10);lf(s,'happy',12);s.legacy+=12;log(s,`${s.name} 유소년 농구 재단을 설립했다.`,'major');}},
-];
-function buy(id){
-  const s=S,it=SHOP.find(x=>x.id===id);if(!it||UI.modalOpen)return;
-  if(it.once&&s.assets.some(a=>a.id===id))return;
-  if(s.money<it.price){toast(it.name,'돈이 부족하다.','');return;}
-  const before=snap(s);
-  s.money-=it.price;
-  if(it.value||it.upkeep)s.assets.push({id,name:it.name,value:it.value||0,grow:it.grow||0,upkeep:it.upkeep||0});
-  else if(it.once)s.assets.push({id,name:it.name,value:0});
-  it.fx(s);
-  log(s,`${J(it.name,'을/를')} 샀다.`.replace('기부을/를 샀다','기부를 했다'),'good');
-  toast(it.name,'완료',deltas(before,snap(s)));save();render();
+/* ================= economy ================= */
+const FIN={
+  deposit:{n:'정기예금',d:'원금 보장 · 연 2.5~3.5%',r:[.025,.035]},
+  gold:{n:'금',d:'연 -10% ~ +20%',r:[-.1,.2]},
+  etf:{n:'미국 지수 ETF',d:'연 -20% ~ +32%',r:[-.2,.32]},
+  stock:{n:'국내 개별 주식',d:'연 -35% ~ +50%',r:[-.35,.5]},
+  coin:{n:'암호화폐',d:'연 -80% ~ +220% · 한 방 아니면 휴지',r:[-.8,2.2]},
+};
+function port(s){if(!s.port)s.port={};if(s.invest>0){s.port.stock=(s.port.stock||0)+s.invest;s.invest=0;}return s.port;}
+const portVal=s=>Object.values(port(s)).reduce((a,b)=>a+(b||0),0);
+const netWorth=s=>s.money+s.assets.reduce((a,x)=>a+(x.value||0),0)+portVal(s);
+const notActive=s=>isPlaying(s)||s.stage==='army'?'현역 선수 · 복무 중엔 불가':null;
+const sgn=m=>(m>=0?'+':'-')+fmtMoney(Math.abs(m));
+function election(s,kind){
+  const nat=kind==='nat';
+  const p=clamp((nat?.06:.2)+s.life.fame*.006+s.life.smarts*.003+s.legacy*.0006+(s.flags.elected?.1:0),.03,.88);
+  if(chance(p)){
+    const title=nat?'국회의원':'시의원';
+    s.career2={id:'politician',title,income:nat?15500:6000,term:s.age+4,prev:s.career2&&s.career2.id!=='politician'?s.career2:(s.career2?.prev||null)};
+    s.flags.elected=nat?'nat':(s.flags.elected||'local');
+    lf(s,'fame',nat?12:5);lf(s,'happy',12);s.legacy+=nat?6:2;
+    log(s,`${s.home||'고향'} 지역구 ${title} 당선!`,'major');
+    return {title:`${title} 당선`,text:`개표 마지막까지 접전이었다. 새벽 3시, 당선 확정. 임기는 4년.`};
+  }
+  lf(s,'mental',-8);lf(s,'happy',-6);
+  log(s,`${nat?'국회의원':'시의원'} 선거에서 낙선했다.`,'bad');
+  return {title:'낙선',text:`득표율 ${Math.round(R(18,45))}%. "농구 말고 정치는 모르지 않느냐"는 말이 끝까지 따라다녔다.`};
 }
-function invest(amt){
-  const s=S;if(s.money<amt||UI.modalOpen)return;
-  s.money-=amt;s.invest+=amt;log(s,`${fmtMoney(amt)}을 주식에 투자했다.`);
-  toast('투자',`${fmtMoney(amt)} 투자. 내년에 정산된다.`,'');save();render();
+const ITEMS=[
+  // 부동산
+  {id:'officetel',cat:'estate',name:'오피스텔',price:30000,desc:'월세가 꼬박꼬박 들어온다',asset:{value:30000,grow:.03,income:1300},tags:['임대 연 1,300만']},
+  {id:'shop',cat:'estate',name:'지방 상가',price:80000,desc:'임대료는 높지만 공실 위험이 있다',asset:{value:80000,grow:.02,income:4200,vacancy:.15},tags:['임대 연 4,200만','공실 15%']},
+  {id:'apt',cat:'estate',name:'서울 아파트',price:150000,once:1,desc:'내 집 마련. 시세 상승 기대',asset:{value:150000,grow:.06},fx:s=>{lf(s,'happy',10);return '현관문 비밀번호를 내 생일로 바꿨다.';},tags:['행복 +10','시세 연 최대 +6%']},
+  {id:'villa',cat:'estate',name:'제주 별장',price:120000,once:1,desc:'시즌이 끝나면 바다를 보러 간다',asset:{value:120000,grow:.04,upkeep:600,eff:'villa'},tags:['매년 건강 +4 · 멘탈 +5']},
+  {id:'gangnam',cat:'estate',name:'강남 펜트하우스',price:450000,once:1,desc:'성공의 상징',asset:{value:450000,grow:.07,upkeep:800},fx:s=>{lf(s,'happy',14);lf(s,'fame',3);return '거실 창으로 한강이 다 보인다.';},tags:['행복 +14','인기 +3']},
+  {id:'building',cat:'estate',name:'꼬마빌딩',price:650000,desc:'이제 건물주',asset:{value:650000,grow:.05,income:24000},fx:s=>{lf(s,'happy',10);return '1층에 내 이름을 딴 카페가 들어왔다.';},tags:['임대 연 2.4억']},
+  // 사업
+  {id:'cafe',cat:'biz',name:'카페 창업',price:15000,desc:'동네 사랑방. 3년 안에 망할 수도 있다',asset:{value:6000,biz:{base:3500,lo:-.6,hi:1.5,fail:.12,fame:.005}},tags:['폐업 위험 높음']},
+  {id:'chicken',cat:'biz',name:'치킨 프랜차이즈 가맹점',price:30000,desc:'튀김기는 쉬지 않는다',asset:{value:12000,biz:{base:5000,lo:-.3,hi:1.3,fail:.08,fame:.003}},tags:['안정형']},
+  {id:'gym',cat:'biz',name:'피트니스 센터',price:50000,desc:'"그 선수가 운동하는 헬스장"',asset:{value:25000,biz:{base:9000,lo:-.4,hi:1.4,fail:.07,fame:.012}},tags:['인기 비례']},
+  {id:'restaurant',cat:'biz',name:'파인다이닝 레스토랑',price:60000,desc:'미쉐린 별을 노린다',asset:{value:20000,biz:{base:10000,lo:-.7,hi:1.8,fail:.11,fame:.008}},tags:['고위험 고수익']},
+  {id:'bb_academy',cat:'biz',name:'유소년 농구 아카데미',price:40000,desc:'꿈나무를 키운다',asset:{value:15000,biz:{base:6000,lo:-.2,hi:1.2,fail:.04,fame:.01,legacy:.6}},tags:['매년 레거시 +']},
+  {id:'apparel',cat:'biz',name:'개인 스포츠웨어 브랜드',price:100000,req:s=>s.life.fame<35?'인기 35 필요':null,desc:'인기가 곧 매출',asset:{value:40000,biz:{base:6000,lo:-.5,hi:2,fail:.09,fame:.03}},tags:['인기 높을수록 대박']},
+  {id:'agency',cat:'biz',name:'연예 기획사 지분',price:200000,desc:'아이돌 한 팀만 뜨면 된다',asset:{value:120000,biz:{base:22000,lo:-1,hi:3.5,fail:.06,fame:0}},tags:['변동성 극심']},
+  {id:'esports',cat:'biz',name:'e스포츠 팀 창단',price:300000,desc:'세계 대회 우승하면 화제의 중심',asset:{value:150000,biz:{base:25000,lo:-1.5,hi:3,fail:.05,fame:.01,famegain:2}},tags:['인기 +','적자 위험']},
+  {id:'own_team',cat:'biz',name:'프로농구단 인수',price:3000000,once:1,req:notActive,desc:'구단주가 된다. 매년 적자지만 우승하면 전설',asset:{value:2500000,grow:.03,eff:'owner'},fx:s=>{lf(s,'fame',15);s.legacy+=8;log(s,'프로농구단을 인수해 구단주가 됐다.','major');return '선수 시절 쓰던 라커룸에 구단주로 들어섰다.';},tags:['연 10~40억 적자','우승 시 레거시 +12']},
+  // 라이프
+  {id:'eng',cat:'life',name:'영어 과외',price:200,kid:1,repeat:'year',desc:'NCAA와 해외 진출의 기본',fx:s=>{lf(s,'smarts',6);return '단어장이 두꺼워졌다.';},tags:['학업 +6']},
+  {id:'piano',cat:'life',name:'피아노 레슨',price:150,kid:1,repeat:'year',desc:'농구 말고 다른 세계',fx:s=>{lf(s,'happy',5);lf(s,'mental',4);return '쇼팽 한 곡을 끝까지 쳤다.';},tags:['행복 +5','멘탈 +4']},
+  {id:'dog',cat:'life',name:'반려견 입양',price:100,kid:1,desc:'산책 친구. 매년 유지비 200만',fx:s=>{const n=pick(['농구','덩크','바스켓','마루','초코','콩이','보리','슛돌이']);addRel(s,'반려견',n,85,0);lf(s,'happy',10);return `${J(n,'이/가')} 집에 왔다. 첫날부터 소파를 차지했다.`;},tags:['행복 +10','관계 탭에서 산책']},
+  {id:'travel',cat:'life',name:'세계 일주',price:5000,ap:1,repeat:'year',desc:'한 해 행동 1회를 쓴다',fx:s=>{lf(s,'happy',18);lf(s,'mental',12);lf(s,'health',5);return pick(['파타고니아 빙하 앞에서 한참을 서 있었다.','파리 길거리 코트에서 동네 사람들과 한 게임 했다.','아이슬란드에서 오로라를 봤다.']);},tags:['행복 +18','멘탈 +12']},
+  {id:'mba',cat:'life',name:'스포츠 경영 대학원 (MBA)',price:8000,ap:1,once:1,req:s=>s.age<22?'22세부터':null,desc:'은퇴 후 단장·에이전시 대표의 길이 열린다',fx:s=>{lf(s,'smarts',15);s.flags.mba=true;log(s,'스포츠 경영 대학원을 마쳤다.','major');return '졸업 가운을 입었다. 학위 이름이 생각보다 길다.';},tags:['학업 +15','은퇴 후 진로 해금']},
+  {id:'acting',cat:'life',name:'연기 학원',price:1500,ap:1,repeat:'year',desc:'다닐수록 드라마 오디션 합격률이 오른다',fx:s=>{s.flags.acting=(s.flags.acting||0)+1;lf(s,'happy',3);return `연기 수업 ${s.flags.acting}년 차. 대사가 조금 덜 어색하다.`;},tags:['오디션 합격률 +']},
+  {id:'audition',cat:'life',name:'드라마 오디션',price:300,repeat:'year',req:s=>!s.flags.acting?'연기 학원 먼저':null,desc:'붙으면 인기와 출연료',
+    fx:s=>{const p=clamp(.12+s.flags.acting*.12+s.life.fame*.004,.08,.85);if(chance(p)){const pay=3000+Math.round(s.life.fame*120);s.money+=pay;lf(s,'fame',10);lf(s,'happy',8);s.flags.actor=(s.flags.actor||0)+1;log(s,'드라마에 캐스팅됐다.','major');return {title:'캐스팅!',text:`주말 드라마 조연. 출연료 ${fmtMoney(pay)}. "농구선수 출신인데 연기가 된다"는 기사가 났다.`};}lf(s,'mental',-3);return {title:'불합격',text:'"키가 너무 커서 상대 배우와 화면에 안 잡혀요."'};},big:1,tags:['합격률 표시 없음']},
+  {id:'album',cat:'life',name:'음원 발매',price:5000,repeat:'year',desc:'인기가 높을수록 차트인 확률 상승',
+    fx:s=>{const r=rnd(),hit=clamp(.06+s.life.fame*.006,.05,.6);if(r<hit){const m=2000+Math.round(s.life.fame*s.life.fame*4);s.money+=m;lf(s,'fame',8);lf(s,'happy',10);log(s,'발매한 음원이 차트 1위에 올랐다.','major');return {title:'차트 1위',text:`음원 차트 정상. 저작권료 ${fmtMoney(m)}. 경기장에서 내 노래가 나온다.`};}
+      if(r<hit+.35){s.money+=300;lf(s,'fame',3);return {title:'차트 진입',text:'100위권에 2주 머물렀다. 팬들은 좋아했다.'};}lf(s,'happy',-3);lf(s,'fame',-1);return {title:'조용한 발매',text:'스트리밍 수 2,341회. 그중 절반은 어머니다.'};},big:1},
+  {id:'chef',cat:'life',name:'전담 셰프 · 영양사',price:3000,once:1,desc:'첫해 비용을 내고, 이후 매년 3,000만',asset:{upkeep:3000,eff:'chef'},tags:['매년 건강 +8']},
+  {id:'medical',cat:'life',name:'개인 의료 · 회복팀',price:8000,once:1,desc:'첫해 비용을 내고, 이후 매년 8,000만',asset:{upkeep:8000,eff:'medical'},tags:['부상 확률 -4%p','매년 건강 +6']},
+  {id:'golf',cat:'life',name:'골프장 회원권',price:25000,once:1,desc:'재계 인맥. 사업 수익 +10%',asset:{value:25000,grow:.02,eff:'golf'},tags:['사업 수익 +10%']},
+  {id:'watch',cat:'life',name:'고급 시계',price:2000,once:1,desc:'계약 기념 선물',asset:{value:1500,grow:.01},fx:s=>{lf(s,'happy',5);return '손목이 묵직하다.';}},
+  {id:'car',cat:'life',name:'스포츠카',price:15000,once:1,desc:'유지비 연 500만',asset:{value:9000,upkeep:500,grow:-.08},fx:s=>{lf(s,'happy',8);lf(s,'fame',2);return '경기장 주차장에서 사진이 찍혔다.';},tags:['행복 +8']},
+  {id:'yacht',cat:'life',name:'요트',price:90000,once:1,desc:'유지비 연 3,000만',asset:{value:60000,grow:-.05,upkeep:3000,eff:'yacht'},fx:s=>{lf(s,'happy',10);lf(s,'fame',3);return '선상 파티 사진이 기사에 실렸다.';},tags:['매년 행복 +3']},
+  {id:'jet',cat:'life',name:'개인 전용기',price:600000,once:1,desc:'유지비 연 4억',asset:{value:400000,grow:-.06,upkeep:40000,eff:'jet'},fx:s=>{lf(s,'fame',8);lf(s,'happy',10);return '원정 경기 이동이 이렇게 편할 수가.';},tags:['매년 건강 +5','인기 +8']},
+  // 가족 · 사회
+  {id:'parents_trip',cat:'social',name:'부모님 효도 여행',price:2000,repeat:'year',req:s=>parents(s).length?null:'부모님이 계시지 않다',desc:'유럽 크루즈 패키지',fx:s=>{parents(s).forEach(p=>p.bond=clamp(p.bond+20,0,100));lf(s,'happy',6);return '단체 사진 속 부모님이 활짝 웃고 계신다.';},tags:['부모님 관계 +20']},
+  {id:'parents_home',cat:'social',name:'부모님 집 선물',price:40000,once:1,req:s=>parents(s).length?null:'부모님이 계시지 않다',desc:'효도의 끝판왕',fx:s=>{parents(s).forEach(p=>p.bond=100);lf(s,'happy',15);log(s,'부모님께 집을 사 드렸다.','major');return '어머니가 열쇠를 받고 한참 우셨다.';}},
+  {id:'sibling_biz',cat:'social',name:'형제·자매 사업 자금',price:10000,once:1,req:s=>s.relations.some(r=>['형제','자매'].includes(r.type)&&!r.dead)?null:'형제·자매가 없다',desc:'잘되면 돌려받는다',
+    fx:s=>{const r=s.relations.find(x=>['형제','자매'].includes(x.type)&&!x.dead);r.bond=clamp(r.bond+25,0,100);if(chance(.4)){s.money+=18000;return `${J(r.name,'의')} 가게가 대박 났다. 1억 8,000만 원을 돌려받았다.`.replace('의의','의');}return `가게는 2년 만에 문을 닫았다. ${J(r.name,'은/는')} 평생 고마워했다.`;},tags:['관계 +25','40% 확률로 회수']},
+  {id:'kid_abroad',cat:'social',name:'자녀 해외 유학 지원',price:20000,once:1,req:s=>s.relations.some(r=>r.type==='자녀'&&!r.dead&&r.age>=12&&r.age<=22)?null:'12~22세 자녀 필요',desc:'더 넓은 세상으로',
+    fx:s=>{const c=s.relations.find(r=>r.type==='자녀'&&!r.dead&&r.age>=12&&r.age<=22);c.bond=clamp(c.bond+20,0,100);lf(s,'happy',6);return `${J(c.name,'이/가')} 공항에서 손을 흔들었다.`;}},
+  {id:'donate',cat:'social',name:'모교 농구부 기부',price:5000,desc:'인기와 레거시 상승',fx:s=>{lf(s,'fame',4);lf(s,'happy',6);s.legacy+=1.5;return '후배들에게 새 농구화를 맞춰 줬다.';},tags:['인기 +4','레거시 +1.5']},
+  {id:'court',cat:'social',name:'고향에 야외 농구장 기증',price:10000,once:1,desc:'내 이름이 붙은 코트',fx:s=>{lf(s,'fame',2);lf(s,'happy',8);s.legacy+=2;return `${s.home||'고향'}에 ${s.name} 코트가 생겼다. 개장식 날 아이들과 한 게임 했다.`;},tags:['레거시 +2']},
+  {id:'scholarship',cat:'social',name:'고향 장학재단',price:30000,once:1,desc:'공부하는 학생들을 돕는다',fx:s=>{lf(s,'fame',5);lf(s,'happy',8);s.legacy+=4;log(s,'고향에 장학재단을 세웠다.','major');return '첫 장학생 열두 명의 편지를 받았다.';},tags:['인기 +5','레거시 +4']},
+  {id:'foundation',cat:'social',name:'유소년 농구 재단',price:100000,once:1,desc:'평생의 유산',fx:s=>{lf(s,'fame',10);lf(s,'happy',12);s.legacy+=12;log(s,`${s.name} 유소년 농구 재단을 설립했다.`,'major');return '재단 로고에 내 등번호를 넣었다.';},tags:['레거시 +12']},
+  {id:'run_local',cat:'social',name:'시의원 출마',price:5000,req:s=>notActive(s)||(s.age<25?'25세부터':null)||(s.career2?.id==='politician'?'임기 중':null),desc:'선거 비용 5,000만 · 인기·학업·레거시가 당락을 가른다',fx:s=>election(s,'local'),big:1,tags:['당선 시 4년 의정 활동']},
+  {id:'run_nat',cat:'social',name:'국회의원 출마',price:30000,req:s=>notActive(s)||(s.age<35?'35세부터':null)||(s.career2?.id==='politician'&&s.career2.title==='국회의원'?'임기 중':null),desc:'선거 비용 3억 · 코트에서 국회로',fx:s=>election(s,'nat'),big:1,tags:['당선 시 연 1.5억','인기 +12']},
+];
+const itemPrice=(s,it)=>typeof it.price==='function'?it.price(s):it.price;
+function itemReq(s,it){
+  if(!it.kid&&s.age<19)return '성인이 되면 가능';
+  if(it.req){const r=it.req(s);if(r)return r;}
+  if(it.once&&(s.assets.some(a=>a.id===it.id)||s.flags.bought?.[it.id]))return '이미 했다';
+  if(it.repeat==='year'&&s.flags.yearly?.['buy_'+it.id])return '올해는 이미 했다';
+  if(it.ap&&s.ap<=0)return '올해 행동 없음';
+  if(wallet(s)<itemPrice(s,it))return '돈 부족';
+  return null;
+}
+function buyItem(id){
+  const s=S,it=ITEMS.find(x=>x.id===id);if(!it||UI.modalOpen)return;
+  const why=itemReq(s,it);if(why){toast(it.name,why,'');return;}
+  const before=snap(s),price=itemPrice(s,it);
+  if(!spend(s,price))return;
+  s.flags.yearly=s.flags.yearly||{};
+  if(it.ap)s.ap--;
+  if(it.repeat==='year')s.flags.yearly['buy_'+id]=1;
+  if(it.once&&!it.asset){s.flags.bought=s.flags.bought||{};s.flags.bought[id]=1;}
+  if(it.asset){const a=it.asset;s.assets.push({id,name:it.name,cat:it.cat,value:a.value||0,grow:a.grow||0,upkeep:a.upkeep||0,income:a.income||0,vacancy:a.vacancy||0,eff:a.eff||null,biz:a.biz?{...a.biz}:null,level:1,price});}
+  const r=it.fx?it.fx(s):null;
+  if(r&&typeof r==='object'){
+    queue=[];save();
+    showModal({kicker:it.name,title:r.title,body:`<div class="result">${esc(r.text)}</div>${deltas(before,snap(s))}`,choices:[{label:'계속',primary:true,act:()=>null}]});
+    return;
+  }
+  const msg=r||(it.cat==='estate'?'계약서에 도장을 찍었다.':it.cat==='biz'?'개업식 테이프를 잘랐다.':'완료.');
+  log(s,`${it.name}: ${msg}`,it.cat==='estate'||it.cat==='biz'?'good':'');
+  toast(it.name,msg,deltas(before,snap(s)));save();render();
+}
+const expandCost=x=>Math.round((x.price||20000)*.6/100)*100;
+function expandAsset(i){
+  const s=S,x=s.assets[i];if(!x||!x.biz||UI.modalOpen)return;const c=expandCost(x);
+  if(s.money<c){toast(x.name,'확장 자금이 부족하다.','');return;}
+  s.money-=c;x.level=(x.level||1)+1;x.value+=Math.round(c*.6);
+  log(s,`${x.name}을 ${x.level}단계로 확장했다.`,'good');toast(x.name,`${x.level}호점 오픈. 수익 규모가 커지고 폐업 위험이 줄었다.`,'');save();render();
+}
+function sellAsset(i){
+  const s=S,x=s.assets[i];if(!x||UI.modalOpen)return;
+  const price=x.biz?Math.round(x.value*R(.7,1.15)):x.value||0;
+  s.money+=price;s.assets.splice(i,1);
+  const t=price?`${J(x.name,'을/를')} ${fmtMoney(price)}에 팔았다.`:`${J(x.name,'을/를')} 해지했다.`;
+  log(s,t);toast(x.name,t,'');save();render();
+}
+function finBuy(k,amt){const s=S;if(s.age<19||s.money<amt||UI.modalOpen)return;s.money-=amt;port(s)[k]=(port(s)[k]||0)+amt;log(s,`${FIN[k].n}에 ${fmtMoney(amt)} 투자.`);toast(FIN[k].n,`${fmtMoney(amt)} 매수. 수익률은 매년 시즌 뒤 반영된다.`,'');save();render();}
+function finSell(k){const s=S,p=port(s);if(!p[k]||UI.modalOpen)return;const v=p[k];s.money+=v;p[k]=0;log(s,`${FIN[k].n} 전량 매도: ${fmtMoney(v)}.`);toast(FIN[k].n,`${fmtMoney(v)} 현금화.`,'');save();render();}
+function financeYear(s){
+  const p=port(s);let inv=0;
+  for(const k in p){if(!p[k])continue;const f=FIN[k];const nv=Math.max(0,Math.round(p[k]*(1+R(f.r[0],f.r[1]))));inv+=nv-p[k];p[k]=nv;}
+  let rent=0,biz=0,up=0;const golf=s.assets.some(a=>a.eff==='golf');
+  s.assets.slice().forEach(x=>{
+    if(x.grow)x.value=Math.max(0,Math.round(x.value*(1+R(-.02,x.grow))));
+    if(x.upkeep){s.money-=x.upkeep;up+=x.upkeep;}
+    if(x.income){if(x.vacancy&&chance(x.vacancy))log(s,`${x.name} 공실. 올해는 임대료가 없다.`,'bad');else{s.money+=x.income;rent+=x.income;}}
+    if(x.biz){const b=x.biz,l=x.level||1;
+      if(chance(b.fail/l)){const back=Math.round(x.value*.3);s.money+=back;s.assets.splice(s.assets.indexOf(x),1);lf(s,'happy',-8);log(s,`${x.name} 폐업. 정리하고 ${fmtMoney(back)}을 건졌다.`,'bad');return;}
+      const prof=Math.round(b.base*l*(1+b.fame*s.life.fame)*R(b.lo,b.hi)*(golf?1.1:1));s.money+=prof;biz+=prof;x.last=prof;
+      x.value=Math.max(0,Math.round(x.value*(prof>0?1.04:.94)));
+      if(b.legacy)s.legacy+=b.legacy;if(b.famegain&&prof>0)lf(s,'fame',b.famegain);}
+    if(x.eff==='villa'){lf(s,'health',4);lf(s,'mental',5);}
+    if(x.eff==='chef')lf(s,'health',8);
+    if(x.eff==='medical')lf(s,'health',6);
+    if(x.eff==='yacht')lf(s,'happy',3);
+    if(x.eff==='jet')lf(s,'health',5);
+    if(x.eff==='owner'){const loss=Math.round(R(10000,40000));s.money-=loss;biz-=loss;
+      if(chance(.12)){s.awards.push({year:s.year-1,age:s.age-1,key:'owner_champ',name:`${s.year-1} 구단주 우승`,lg:'owner'});s.legacy+=12;lf(s,'fame',8);lf(s,'happy',12);log(s,'구단주로서 챔피언결정전 우승 트로피를 들었다!','major');}}
+  });
+  const pets=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length;if(pets){s.money-=pets*200;up+=pets*200;}
+  if(rent||biz||up||inv)log(s,`자산 정산 · 임대 ${sgn(rent)} · 사업 ${sgn(biz)} · 투자 ${sgn(inv)} · 유지비 -${fmtMoney(up)}`,(rent+biz+inv-up)>=0?'good':'bad');
+}
+function cashflow(s){let inc=0,up=0;s.assets.forEach(x=>{inc+=x.income||0;if(x.biz){const b=x.biz;inc+=Math.round(b.base*(x.level||1)*(1+b.fame*s.life.fame)*(b.lo+b.hi)/2);}up+=x.upkeep||0;});up+=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length*200;return {inc,up};}
+const MTABS=[['own','내 자산'],['fin','투자'],['estate','부동산'],['biz','사업'],['life','라이프'],['social','가족 · 사회'],['hair','헤어숍']];
+function itemCard(s,it){const why=itemReq(s,it);
+  return `<button class="act" data-item="${it.id}" ${why||UI.modalOpen?'disabled':''}><strong>${it.name}</strong><p>${it.desc}</p>${it.tags?`<div class="tags">${it.tags.map(t=>`<i>${t}</i>`).join('')}</div>`:''}<span class="cost">${fmtMoney(itemPrice(s,it))}${it.ap?' · 행동 1회':''}${why?` · ${why}`:''}</span></button>`;}
+function ownedHTML(s){
+  const p=port(s),pv=portVal(s);
+  const rows=s.assets.map((x,i)=>{
+    const sub=[x.value?`평가액 ${fmtMoney(x.value)}`:'',x.income?`임대 ${fmtMoney(x.income)}/년`:'',x.biz?`${x.level||1}단계 · 작년 ${x.last==null?'—':sgn(x.last)}`:'',x.upkeep?`유지비 ${fmtMoney(x.upkeep)}/년`:'',x.eff==='owner'?'매년 적자 · 우승 도전':''].filter(Boolean).join(' · ');
+    const canSell=x.value>0||x.upkeep>0;
+    return `<div class="own-row"><div><b>${esc(x.name)}</b><small>${sub||'기념품'}</small></div><div class="own-btns">${x.biz&&(x.level||1)<3?`<button class="btn" data-expand="${i}" ${s.money<expandCost(x)||UI.modalOpen?'disabled':''}>확장 ${fmtMoney(expandCost(x)).replace(' 원','')}</button>`:''}${canSell?`<button class="btn warn" data-sell="${i}" ${UI.modalOpen?'disabled':''}>${x.value>0?'매각':'해지'}</button>`:''}</div></div>`;}).join('');
+  const inc=[s.contract&&!s.contract.military?`연봉 ${fmtMoney(s.contract.salary)}`:'',s.flags.endorse?`광고 ${fmtMoney(s.flags.endorse)}`:'',s.career2&&['retired','civil'].includes(s.stage)&&s.age<66?`${s.career2.title} ${fmtMoney(s.career2.income)}`:''].filter(Boolean);
+  return `<div class="own-list">${inc.length?`<p class="sb-note" style="margin:0 0 4px">고정 수입 · ${inc.join(' · ')}</p>`:''}
+    ${pv?`<div class="own-row"><div><b>투자 포트폴리오</b><small>${Object.entries(p).filter(([,v])=>v>0).map(([k,v])=>`${FIN[k].n} ${fmtMoney(v)}`).join(' · ')}</small></div><div class="own-btns"><button class="btn" data-mtab="fin">관리</button></div></div>`:''}
+    ${rows||(pv?'':'<div class="empty">아직 가진 게 없다. 부동산 · 사업 · 투자 탭에서 시작해 보자.</div>')}</div>`;
+}
+function finHTML(s){
+  const p=port(s);
+  return `<div class="own-list">${Object.entries(FIN).map(([k,f])=>`<div class="own-row"><div><b>${f.n}</b><small>${f.d} · 보유 ${fmtMoney(p[k]||0)}</small></div><div class="own-btns">${[1000,5000,30000].map(v=>`<button class="btn" data-fin="${k}" data-amt="${v}" ${s.money<v||s.age<19||UI.modalOpen?'disabled':''}>+${fmtMoney(v).replace(' 원','')}</button>`).join('')}<button class="btn warn" data-finsell="${k}" ${!(p[k]>0)||UI.modalOpen?'disabled':''}>전량 매도</button></div></div>`).join('')}</div>
+  <p class="sb-note" style="margin-top:8px">수익률은 매년 시즌이 끝날 때 반영되고 복리로 굴러간다. 언제든 매도해 현금으로 바꿀 수 있다.</p>`;
 }
 
 /* ================= render ================= */
@@ -2220,22 +2380,20 @@ function peopleHTML(s){
   <p class="sb-note" style="margin-top:10px">각 행동은 사람마다 1년에 한 번. 행동 횟수는 소모하지 않는다.</p>`;
 }
 function moneyHTML(s){
-  const net=s.money+s.assets.reduce((a,x)=>a+(x.value||0),0)+s.invest;
-  return `<div class="kv">
-    <div><span>현금</span><b class="num" style="color:var(--led)">${fmtMoney(s.money)}</b></div>
-    <div><span>순자산</span><b class="num">${fmtMoney(net)}</b></div>
-    <div><span>올해 투자금</span><b class="num">${fmtMoney(s.invest)}</b></div>
-    <div><span>광고 수입</span><b class="num">${s.flags.endorse?fmtMoney(s.flags.endorse)+'/년':'—'}</b></div>
-  </div>
-  ${s.age<19?`<p class="sb-note" style="margin-top:12px">미성년자는 가족 지원 예산(${fmtMoney(famBudget(s))})으로 훈련비를 쓴다. 19세부터 직접 돈을 관리한다.</p>`:`
-  <h3 style="margin-top:16px">보유 자산</h3>
-  ${s.assets.length?`<div class="trophies">${s.assets.map(a=>`<div class="trophy" style="padding-left:10px">${esc(a.name)}${a.value?` · ${fmtMoney(a.value)}`:''}</div>`).join('')}</div>`:'<div class="empty">아직 없다.</div>'}
-  <h3 style="margin-top:16px">헤어숍 · 스타일 <em>변경마다 30만 원</em></h3>
-  <div class="look-wrap shop-look"><div class="look-prev">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar big-av'})}</div>${lookEditorHTML(s.look||randomLook(s.gender),s.gender,'hs')}</div>
-  <h3 style="margin-top:16px">쇼핑 · 기부</h3>
-  <div class="acts">${SHOP.map(it=>{const own=it.once&&s.assets.some(a=>a.id===it.id);return `<button class="act" data-buy="${it.id}" ${own||s.money<it.price||UI.modalOpen?'disabled':''}><strong>${it.name}</strong><p>${it.desc}</p><span class="cost">${own?'보유 중':fmtMoney(it.price)}</span></button>`;}).join('')}</div>
-  <h3 style="margin-top:16px">주식 투자 <em>1년 뒤 -35% ~ +50%</em></h3>
-  <div class="btn-row">${[1000,5000,30000].map(v=>`<button class="btn" data-inv="${v}" ${s.money<v||UI.modalOpen?'disabled':''}>${fmtMoney(v)} 투자</button>`).join('')}</div>`}`;
+  const t=UI.mtab||'own',cf=cashflow(s);
+  const head=`<div class="kv">
+    <div><span>${s.age<19?'가족 지원 예산':'현금'}</span><b class="num" style="color:var(--led)">${fmtMoney(wallet(s))}</b></div>
+    <div><span>순자산</span><b class="num">${fmtMoney(netWorth(s))}</b></div>
+    <div><span>연 자산 수입 (예상)</span><b class="num">${fmtMoney(cf.inc)}</b></div>
+    <div><span>연 유지비</span><b class="num">${fmtMoney(cf.up)}</b></div>
+  </div><nav class="subtabs" aria-label="자산 메뉴">${MTABS.map(([k,n])=>`<button class="chipb" data-mtab="${k}" aria-pressed="${t===k}">${n}</button>`).join('')}</nav>`;
+  let body;
+  if(t==='own')body=ownedHTML(s);
+  else if(t==='fin')body=finHTML(s);
+  else if(t==='hair')body=`<p class="sb-note" style="margin:0 0 8px">변경할 때마다 30만 원</p><div class="look-wrap shop-look"><div class="look-prev">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar big-av'})}</div>${lookEditorHTML(s.look||randomLook(s.gender),s.gender,'hs')}</div>`;
+  else body=`<div class="acts">${ITEMS.filter(i=>i.cat===t).map(i=>itemCard(s,i)).join('')}</div>`;
+  const note=s.age<19&&!['hair','life'].includes(t)?`<p class="sb-note" style="margin:0 0 8px">19세부터 직접 돈을 관리한다. 지금은 라이프 탭의 과외·레슨·반려견과 헤어숍만 가족 지원 예산으로 쓸 수 있다.</p>`:'';
+  return head+note+body;
 }
 function bindGame(){
   $('#btnNext').onclick=()=>{UI.confirmRetire=false;ageUp(false);};
@@ -2256,8 +2414,12 @@ function bindGame(){
     $('#rtNow').onclick=()=>{if(UI.modalOpen)return;runRoutine(S,true);save();render();};
   }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
-  document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buy(b.dataset.buy));
-  document.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>invest(+b.dataset.inv));
+  document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>buyItem(b.dataset.item));
+  document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
+  document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
+  document.querySelectorAll('[data-expand]').forEach(b=>b.onclick=()=>expandAsset(+b.dataset.expand));
+  document.querySelectorAll('[data-fin]').forEach(b=>b.onclick=()=>finBuy(b.dataset.fin,+b.dataset.amt));
+  document.querySelectorAll('[data-finsell]').forEach(b=>b.onclick=()=>finSell(b.dataset.finsell));
   if(document.querySelector('[data-hs]')){S.look=S.look||randomLook(S.gender);bindLook('hs',S.look,()=>{S.money-=30;log(S,'헤어숍에서 스타일을 바꿨다.');toast('헤어숍','새 스타일. 거울 속 내가 낯설다.','');save();render();});}
   const love=$('#btnLove');if(love)love.onclick=findLove;
   const ps=$('#posSel');if(ps)ps.onchange=()=>{S.pos=ps.value;log(S,`포지션을 ${POS[S.pos].ko}(으)로 바꿨다.`.replace('(으)로',hasBatchim(POS[S.pos].ko)?'으로':'로'));save();render();};
@@ -2364,6 +2526,9 @@ function endHTML(s){
   else if(nba)ep=`${s.gender==='m'?'NBA':'WNBA'} 코트를 밟은 몇 안 되는 한국 선수.`;
   else if(proChamps>=2)ep=`프로 우승 반지 ${proChamps}개. 이기는 법을 알았던 선수.`;
   else if(s.flags.hof)ep='명예의 전당에 이름을 남겼다.';
+  else if(s.flags.elected==='nat')ep='코트에서 국회까지. 두 번째 인생도 뜨거웠다.';
+  else if(s.assets.some(a=>a.eff==='owner'))ep='선수로 시작해 구단주로 끝났다.';
+  else if(s.flags.actor)ep='농구선수, 그리고 배우.';
   else if(pro.length>=10)ep=`${pro.length}시즌 동안 코트를 지킨 성실한 프로.`;
   else if(pro.length&&s.settled&&s.stage==='pro')ep=`${pro.length}번째 시즌을 마치고 기록을 멈췄다. 이야기는 아직 진행 중이었다.`;
   else if(pro.length)ep='짧았지만 프로의 꿈을 이뤘다.';
@@ -2385,7 +2550,7 @@ function endHTML(s){
       <div><span>우승 (전체 / 프로)</span><b class="num">${champs} / ${proChamps}</b></div>
       <div><span>MVP · 올스타</span><b class="num">${mvps} · ${alls}</b></div>
       <div><span>레거시 점수</span><b class="num">${Math.round(s.legacy)}</b></div>
-      <div><span>최종 자산</span><b class="num">${fmtMoney(s.money+s.assets.reduce((a,x)=>a+(x.value||0),0))}</b></div>
+      <div><span>최종 자산</span><b class="num">${fmtMoney(netWorth(s))}</b></div>
       <div><span>최고 능력치</span><b class="num">${Math.max(...s.ovrHist.map(p=>p.o))}</b></div>
     </div></div>
     <div class="panel"><h3>결정적 순간들</h3><div class="feed">${majors.map(e=>`<div class="yr"><div class="yr-age num">${e.age}세<small>${e.year}</small></div><ul><li class="major">${esc(e.text)}</li></ul></div>`).join('')}</div></div>
