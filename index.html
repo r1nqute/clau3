@@ -923,7 +923,7 @@ function schoolPickChoices(s,stage,list,lg,reqs,onPick){
   const L=LG[lg],o=ovr(s),home=s.home;
   const rows=list.map(([n,c,t])=>({n,c,t,str:schoolStr(L,t)})).sort((a,b)=>(b.c===home)-(a.c===home)||b.t-a.t||b.str-a.str);
   return rows.map(r=>{const req=reqs(r.t,r.n);const ok=req.ok;
-    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`서류 통과 · 실기 시험 후 입학 · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
+    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`${isHaeun(s)?'프리패스':'서류 통과 · 실기 시험 후 입학'} · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
       disabled:!ok,reason:`${r.c} · ${req.why}`,act:()=>onPick({name:r.n,league:lg,str:r.str,city:ABROAD[lg]?null:r.c})};});
 }
 function newGame(o){
@@ -1134,6 +1134,31 @@ const EVENTS=[
     choices:[
       {t:'직접 가르친다',f:s=>{const c=s.relations.find(r=>r.type==='자녀'&&!r.dead&&r.age>=8&&r.age<=14);c.bond=clamp(c.bond+15,0,100);lf(s,'happy',10);s.flags.kidHoops=c.name;return '주말마다 집 앞 코트에 둘의 그림자가 길게 늘어졌다.';}},
       {t:'하고 싶은 걸 하게 둔다',f:s=>{lf(s,'happy',4);return '아이는 결국 농구부에 들어갔다. 내 등번호를 달고.';}}]},
+  // 이름이 "김하은"이면 운명이 요동친다: 억빠와 억까가 번갈아 온다
+  {id:'hx_god',w:7,cond:s=>isHaeun(s),title:'억빠 · 농구의 신 강림',body:'아침에 눈을 떴더니 손끝이 이상하게 뜨겁다. 그날 연습에서 하프라인 슛 열 개 중 아홉 개가 들어갔다. 감독님이 안경을 두 번 닦았다.',
+    choices:[{t:'겸손하게 받아들인다',f:s=>{boostAll(s,2.5);lf(s,'fame',6);return '이유는 아무도 모른다. 전 능력치가 올랐다.';}},{t:'"원래 이 정도였는데요?"',f:s=>{boostAll(s,2);lf(s,'fame',9);lf(s,'mental',4);return '인터뷰 클립이 밈이 됐다. 그런데 진짜로 원래 그 정도인 것처럼 보였다.';}}]},
+  {id:'hx_ref',w:6,cond:s=>isHaeun(s)&&isPlaying(s),title:'억빠 · 휘슬이 내 편',body:'이번 시즌 심판들이 이상하다. 내가 넘어지기만 하면 파울이 불린다. 상대 감독은 테크니컬 파울만 세 개를 받았다.',
+    choices:[{t:'이번 시즌은 즐긴다',f:s=>{s.flags.clutchBoost=(s.flags.clutchBoost||0)+.05;lf(s,'happy',4);return '팀 승률이 눈에 띄게 올라갔다. 상대 팬들의 원성도 같이 올라갔다.';}}]},
+  {id:'hx_sponsor',w:5,cond:s=>isHaeun(s)&&s.age>=14,title:'억빠 · 스폰서 폭격',body:'하루에 광고 제안이 세 건 들어왔다. 그중 하나는 농구와 아무 상관없는 김치냉장고다.',
+    choices:[{t:'다 찍는다',f:s=>{const m=s.age<19?800:3000+Math.round(s.life.fame*120);if(s.age<19)s.flags.famBudget=(s.flags.famBudget||0)+m;else s.money+=m;lf(s,'fame',5);return `계약금 ${fmtMoney(m)}. 김치냉장고 광고가 제일 반응이 좋았다.`;}}]},
+  {id:'hx_grow',once:1,w:6,cond:s=>isHaeun(s),title:'억빠 · 의사도 설명 못 하는 성장',body:'정기 검진 날, 의사가 X-ray를 세 번 다시 찍었다. "이게… 가능한가?"',
+    choices:[{t:'결과를 듣는다',f:s=>{if(s.age<19){s.adultHeight+=R(3,5);return '예상 신장이 4cm 가까이 늘었다. 의학 학회에 사례로 보고될 예정이다.';}at(s,'athletic',4);at(s,'stamina',3);return '성장판은 닫혔지만 근섬유가 이상하게 좋아졌다. 점프가 더 높아졌다.';}}]},
+  {id:'hx_vote',w:5,cond:s=>isHaeun(s)&&s.age>=13,title:'억빠 · 팬 투표 몰표',body:'올스타 팬 투표 집계 결과, 내 득표수가 리그 전체 관중 수보다 많다. 집계팀이 밤새 재검표 중이다.',
+    choices:[{t:'감사 인사 영상을 올린다',f:s=>{lf(s,'fame',10);lf(s,'happy',6);return '재검표 결과도 1위. 이유는 여전히 미스터리다.';}}]},
+  {id:'hx_press',w:5,cond:s=>isHaeun(s)&&s.age>=13,title:'억빠 · 언론의 과한 극찬',body:'어시스트 하나 했을 뿐인데 다음 날 헤드라인이 "패스의 신 탄생, 농구 역사가 바뀐다".',
+    choices:[{t:'부담스럽지만 기분은 좋다',f:s=>{lf(s,'fame',5);lf(s,'mental',5);at(s,'pass',1.5);return '기사를 읽다 보니 나도 패스가 좋아진 것 같았다. 실제로 조금 좋아졌다.';}}]},
+  {id:'hx_blackout',w:6,cond:s=>isHaeun(s)&&isPlaying(s)&&s.age>=12,title:'억까 · 버저비터 무효',body:'종료 직전, 하프라인에서 던진 공이 그물을 갈랐다. 바로 그 순간 체육관 전기가 나갔다. 심판진 판정: "기록 확인 불가, 무효."',
+    choices:[{t:'항의한다',f:s=>{lf(s,'mental',-4);lf(s,'fame',2);s.flags.clutchBoost=(s.flags.clutchBoost||0)-.02;return '항의 영상이 퍼져 동정 여론은 생겼다. 경기 결과는 바뀌지 않았다.';}},{t:'웃어넘긴다',f:s=>{lf(s,'mental',-2);lf(s,'happy',-2);return '다음 경기에서 똑같은 슛을 넣었다. 이번엔 전기가 안 나갔다.';}}]},
+  {id:'hx_critic',w:6,cond:s=>isHaeun(s)&&isPlaying(s)&&s.age>=13,title:'억까 · 40점 넣고 혹평',body:'40득점 12리바운드. 다음 날 기사 제목: "수비 집중력 아쉬웠던 경기".',
+    choices:[{t:'수비 영상을 1,000번 돌려본다',f:s=>{lf(s,'mental',-3);tr(s,'defense',2);return '억울했지만 수비는 진짜로 늘었다.';}},{t:'기사를 캡처해 둔다',f:s=>{lf(s,'mental',-5);s.flags.clutchBoost=(s.flags.clutchBoost||0)+.02;return '라커에 붙여 놨다. 다음 경기 50득점.';}}]},
+  {id:'hx_bus',w:5,cond:s=>isHaeun(s)&&isPlaying(s),title:'억까 · 원정 버스 증발',body:'원정 버스 기사님이 내비게이션을 잘못 찍었다. 도착한 곳은 상대 팀 연고지가 아니라 동명의 다른 도시다.',
+    choices:[{t:'택시를 타고 간다',f:s=>{lf(s,'health',-6);if(s.age>=19)s.money-=50;return '경기 시작 3분 전 도착. 몸도 못 풀고 뛰었다.';}}]},
+  {id:'hx_shoe',w:4,cond:s=>isHaeun(s),title:'억까 · 양쪽 다 왼발',body:'새로 주문한 농구화가 도착했다. 상자를 열어 보니 양쪽 다 왼발이다. 경기는 내일이다.',
+    choices:[{t:'그냥 신고 뛴다',f:s=>{at(s,'handle',-1);lf(s,'happy',-3);lf(s,'fame',2);return '"왼발 두 개로 20득점" 기사가 났다. 칭찬인지 놀림인지 모르겠다.';}},{t:'예전 신발을 꺼낸다',f:s=>{lf(s,'happy',-2);return '밑창이 반쯤 떨어진 신발. 그래도 오른발은 오른발이다.';}}]},
+  {id:'hx_stat',w:5,cond:s=>isHaeun(s)&&isPlaying(s)&&s.age>=13,title:'억까 · 기록원의 실수',body:'오늘 넣은 3점슛 여섯 개가 공식 기록에는 전부 2점으로 찍혔다. 정정 요청 결과: "규정상 정정 불가."',
+    choices:[{t:'받아들인다',f:s=>{lf(s,'fame',-3);lf(s,'mental',-3);return '기록지에는 12점. 관중은 18점을 봤다.';}}]},
+  {id:'hx_roof',w:4,cond:s=>isHaeun(s)&&isPlaying(s),title:'억까 · 내 자리만 비가 샌다',body:'실내 체육관인데 내 벤치 자리 천장에서만 물이 떨어진다. 다른 자리는 멀쩡하다.',
+    choices:[{t:'우산을 쓰고 앉는다',f:s=>{lf(s,'health',-3);lf(s,'fame',3);return '우산 쓴 사진이 하이라이트보다 조회수가 높았다.';}}]},
   // 분당 월드클래스 3교 병맛 이벤트 (서재윤 · 박용준 · 선주안)
   {id:'jy_intro',once:1,w:9,cond:s=>s.team?.name==='장안중',title:'장안중 서열 정리',
     body:'입학 첫날 체육관 문 앞. 장안중 농구 1짱 서재윤이 팔짱을 끼고 서 있다. "여기 처음이지? 장안중엔 룰이 하나 있어. 1짱한테 인사는 덩크로 한다."',
@@ -1288,9 +1313,10 @@ function simSeason(s){
   const m=min/36,vary=()=>R(.88,1.12);
   const scor=A.shoot*.45+A.inside*.35+A.athletic*.2-lv;
   const hRel=s.height-(s.gender==='f'?178:193)*gfrac(s.age);
-  const pts=gp?m*clamp(11.5+scor*.62,1.5,44)*vary():0;
-  const reb=gp?m*clamp(3.2+(A.rebound-lv)*.2+hRel*.13,.6,16)*vary():0;
-  const ast=gp?m*clamp(1.8+(A.pass-lv)*.12+(A.handle-lv)*.05+{PG:2.6,SG:1,SF:.6,PF:.2,C:0}[s.pos],.3,12.5)*vary():0;
+  const fate=isHaeun(s)?(chance(.5)?R(1.2,1.4):R(.65,.85)):1;
+  const pts=gp?m*clamp(11.5+scor*.62,1.5,44)*vary()*fate:0;
+  const reb=gp?m*clamp(3.2+(A.rebound-lv)*.2+hRel*.13,.6,16)*vary()*fate:0;
+  const ast=gp?m*clamp(1.8+(A.pass-lv)*.12+(A.handle-lv)*.05+{PG:2.6,SG:1,SF:.6,PF:.2,C:0}[s.pos],.3,12.5)*vary()*fate:0;
   const tp=clamp(.25+(A.shoot-lv)*.005+A.shoot*.0008+R(-.02,.02),.1,.47);
   const fg=clamp(.41+(A.inside-lv)*.0025+(['PF','C'].includes(s.pos)?.05:0)+(A.iq-lv)*.0012+R(-.02,.02),.32,.66);
   const impact=rel*m*.012*(gp/games)+(s.flags.clutchBoost||0)+chemistry(s)*.0008;
@@ -1333,6 +1359,7 @@ function simSeason(s){
   aw.forEach(a=>s.awards.push({year:s.year,age:s.age,key:a[0],name:a[1],lg}));
   const line=`${s.team.name} · ${wins}승 ${games-wins}패 · ${labels[res]} · 평균 ${season.pts}점 ${season.reb}리바 ${season.ast}어시`;
   log(s,line,champ?'major':res>=4?'':'good');
+  if(fate!==1)log(s,fate>1?pick(['억빠 시즌: 던지는 족족 들어갔다. 해설진이 "설명할 수 없다"를 반복했다.','억빠 시즌: 상대 수비가 왜인지 자꾸 비켜 줬다.']):pick(['억까 시즌: 림이 나만 싫어하는 것 같았다.','억까 시즌: 슛이 들어가도 왜인지 기록이 안 됐다.']),fate>1?'good':'bad');
   aw.filter(a=>a[0]!=='champ').forEach(a=>log(s,`${a[1]} 수상`,'major'));
   if(injury&&injury.sev)log(s,`부상: ${injury.name}`,'bad');
   return season;
@@ -1934,8 +1961,10 @@ const WC_EXAM={
   '대진고':{o:58,feeder:54,pot:80,extra:[['mental',60,'선주안 눈싸움 버티기 (멘탈 60)'],['athletic',55,'탄천 계단 왕복 50회 (운동능력 55)']],
     exam:{n:'선주안 앞 덩크 실기',tries:3,need:2,attr:'athletic',lv:46,btn:'점프!',lines:['대진고 1짱 선주안이 림 옆에 섰다. "세 번 중에 두 번. 못 하면 집에 가."','선주안이 림을 툭툭 친다. 더 높아 보인다.','마지막 점프. 선주안이 헤어밴드를 고쳐 쓴다.']}},
 };
+const isHaeun=s=>!!s&&String(s.name||'').replace(/\s/g,'')==='김하은';
 function wcReq(s,stage,name){
   const E=WC_EXAM[name];if(!E)return {ok:true};
+  if(isHaeun(s))return name==='대진고'?{ok:false,why:'절대 입학 불가 · 이유는 대진고만 안다'}:{ok:true};
   const o=ovr(s),needO=s.flags.wc&&E.feeder?E.feeder:E.o,miss=[];
   if(o<needO)miss.push(`종합 ${needO} (현재 ${o})`);
   if(s.pot<E.pot)miss.push(`잠재력 ★★★★ (현재 ${starStr(potStars(s.pot))})`);
@@ -2057,7 +2086,7 @@ function schoolChoiceSpec(s,stage){
   return {kicker:`${s.age}세 · 진학 · 전국 ${list.length}개 학교`,title:`${kname} 농구부를 고르자`,
     body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 서류(종합·잠재력 ★★★★·학교별 특기 조건)를 통과한 뒤 실기 시험을 본다. 실기에서 떨어지면 그 학교는 재응시할 수 없다. ${stage==='middle'?'장안중: 종합 40 · 체력 40 · 학업 50 → 서재윤 앞 자유투':'서현고: 종합 58 · 학업 55 · 농구 IQ 55 → 슬리퍼 3점 / 대진고: 종합 58 · 멘탈 60 · 운동능력 55 → 선주안 앞 덩크 (장안중 출신은 종합 54)'}</p>`:''}`,
     choices:schoolPickChoices(s,stage,list,stage,(t,n)=>t===4?wcReq(s,stage,n):t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
-      team=>WC_SCHOOLS.has(team.name)?{meter:wcExamCfg(s,stage,team,{i:0,m:0})}:enterSchool(s,stage,team))};
+      team=>WC_SCHOOLS.has(team.name)?(isHaeun(s)?enterSchool(s,stage,team,'프리패스! 서류도 실기도 없이 합격.'):{meter:wcExamCfg(s,stage,team,{i:0,m:0})}):enterSchool(s,stage,team))};
 }
 function collegeChoiceSpec(s,lg){
   const L=LG[lg],o=ovr(s),list=SCHOOLS[lg][s.gender];
