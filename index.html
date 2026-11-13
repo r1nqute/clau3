@@ -358,6 +358,15 @@ input:focus{outline:none;border-color:var(--leather)}
 .news-meta .num{font-size:15px}
 .ntag{font-weight:900;color:var(--info);letter-spacing:.04em}
 .nbig{background:#b3121b;color:#fff;border-radius:4px;padding:0 6px;font-weight:900}
+/* trade panel */
+.trade{background:#0e1a2e;border:1px solid var(--line);border-radius:12px;padding:12px}
+.amt-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.amt-row input{flex:1 1 140px;max-width:220px}
+.amt-row .unit{color:var(--muted);font-size:13px}
+.amt-prev{font-size:24px;color:var(--led);margin-left:auto;font-weight:500}
+.pct-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.fin-go{width:100%;padding:12px;font-size:15px}
+.fin-go:disabled{opacity:.45}
 /* save + skip */
 .code{width:100%;min-width:0;background:#0b1527;border:1px solid var(--line);color:var(--chalk);border-radius:8px;padding:8px 10px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical;word-break:break-all}
 .m-sub{margin:14px 0 6px;font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
@@ -2636,10 +2645,37 @@ function ownedHTML(s){
     ${pv?`<div class="own-row"><div><b>투자 포트폴리오</b><small>${Object.entries(p).filter(([,v])=>v>0).map(([k,v])=>`${FIN[k].n} ${fmtMoney(v)}`).join(' · ')}</small></div><div class="own-btns"><button class="btn" data-mtab="fin">관리</button></div></div>`:''}
     ${rows||(pv?'':'<div class="empty">아직 가진 게 없다. 부동산 · 사업 · 투자 탭에서 시작해 보자.</div>')}</div>`;
 }
+function finState(){if(!UI.fin)UI.fin={k:'etf',mode:'buy',amt:0};return UI.fin;}
+function finBase(s,f){return f.mode==='buy'?Math.max(0,s.money):(port(s)[f.k]||0);}
 function finHTML(s){
-  const p=port(s);
-  return `<div class="own-list">${Object.entries(FIN).map(([k,f])=>`<div class="own-row"><div><b>${f.n}</b><small>${f.d} · 보유 ${fmtMoney(p[k]||0)}</small></div><div class="own-btns">${[1000,5000,30000].map(v=>`<button class="btn" data-fin="${k}" data-amt="${v}" ${s.money<v||s.age<19||UI.modalOpen?'disabled':''}>+${fmtMoney(v).replace(' 원','')}</button>`).join('')}<button class="btn warn" data-finsell="${k}" ${!(p[k]>0)||UI.modalOpen?'disabled':''}>전량 매도</button></div></div>`).join('')}</div>
+  const p=port(s),f=finState(),base=finBase(s,f),F=FIN[f.k];
+  f.amt=clamp(Math.round(f.amt||0),0,base);
+  const pct=base?Math.round(f.amt/base*100):0;
+  const kid=s.age<19;
+  return `<div class="trade">
+    <div class="subtabs" style="margin:0 0 8px" aria-label="상품 선택">${Object.entries(FIN).map(([k,x])=>`<button class="chipb" data-fink="${k}" aria-pressed="${f.k===k}">${x.n}${p[k]>0?' ●':''}</button>`).join('')}</div>
+    <p class="sb-note" style="margin:0 0 10px">${F.d} · 보유 <b style="color:var(--chalk)">${fmtMoney(p[f.k]||0)}</b> · 현금 ${fmtMoney(s.money)}</p>
+    <div class="seg" style="max-width:260px;margin-bottom:10px"><button type="button" data-finmode="buy" aria-pressed="${f.mode==='buy'}">매수</button><button type="button" data-finmode="sell" aria-pressed="${f.mode==='sell'}">매도</button></div>
+    <div class="amt-row">
+      <input type="number" id="finAmt" min="0" max="${base}" step="100" value="${f.amt}" inputmode="numeric" aria-label="금액 (만 원 단위)" ${kid?'disabled':''}><span class="unit">만 원</span>
+      <b class="num amt-prev" id="finPrev">${fmtMoney(f.amt)}</b>
+    </div>
+    <input type="range" id="finPct" min="0" max="100" step="1" value="${pct}" aria-label="${f.mode==='buy'?'현금':'보유액'} 대비 비율" ${kid||!base?'disabled':''}>
+    <div class="pct-row">${[10,25,50,75,100].map(v=>`<button class="chipb" data-finpct="${v}" ${kid||!base?'disabled':''}>${v===100?(f.mode==='buy'?'전액':'전량'):v+'%'}</button>`).join('')}</div>
+    <button class="btn hot fin-go" id="finGo" ${kid||!f.amt||UI.modalOpen?'disabled':''}>${f.mode==='buy'?'매수하기':'매도하기'} · <span id="finGoAmt">${fmtMoney(f.amt)}</span></button>
+    ${kid?'<p class="sb-note">19세부터 투자할 수 있다.</p>':''}
+  </div>
+  <h3 class="m-sub" style="margin-top:16px">보유 현황</h3>
+  <div class="own-list">${Object.entries(FIN).filter(([k])=>p[k]>0).map(([k,x])=>`<div class="own-row"><div><b>${x.n}</b><small>${fmtMoney(p[k])}</small></div><div class="own-btns"><button class="btn" data-fink="${k}" data-finmode2="sell">매도 설정</button><button class="btn warn" data-finsell="${k}" ${UI.modalOpen?'disabled':''}>전량 매도</button></div></div>`).join('')||'<div class="empty">보유한 투자 상품이 없다.</div>'}</div>
   <p class="sb-note" style="margin-top:8px">수익률은 매년 시즌이 끝날 때 반영되고 복리로 굴러간다. 언제든 매도해 현금으로 바꿀 수 있다.</p>`;
+}
+function finTrade(){
+  const s=S,f=finState();if(UI.modalOpen||s.age<19)return;
+  const amt=clamp(Math.round(f.amt||0),0,finBase(s,f));if(!amt)return;
+  const p=port(s),F=FIN[f.k];
+  if(f.mode==='buy'){s.money-=amt;p[f.k]=(p[f.k]||0)+amt;log(s,`${F.n} ${fmtMoney(amt)} 매수.`);toast(F.n,`${fmtMoney(amt)} 매수. 수익률은 매년 시즌 뒤 반영된다.`,'');}
+  else{p[f.k]-=amt;s.money+=amt;log(s,`${F.n} ${fmtMoney(amt)} 매도.`);toast(F.n,`${fmtMoney(amt)} 현금화.`,'');}
+  f.amt=0;save();render();
 }
 
 /* ================= render ================= */
@@ -2869,8 +2905,19 @@ function bindGame(){
   document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
   document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
   document.querySelectorAll('[data-expand]').forEach(b=>b.onclick=()=>expandAsset(+b.dataset.expand));
-  document.querySelectorAll('[data-fin]').forEach(b=>b.onclick=()=>finBuy(b.dataset.fin,+b.dataset.amt));
   document.querySelectorAll('[data-finsell]').forEach(b=>b.onclick=()=>finSell(b.dataset.finsell));
+  document.querySelectorAll('[data-fink]').forEach(b=>b.onclick=()=>{const f=finState();f.k=b.dataset.fink;if(b.dataset.finmode2)f.mode='sell';f.amt=0;if(UI.mtab!=='fin')UI.mtab='fin';render();});
+  document.querySelectorAll('[data-finmode]').forEach(b=>b.onclick=()=>{const f=finState();f.mode=b.dataset.finmode;f.amt=0;render();});
+  const fa=$('#finAmt');if(fa){
+    const f=finState(),base=finBase(S,f);
+    const sync=(v,from)=>{f.amt=clamp(Math.round(v)||0,0,base);if(from!=='amt')fa.value=f.amt;const pc=$('#finPct');if(from!=='pct'&&pc)pc.value=base?Math.round(f.amt/base*100):0;
+      $('#finPrev').textContent=fmtMoney(f.amt);$('#finGoAmt').textContent=fmtMoney(f.amt);$('#finGo').disabled=!f.amt||UI.modalOpen;};
+    fa.oninput=()=>sync(+fa.value,'amt');
+    fa.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();finTrade();}};
+    const pc=$('#finPct');if(pc)pc.oninput=()=>sync(base*(+pc.value)/100,'pct');
+    document.querySelectorAll('[data-finpct]').forEach(b=>b.onclick=()=>sync(base*(+b.dataset.finpct)/100));
+    $('#finGo').onclick=finTrade;
+  }
   if(document.querySelector('[data-hs]')){S.look=S.look||randomLook(S.gender);bindLook('hs',S.look,()=>{S.money-=30;log(S,'헤어숍에서 스타일을 바꿨다.');toast('헤어숍','새 스타일. 거울 속 내가 낯설다.','');save();render();});}
   const love=$('#btnLove');if(love)love.onclick=findLove;
   const ps=$('#posSel');if(ps)ps.onchange=()=>{S.pos=ps.value;log(S,`포지션을 ${POS[S.pos].ko}(으)로 바꿨다.`.replace('(으)로',hasBatchim(POS[S.pos].ko)?'으로':'로'));save();render();};
