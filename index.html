@@ -303,6 +303,25 @@ input:focus{outline:none;border-color:var(--leather)}
 .epitaph{font-size:16px;color:#dfe6f2;margin:14px auto 0;max-width:46ch;word-break:keep-all}
 
 
+/* routine */
+.routine{background:#0e1a2e;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+.rt-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rt-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.rt-slot{display:flex;align-items:center;gap:6px;min-width:0}
+.rt-slot span{font-family:var(--f-num);font-size:20px;line-height:1;color:var(--leather-hi);width:14px;flex:none}
+.rt-slot select{flex:1;min-width:0;background:#0b1527;color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:7px 6px;font:inherit;font-size:13px}
+.rt-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.rt-presets{display:flex;flex-wrap:wrap;gap:6px}
+.rt-presets .btn{padding:6px 10px;font-size:12.5px}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted)}
+.switch b{color:var(--chalk);font-size:15px}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch span{width:38px;height:22px;border-radius:11px;background:#24385a;position:relative;flex:none;transition:background .15s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--chalk);transition:transform .15s}
+.switch input:checked+span{background:var(--leather)}
+.switch input:checked+span::after{transform:translateX(16px)}
+.switch input:focus-visible+span{outline:2px solid var(--led);outline-offset:2px}
+.switch.small span{width:32px;height:18px}.switch.small span::after{width:12px;height:12px}.switch.small input:checked+span::after{transform:translateX(14px)}
 /* custom genetics */
 input[type=range]{width:100%;accent-color:var(--leather)}
 .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
@@ -1057,6 +1076,7 @@ function bigMatchIntro(s){
   const star=L.kind==='pro'?teamStar(lg==='sangmu'?'kbl':lg,oppName,s.year,s.gender):null;
   const base=L.kind==='pro'?RI(78,92):L.kind==='college'?RI(60,70):RI(44,56);
   const M={opp:oppName,star,my:base,them:base+RI(-2,6),step:0,pts:0,ast:0,stops:0,lv:L.level,oppO:star?star.o:L.level+RI(0,5),last:''};
+  if(s.routine?.bmAuto)return bmAuto(s,M).spec;
   return {kicker:`${seasonLabel(s,s.year)} 시즌 · 빅매치`,title:`vs ${oppName}`,board:bmBoard(s,M),
     body:`<p>${star?`상대 에이스는 <b>${esc(star.name)}</b>${star.real?'':''} (OVR ${star.o}). `:''}4쿼터 4분 남기고 ${M.my}-${M.them}. 감독이 나를 부른다.</p><p class="sb-note">공격 3번, 수비 3번을 직접 고른다. 슛은 타이밍 미니게임. 이기면 시즌 성적과 인기가 오른다.</p>`,
     choices:[{label:'코트에 들어간다',sub:'공격과 수비를 직접 지휘',act:()=>({spec:bmStep(s,M)})},
@@ -1512,6 +1532,7 @@ function enqueue(fn){queue.push(fn);}
 function ageUp(quiet){
   if(UI.modalOpen||!S||!S.alive)return;
   const s=S;queue=[];
+  if(s.routine?.on&&s.ap>0)runRoutine(s,!quiet);
   const yr=s.year;
   if(!quiet){
     const n=s.stage==='pro'?(chance(.55)?2:1):s.age<12?(chance(.6)?1:0):(chance(.3)?2:1);
@@ -1738,6 +1759,34 @@ function toast(title,text,d){
   const t=$('#toast');t.innerHTML=`<b>${esc(title)}</b><p>${esc(text)}</p>${d}`;t.classList.add('show');
   clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3600);
 }
+const PRESETS={
+  grow:{n:'기량 성장',slots:['shoot','handle','weight','defense','film']},
+  bal:{n:'균형',slots:['shoot','weight','rest','film','study']},
+  star:{n:'스타 만들기',slots:['drill','weight','sns','camp','rest']},
+  care:{n:'몸 관리',slots:['rest','film','counsel','shoot','rest']},
+};
+function routineOf(s){if(!s.routine)s.routine={on:false,bmAuto:false,slots:PRESETS.grow.slots.slice()};return s.routine;}
+function actUsable(s,a){if(!a||!actAvailable(s,a))return false;if(a.yearly&&s.flags.yearly?.[a.id])return false;const c=a.cost?a.cost(s):0;return !c||wallet(s)>=c;}
+function autoDrill(s){const p=clamp(.4+(s.attr.shoot-lvl(s))*.012,.15,.88);let m=0;for(let i=0;i<5;i++)if(chance(p))m++;tr(s,'shoot',.7*m);lf(s,'health',-1);return `5개 중 ${m}개 성공.`;}
+function performAct(s,a){
+  const cost=a.cost?a.cost(s):0;if(cost&&!spend(s,cost))return null;
+  const txt=a.mini?autoDrill(s):a.run(s);
+  s.ap--;s.flags.yearly=s.flags.yearly||{};if(a.yearly)s.flags.yearly[a.id]=1;
+  log(s,`${a.name}: ${txt}`);return txt;
+}
+function runRoutine(s,showToast){
+  const r=routineOf(s);const before=snap(s);const done=[];
+  let guard=0;
+  while(s.ap>0&&guard++<12){
+    const idx=s.apMax-s.ap;const want=ACTS.find(x=>x.id===r.slots[idx]);
+    let a=actUsable(s,want)?want:null;
+    if(!a&&r.slots[idx]!=='none'){a=r.slots.map(id=>ACTS.find(x=>x.id===id)).find(x=>actUsable(s,x))||['rest','pickup','study'].map(id=>ACTS.find(x=>x.id===id)).find(x=>actUsable(s,x));}
+    if(!a){s.ap--;continue;}
+    if(performAct(s,a)!=null)done.push(a.name);else s.ap--;
+  }
+  if(showToast&&done.length)toast('루틴 자동 실행',done.join(' · '),deltas(before,snap(s)));
+  return done;
+}
 function doAct(id){
   const s=S,a=ACTS.find(x=>x.id===id);
   if(!a||s.ap<=0||UI.modalOpen)return;
@@ -1882,7 +1931,7 @@ function render(){
     </div>
   </div>
   <div class="bar-bottom"><div class="wrap bar-inner">
-    <div class="pips" aria-label="남은 행동 ${s.ap}/${s.apMax}">${Array.from({length:s.apMax},(_,i)=>`<span class="pip ${i<s.ap?'on':''}"></span>`).join('')}<span style="margin-left:4px">행동 ${s.ap}/${s.apMax}</span></div>
+    <div class="pips" aria-label="남은 행동 ${s.ap}/${s.apMax}">${Array.from({length:s.apMax},(_,i)=>`<span class="pip ${i<s.ap?'on':''}"></span>`).join('')}<span style="margin-left:4px">행동 ${s.ap}/${s.apMax}${s.routine?.on?' · <b style="color:var(--leather-hi)">자동 루틴 ON</b>':''}</span></div>
     <div style="display:flex;gap:8px;align-items:center">
       ${['retired','civil'].includes(s.stage)?`<button class="ff" id="btnFF" ${UI.modalOpen?'disabled':''}>+5년</button>`:''}
       <button class="next" id="btnNext" ${UI.modalOpen?'disabled':''}>
@@ -1906,9 +1955,24 @@ function feedHTML(s){
   for(let i=s.log.length-1;i>=0;i--){const e=s.log[i];if(!cur||cur.age!==e.age){cur={age:e.age,year:e.year,items:[]};groups.push(cur);}cur.items.push(e);}
   return `<div class="feed">${groups.slice(0,60).map(g=>`<div class="yr"><div class="yr-age num">${g.age}세<small>${g.year}</small></div><ul>${g.items.map(e=>`<li class="${e.tone}">${esc(e.text)}</li>`).join('')}</ul></div>`).join('')}</div>`;
 }
+function routineHTML(s){
+  const r=routineOf(s),n=Math.min(s.apMax,5);
+  const opts=id=>`<option value="none" ${id==='none'?'selected':''}>— 비워 둠 —</option>`+ACTS.map(a=>`<option value="${a.id}" ${a.id===id?'selected':''}>${a.name}${actAvailable(s,a)?'':' (지금은 불가)'}</option>`).join('');
+  return `<div class="routine">
+    <div class="rt-head"><label class="switch"><input type="checkbox" id="rtOn" ${r.on?'checked':''}><span></span><b>자동 루틴</b></label>
+      <span class="sb-note">${r.on?'시즌 진행을 누르면 남은 행동을 아래 순서대로 자동 실행':'켜면 매년 아래 순서대로 행동을 자동 실행'}</span></div>
+    <div class="rt-slots">${Array.from({length:n},(_,i)=>`<label class="rt-slot"><span>${i+1}</span><select data-slot="${i}">${opts(r.slots[i]||'none')}</select></label>`).join('')}</div>
+    <div class="rt-foot">
+      <div class="rt-presets">${Object.entries(PRESETS).map(([k,p])=>`<button class="btn" data-preset="${k}">${p.n}</button>`).join('')}</div>
+      <label class="switch small"><input type="checkbox" id="rtBm" ${r.bmAuto?'checked':''}><span></span>빅매치 자동 진행</label>
+      <button class="btn hot" id="rtNow" ${s.ap<=0||UI.modalOpen?'disabled':''}>지금 루틴 실행</button>
+    </div>
+    <p class="sb-note" style="margin:6px 0 0">할 수 없는 행동(돈 부족, 나이·시기 제한)은 루틴의 다른 행동이나 휴식으로 대체된다. 슈팅 챌린지는 확률로 판정된다.</p>
+  </div>`;
+}
 function actHTML(s){
   const list=ACTS.filter(a=>actAvailable(s,a));
-  return `<div class="ap-head"><span>올해 남은 행동 <b class="num" style="font-size:20px;color:var(--chalk)">${s.ap}</b> / ${s.apMax} · 다 쓰지 않아도 시즌은 진행된다</span><span>${s.age<19?'비용은 가족 지원 예산에서 나간다':''}</span></div>
+  return `${routineHTML(s)}<div class="ap-head"><span>올해 남은 행동 <b class="num" style="font-size:20px;color:var(--chalk)">${s.ap}</b> / ${s.apMax} · 다 쓰지 않아도 시즌은 진행된다</span><span>${s.age<19?'비용은 가족 지원 예산에서 나간다':''}</span></div>
   <div class="acts">${list.map(a=>{const cost=a.cost?a.cost(s):0;const used=a.yearly&&s.flags.yearly?.[a.id];const poor=cost&&wallet(s)<cost;
     return `<button class="act" data-act="${a.id}" ${s.ap<=0||used||poor||UI.modalOpen?'disabled':''}><strong>${a.name}</strong><p>${typeof a.sub==='function'?a.sub(s):a.sub}</p><div class="tags">${a.tags.map(t=>`<i>${t}</i>`).join('')}</div>${cost?`<span class="cost">${fmtMoney(cost)}${poor?' · 부족':''}</span>`:''}${used?'<span class="cost">올해 이미 참가</span>':''}</button>`;}).join('')}</div>`;
 }
@@ -2015,6 +2079,13 @@ function bindGame(){
     choices:[{label:'새 인생 시작',act:()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}queue=[];closeModal();render();return null;}},{label:'계속 플레이',act:()=>null}]});
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;try{localStorage.setItem(SAVE_KEY+':tab',UI.tab);}catch(e){}render();});
   document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>doAct(b.dataset.act));
+  const rtOn=$('#rtOn');if(rtOn){
+    rtOn.onchange=()=>{routineOf(S).on=rtOn.checked;save();render();};
+    $('#rtBm').onchange=e=>{routineOf(S).bmAuto=e.target.checked;save();render();};
+    document.querySelectorAll('[data-slot]').forEach(sel=>sel.onchange=()=>{routineOf(S).slots[+sel.dataset.slot]=sel.value;save();});
+    document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{routineOf(S).slots=PRESETS[b.dataset.preset].slots.slice();save();render();});
+    $('#rtNow').onclick=()=>{if(UI.modalOpen)return;runRoutine(S,true);save();render();};
+  }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
   document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   document.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>invest(+b.dataset.inv));
