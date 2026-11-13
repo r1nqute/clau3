@@ -1104,6 +1104,70 @@ const EVENTS=[
     choices:[
       {t:'직접 가르친다',f:s=>{const c=s.relations.find(r=>r.type==='자녀'&&!r.dead&&r.age>=8&&r.age<=14);c.bond=clamp(c.bond+15,0,100);lf(s,'happy',10);s.flags.kidHoops=c.name;return '주말마다 집 앞 코트에 둘의 그림자가 길게 늘어졌다.';}},
       {t:'하고 싶은 걸 하게 둔다',f:s=>{lf(s,'happy',4);return '아이는 결국 농구부에 들어갔다. 내 등번호를 달고.';}}]},
+  // 분당 월드클래스 3교 병맛 이벤트 (서재윤 · 박용준 · 선주안)
+  {id:'jy_intro',once:1,w:9,cond:s=>s.team?.name==='장안중',title:'장안중 서열 정리',
+    body:'입학 첫날 체육관 문 앞. 장안중 농구 1짱 서재윤이 팔짱을 끼고 서 있다. "여기 처음이지? 장안중엔 룰이 하나 있어. 1짱한테 인사는 덩크로 한다."',
+    choices:[
+      {t:'덩크로 인사한다',f:s=>{meetBud(s,'서재윤','장안중 1짱',45);lf(s,'fame',2);if(s.attr.athletic>=38||chance(.25)){budBond(s,'서재윤',15);return '림을 잡고 내려오자 서재윤이 천천히 박수를 쳤다. 그러더니 매점 소보로빵을 반으로 갈라 내밀었다. 서열 2위 등극.';}return '림에 매달렸다가 체육복 바지가 반쯤 내려갔다. 서재윤이 바닥에 쓰러져 웃었다. 그날부터 별명이 "장안중 반바지"가 됐다.';}},
+      {t:'매점 빵으로 협상한다',f:s=>{meetBud(s,'서재윤','장안중 1짱',55);return '소보로빵 셋, 초코우유 하나. 장안중 역사상 가장 저렴한 평화 조약이 체결됐다.';}},
+      {t:'"형, 사인 해 드릴까요?"',f:s=>{meetBud(s,'서재윤','장안중 1짱',35);lf(s,'mental',4);return '서재윤이 30초 동안 아무 말도 못 했다. 그리고 진짜로 사인을 받아 갔다. 지금도 필통에 붙어 있다고 한다.';}}]},
+  {id:'jy_lunch',once:1,w:7,cond:s=>s.team?.name==='장안중'&&!!bud(s,'서재윤'),title:'급식실 3점슛 대첩',
+    body:'오늘 급식은 돈가스. 서재윤이 식판을 든 채 선언했다. "급식실 끝 쓰레기통까지 우유팩 3점. 지는 쪽이 한 달 동안 식판 반납 담당."',
+    choices:[
+      {t:'받아들인다',f:s=>{if(chance(clamp(.4+(s.attr.shoot-40)*.01,.15,.85))){budBond(s,'서재윤',8);lf(s,'fame',2);return '우유팩이 포물선을 그리며 쓰레기통에 쏙. 급식실 전체가 기립했다. 영양사 선생님까지 박수를 쳤다.';}lf(s,'happy',-2);return '우유팩이 교감 선생님 등에 맞았다. 둘 다 반성문 3장. 식판 반납은 덤.';}},
+      {t:'"돈가스는 건드리는 거 아니다"',f:s=>{budBond(s,'서재윤',5);lf(s,'happy',4);return '둘은 대결 대신 돈가스를 나눠 먹으며 NBA 이야기만 40분 했다.';}}]},
+  {id:'jy_badminton',once:1,w:6,cond:s=>s.team?.name==='장안중'&&!!bud(s,'서재윤'),title:'배드민턴부 오해 사건',
+    body:'새로 온 체육 선생님이 출석부를 보더니 서재윤과 나를 배드민턴부 명단에 넣었다. 대회는 내일이다.',
+    choices:[
+      {t:'그냥 나간다',f:s=>{at(s,'athletic',1.5);lf(s,'fame',3);budBond(s,'서재윤',8);return '서재윤이 스매시를 덩크처럼 내리꽂았다. 둘이 배드민턴 시 대회 3위. 농구부 감독님은 아직 모르신다.';}},
+      {t:'오해를 바로잡는다',f:s=>{at(s,'iq',.5);return '선생님이 사과의 의미로 콜라를 사 주셨다. 서재윤은 조금 아쉬워했다.';}}]},
+  {id:'yj_intro',once:1,w:9,cond:s=>s.team?.name==='서현고',title:'서현고 살아있는 변수, 박용준',
+    body:'첫 훈련. 박용준이 삼선 슬리퍼를 신고 체육관에 들어왔다. "농구화? 나는 영혼으로 뛴다." 감독님이 조용히 눈을 감았다.',
+    choices:[
+      {t:'여분 농구화를 빌려준다',f:s=>{meetBud(s,'박용준','서현고 동료',55);return '사이즈가 두 치수 컸다. 박용준은 그대로 뛰다가 신발 한 짝을 관중석까지 날려 보냈다. 그게 그날의 유일한 어시스트였다.';}},
+      {t:'슬리퍼 농구를 지켜본다',f:s=>{meetBud(s,'박용준','서현고 동료',40);lf(s,'happy',5);return '레이업 도중 슬리퍼가 먼저 림을 통과했다. 공은 안 들어갔다. 감독님 별명이 "서현고 최종병기(?)"로 붙었다.';}},
+      {t:'같이 슬리퍼를 신는다',f:s=>{meetBud(s,'박용준','서현고 동료',70);lf(s,'happy',6);at(s,'handle',.8);return '둘이 나란히 슬리퍼 드리블 훈련. 이상하게 볼 감각이 좋아졌다. 감독님은 두 번째로 눈을 감았다.';}}]},
+  {id:'yj_bus',once:1,w:7,cond:s=>s.team?.name==='서현고'&&!!bud(s,'박용준'),title:'휴게소 실종 사건',
+    body:'원정 버스가 출발하고 20분 뒤, 단톡방에 사진이 올라왔다. 휴게소 호두과자를 든 박용준. "다들 어디 감?"',
+    choices:[
+      {t:'버스를 돌리자고 한다',f:s=>{budBond(s,'박용준',12);lf(s,'happy',3);return '돌아가 보니 박용준이 팀 전원 몫의 호두과자 열여섯 봉지를 사 놓고 기다리고 있었다. 지각했지만 그날 경기는 이겼다.';}},
+      {t:'"알아서 오겠지"',f:s=>{budBond(s,'박용준',-3);if(chance(.5)){lf(s,'happy',5);return '경기장에 도착하니 박용준이 먼저 와 있었다. 지나가던 다른 학교 버스를 얻어 탔다고 한다. 상대 팀 버스였다.';}return '박용준은 2쿼터에 택시를 타고 왔다. 영수증을 감독님께 내밀었다.';}}]},
+  {id:'yj_miracle',once:1,w:7,cond:s=>s.team?.name==='서현고'&&!!bud(s,'박용준')&&s.age>=17,title:'박용준 투입이라는 실수',
+    body:'결승전 종료 3초 전, 1점 차. 감독님이 교체 카드를 잘못 뽑았다. 코트에 들어온 건 박용준. 그리고 공이 그에게 가고 있다.',
+    choices:[
+      {t:'박용준을 믿는다',f:s=>{if(chance(.3)){st(s).yjHero=true;budBond(s,'박용준',20);lf(s,'fame',6);lf(s,'happy',12);log(s,'박용준의 뒤돌아 하프라인 버저비터로 결승 우승.','major');addNews(s,s.year,'사회','서현고 박용준, 뒤돌아 하프라인 버저비터','"보고 던진 거 아님." 본인 인터뷰. 영상은 하루 만에 조회수 500만을 넘었다.',false);return '박용준이 공을 잡더니 뒤돌아 머리 위로 던졌다. 하프라인에서. 들어갔다. 본인도 놀라서 쓰러졌다.';}lf(s,'mental',-3);return '박용준이 공을 잡고 관중석에 손을 흔들었다. 버저가 울렸다. 그래도 표정은 우승한 사람 같았다.';}},
+      {t:'공을 낚아채 직접 쏜다',f:s=>{if(chance(clamp(.45+(s.attr.shoot-60)*.012,.2,.85))){lf(s,'fame',4);budBond(s,'박용준',5);return '들어갔다. 박용준이 세상에서 제일 크게 소리 질렀다. 자기가 어시스트했다고.';}lf(s,'mental',-3);return '빗나갔다. 박용준이 어깨를 두드렸다. "괜찮아, 나도 맨날 안 들어가."';}}]},
+  {id:'ja_derby',once:1,w:8,cond:s=>['서현고','대진고','장안중'].includes(s.team?.name)&&s.age>=15,title:'분당 더비',
+    body:s=>s.team?.name==='대진고'?'탄천 농구장. 대진고 1짱 선주안이 농구공을 발로 굴려 보낸다. "신입이 월드클래스라며? 대진고는 실력으로 증명하는 데야."':'정자동 탄천 코트. 대진고 1짱 선주안이 등장했다. "분당 농구 지도는 내가 그린다. 오늘 여기서 정리하자."',
+    choices:[
+      {t:'1대1 정면 승부',f:s=>{meetBud(s,'선주안','대진고 1짱',35);if(chance(clamp(.5+(ovr(s)-62)*.03,.15,.85))){budBond(s,'선주안',12);lf(s,'fame',4);return '11대 9. 선주안이 한참 하늘을 보더니 말했다. "떡볶이는 내가 산다." 탄천 떡볶이집 사장님이 둘을 기억하게 됐다.';}lf(s,'mental',-3);boostAll(s,.5);return '9대 11. 선주안이 손가락 하나를 들었다. "1년 뒤 리매치." 그날부터 새벽 훈련 알람이 30분 당겨졌다.';}},
+      {t:'떡볶이 많이 먹기로 승부',f:s=>{meetBud(s,'선주안','대진고 1짱',55);lf(s,'health',-3);lf(s,'happy',6);return '떡볶이 7인분째에서 둘 다 쓰러졌다. 무승부. 사장님이 순대를 서비스로 주셨다.';}},
+      {t:'박용준을 대리 출전시킨다',cond:s=>!!bud(s,'박용준'),f:s=>{meetBud(s,'선주안','대진고 1짱',45);budBond(s,'박용준',8);return '박용준이 슬리퍼를 신고 나갔다. 선주안이 너무 당황해서 점프볼을 놓쳤고, 박용준이 공을 들고 그대로 집에 갔다. 판정은 아직도 논쟁 중.';}}]},
+  {id:'ja_boss',once:1,w:8,cond:s=>s.team?.name==='대진고'&&s.age>=17&&!!bud(s,'선주안'),title:'대진고 1짱 계승식',
+    body:'졸업을 앞둔 선주안이 체육관 한가운데로 나를 불렀다. 손에는 낡은 헤어밴드가 들려 있다. "대진고 1짱은 이걸 물려받는다. 3대째 안 빨았다."',
+    choices:[
+      {t:'정중하게 받는다',f:s=>{budBond(s,'선주안',20);s.look=s.look||randomLook(s.gender);s.look.band='black';lf(s,'fame',3);log(s,'선주안에게서 대진고 1짱의 헤어밴드를 물려받았다.','good');return '헤어밴드를 머리에 썼다. 냄새가 전설적이었다. 그날부터 대진고 1짱.';}},
+      {t:'"빨아서 쓸게요"',f:s=>{budBond(s,'선주안',8);lf(s,'happy',4);return '선주안이 3초간 고민하더니 허락했다. "전통도 업데이트가 필요하지."';}}]},
+  {id:'tancheon',once:1,w:6,cond:s=>!!bud(s,'선주안')&&!!(bud(s,'서재윤')||bud(s,'박용준'))&&s.age>=16&&s.age<=22,title:'탄천 길거리 농구 대회',
+    body:s=>`선주안이 팀을 짰다. 나, 선주안, 그리고 ${bud(s,'박용준')?'박용준':'서재윤'}. 결승 상대는 평균 나이 54세의 "분당 OB 레전드". 상대 센터가 무릎 보호대를 세 개 차고 있다.`,
+    choices:[
+      {t:'전력으로 이긴다',f:s=>{['선주안','서재윤','박용준'].forEach(n=>budBond(s,n,6));lf(s,'fame',2);return '21대 8로 이겼다. 그런데 시상식에서 OB 레전드 할아버지들이 상금을 우리 떡볶이값으로 다 내 주셨다.';}},
+      {t:'어르신들을 존중해 살살 한다',f:s=>{['선주안','서재윤','박용준'].forEach(n=>budBond(s,n,4));lf(s,'happy',6);return '살살 했더니 졌다. 54세 포인트가드의 노룩 패스는 진짜였다. 선주안은 그날 일기에 "현타"라고만 적었다.';}}]},
+  {id:'jy_chicken',once:1,w:4,age:[26,45],cond:s=>!!bud(s,'서재윤'),title:'서재윤의 전화',
+    body:'"야, 나 치킨집 차렸다. 가게 이름은 \'장안 1짱 치킨\'. 너 사진 좀 걸어도 되냐? 그리고 투자도 조금…"',
+    choices:[
+      {t:'사진도 걸고 1,000만 원 투자',sub:'1,000만 원',f:s=>{s.money-=1000;budBond(s,'서재윤',15);if(chance(.55)){s.money+=2500;lf(s,'fame',2);return '내 사진이 걸린 날부터 줄이 섰다. 반년 만에 2,500만 원이 돌아왔다. 메뉴판에 "1짱 반 2짱 반" 세트가 생겼다.';}return '가게는 1년 만에 닫았다. 서재윤은 마지막 날 치킨을 스무 마리 튀겨 우리 팀 숙소로 보냈다.';}},
+      {t:'사진만 걸어 준다',f:s=>{budBond(s,'서재윤',6);lf(s,'happy',3);return '"사인도 해 줘." 가게 벽에 내 사진과 사인, 그리고 중학교 때 반바지 사진이 같이 걸렸다.';}}]},
+  {id:'yj_tv',once:1,w:4,age:[22,45],cond:s=>!!bud(s,'박용준')&&s.life.fame>=30,title:'박용준TV 개국',
+    body:s=>`박용준이 유튜브 채널을 열었다. 채널명은 "${s.name} 친구 박용준TV". 첫 영상 제목: "내가 키운 선수 (진짜임)".`,
+    choices:[
+      {t:'출연해 준다',f:s=>{budBond(s,'박용준',12);lf(s,'fame',5);return '슬리퍼 1대1 콘텐츠가 대박이 났다. 박용준이 이겼다. 아무도 어떻게 이겼는지 설명하지 못한다.';}},
+      {t:'댓글로 응원만 한다',f:s=>{budBond(s,'박용준',4);return '"구독 눌렀다" 한 줄에 박용준이 영상 하나를 통째로 감사 인사로 채웠다.';}}]},
+  {id:'bundang_reunion',once:1,w:5,age:[28,60],cond:s=>['서재윤','박용준','선주안'].filter(n=>bud(s,n)).length>=2,title:'분당 3대장 동창회',
+    body:s=>`정자동 고깃집. ${['서재윤','박용준','선주안'].filter(n=>bud(s,n)).join(', ')}. 다들 배가 조금씩 나왔다. 선주안이 잔을 들었다. "분당 농구 지도는 결국 우리가 그렸다."`,
+    choices:[
+      {t:'탄천 코트로 2차를 간다',f:s=>{['서재윤','박용준','선주안'].forEach(n=>budBond(s,n,10));lf(s,'happy',12);lf(s,'health',-2);return '새벽 1시, 넷이서 3대3을 했다. 박용준은 여전히 슬리퍼였다. 경비 아저씨가 와서 같이 뛰었다.';}},
+      {t:'옛날 영상을 같이 본다',f:s=>{['서재윤','박용준','선주안'].forEach(n=>budBond(s,n,7));lf(s,'happy',9);return '장안중 반바지 사건, 휴게소 실종 사건, 하프라인 버저비터. 고깃집 사장님까지 같이 울고 웃었다.';}}]},
   // interviews & locker room
   {id:'presser_goal',age:[18,40],stages:['college','pro'],w:2.2,title:'시즌 개막 기자회견',body:'"이번 시즌 목표가 무엇입니까?" 플래시가 쉴 새 없이 터진다.',
     choices:[
@@ -1139,6 +1203,9 @@ const EVENTS=[
     choices:[{t:'출연한다',f:s=>{lf(s,'fame',12);s.money+=5000;lf(s,'happy',6);return '공개 첫 주 시청 순위 1위. 옛 동료들의 인터뷰에 울컥했다.';}},
       {t:'과거는 과거로 둔다',f:s=>'조용한 삶이 좋다.'}]},
 ];
+function bud(s,name){return s.relations.find(r=>r.name===name&&r.bud&&!r.dead);}
+function meetBud(s,name,role,bond){let r=bud(s,name);if(!r){r=addRel(s,'친구',name,bond,s.age+(role.includes('1짱')?1:0));r.bud=role;log(s,`${role} ${J(name,'과/와')} 엮이기 시작했다.`,'good');}return r;}
+function budBond(s,name,d){const r=bud(s,name);if(r)r.bond=clamp(r.bond+d,0,100);}
 function endorseAmt(s){const top=s.team&&LG[s.team.league].mult>=2;return Math.round((s.life.fame*s.life.fame*(top?8:1.6))/100)*100+1000;}
 function eligible(s,e){
   if(e.once&&s.flags.used[e.id])return false;
@@ -2465,6 +2532,7 @@ const REL_ACTS={
   '손주':[{id:'play',t:'놀아주기'}],
   '반려견':[{id:'walk',t:'산책하기'}],
   '전우':[{id:'talk',t:'연락하기'},{id:'dinner',t:'술 한잔'}],
+  '친구':[{id:'talk',t:'연락하기'},{id:'oneone',t:'1대1 농구'},{id:'dinner',t:'떡볶이 사기'}],
   '라이벌':[{id:'duel',t:'1대1 대결'},{id:'talk',t:'연락하기'}],
   '팀 동료':[{id:'night',t:'야간 훈련 같이'},{id:'dinner',t:'밥 사기'},{id:'advice',t:'조언 구하기'}],
 };
@@ -2475,13 +2543,13 @@ function relAct(rid,aid){
   switch(aid){
     case 'talk':bump(RI(5,10));lf(s,'happy',3);txt=pick([`${J(r.name,'과/와')} 오랜만에 긴 이야기를 나눴다.`,`${r.name}의 잔소리마저 반가웠다.`]);break;
     case 'gift':{const amt=s.stage==='pro'&&s.contract?.salary>20000?2000:300;if(s.money<amt){toast('용돈 드리기','통장 잔고가 부족하다.','');return;}s.money-=amt;bump(15);lf(s,'happy',5);txt=`${fmtMoney(amt)}을 드렸다. "이런 거 안 해도 된다"면서도 웃으셨다.`;break;}
-    case 'oneone':bump(8);at(s,'handle',.6);lf(s,'happy',4);txt=chance(.6)?'이겼다. 형제의 표정이 일그러졌다.':'졌다. 집에서는 아직 서열이 안 바뀐다.';break;
+    case 'oneone':bump(8);at(s,'handle',.6);lf(s,'happy',4);txt=chance(.6)?`이겼다. ${r.name}의 표정이 일그러졌다.`:(r.bud?`졌다. ${J(r.name,'은/는')} 이긴 기념으로 떡볶이를 얻어먹고 갔다.`:'졌다. 집에서는 아직 서열이 안 바뀐다.');break;
     case 'date':bump(RI(6,12));lf(s,'happy',6);if(s.age>=19)s.money-=50;txt=pick(['한강에서 치킨을 먹었다.','경기 없는 날, 영화를 봤다.','같이 걷기만 해도 좋았다.']);break;
     case 'propose':if(r.bond>=65&&chance(.4+r.bond/200)){r.type='배우자';bump(10);lf(s,'happy',18);log(s,`${J(r.name,'과/와')} 결혼했다.`,'major');txt=`${J(r.name,'이/가')} 눈물을 흘리며 고개를 끄덕였다.`;}else{bump(-15);lf(s,'happy',-8);lf(s,'mental',-5);txt='"조금만 더 생각해 볼게." 반지가 주머니로 돌아갔다.';}break;
     case 'breakup':r.dead=true;r.gone=true;s.relations=s.relations.filter(x=>x!==r);lf(s,'happy',-6);txt=`${J(r.name,'과/와')} 헤어졌다.`;break;
     case 'baby':if(chance(.55)){const c=addRel(s,'자녀',koName(),90,0);lf(s,'happy',15);log(s,`첫울음. ${J(c.name,'이/가')} 태어났다.`,'major');txt=`${J(c.name,'이/가')} 태어났다. 손가락이 놀랍도록 길다.`;}else{bump(4);txt='아직 소식이 없다.';}break;
     case 'night':{bump(RI(7,11));const k=pick(['shoot','handle','defense','iq','pass']);tr(s,k,1.2);lf(s,'health',-2);txt=`${J(r.name,'과/와')} 텅 빈 체육관에 남았다. ${ATTR_KO[k]} 감각이 좋아졌다.`;break;}
-    case 'dinner':{const amt=s.age>=19?(s.contract?.salary>20000?200:50):0;s.money-=amt;bump(12);lf(s,'happy',3);txt=`${r.name}에게 고기를 샀다. 코트 밖 이야기를 처음 나눴다.`;break;}
+    case 'dinner':{const amt=s.age>=19?(s.contract?.salary>20000?200:50):0;s.money-=amt;bump(12);lf(s,'happy',3);txt=r.bud?`탄천 떡볶이집에서 ${J(r.name,'과/와')} 3인분을 해치웠다. ${pick(['사장님이 순대를 서비스로 주셨다.','옛날 얘기만 두 시간 했다.','계산은 가위바위보로 정했다. 졌다.'])}`:r.type==='전우'?`${J(r.name,'과/와')} 소주 한잔. 훈련소 얘기만 나오면 둘 다 웃음이 터진다.`:`${r.name}에게 고기를 샀다. 코트 밖 이야기를 처음 나눴다.`;break;}
     case 'advice':{const p=allPlayers().find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
     case 'walk':bump(8);lf(s,'happy',5);lf(s,'health',3);txt=`${J(r.name,'과/와')} 공원을 한 바퀴 돌았다. 꼬리가 멈추지 않는다.`;break;
     case 'play':bump(10);lf(s,'happy',7);txt='바닥에 같이 누워 한참을 웃었다.';break;
@@ -2875,7 +2943,7 @@ function peopleHTML(s){
   const canFind=!partner(s)&&s.age>=16&&!s.flags.relDone.find;
   return `<div class="people">
     ${alive.map(r=>{const acts=(REL_ACTS[r.type]||[{id:'talk',t:'대화하기'}]).filter(a=>!a.min||s.age>=a.min);
-      return `<div class="person"><div class="who"><b>${esc(r.name)}</b><span>${r.type} · ${r.age}세</span><div class="bar"><i style="width:${r.bond}%;background:${r.bond>=60?'var(--good)':r.bond>=30?'var(--led)':'var(--bad)'}"></i></div></div>
+      return `<div class="person"><div class="who"><b>${esc(r.name)}</b><span>${esc(r.bud||r.type)} · ${r.age}세</span><div class="bar"><i style="width:${r.bond}%;background:${r.bond>=60?'var(--good)':r.bond>=30?'var(--led)':'var(--bad)'}"></i></div></div>
       <div class="acts-mini">${acts.map(a=>`<button class="btn" data-rel="${r.id}" data-ra="${a.id}" ${s.flags.relDone[r.id+':'+a.id]||UI.modalOpen?'disabled':''}>${a.t}</button>`).join('')}</div></div>`;}).join('')}
     ${dead.map(r=>`<div class="person gone"><div class="who"><b>故 ${esc(r.name)}</b><span>${r.type}</span></div></div>`).join('')}
   </div>
