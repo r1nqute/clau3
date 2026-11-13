@@ -358,6 +358,12 @@ input:focus{outline:none;border-color:var(--leather)}
 .news-meta .num{font-size:15px}
 .ntag{font-weight:900;color:var(--info);letter-spacing:.04em}
 .nbig{background:#b3121b;color:#fff;border-radius:4px;padding:0 6px;font-weight:900}
+/* lab */
+.lab-card{background:var(--panel-2);border-radius:10px;padding:12px;border:1px solid transparent}
+.lab-card.done{border-color:var(--good)}
+.lab-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lab-h b{font-size:15px}.lab-h .num{font-size:22px;color:var(--good)}
+.lab-card small{display:block;color:var(--muted);font-size:12.5px;word-break:keep-all}
 /* settings */
 .ghost.icon{padding:6px 8px;display:inline-grid;place-items:center}
 .set-list{display:flex;flex-direction:column;gap:6px}
@@ -850,7 +856,7 @@ function at(s,k,d){s.attr[k]=clamp(s.attr[k]+d,1,maxFor(s,k));}
 function tr(s,k,base){
   const c=cap(s,k),v=s.attr[k];
   const room=clamp((c-v)/20,0.05,1.3);
-  const am=s.age<13?.85:s.age<23?1.15:s.age<28?.85:s.age<32?.5:.3;
+  const ba=bodyAge(s),am=ba<13?.85:ba<23?1.15:ba<28?.85:ba<32?.5:.3;
   let g=base*room*am*R(.75,1.25);
   if(has(s,'grinder'))g*=1.3;
   if(has(s,'lazy'))g*=.75;
@@ -1298,7 +1304,7 @@ function simSeason(s){
   const lg=s.team.league,L=LG[lg],lv=L.level,o=ovr(s),rel=o-lv,A=s.attr;
   let gpFrac=1,injury=null;
   if(s.injury){gpFrac-=s.injury.carry;injury={name:s.injury.name+' (재활)',sev:0};s.injury=null;}
-  let p=.06+(s.life.health<45?.08:0)+(s.life.health<25?.12:0)+(has(s,'glass')?.09:0)-(has(s,'iron')?.04:0)+(s.age>=31?.04:0)+(s.age>=34?.05:0)-(s.flags.loadMgmt?.04:0)-(s.assets.some(a=>a.eff==='medical')?.04:0);
+  let p=.06+(s.life.health<45?.08:0)+(s.life.health<25?.12:0)+(has(s,'glass')?.09:0)-(has(s,'iron')?.04:0)+(bodyAge(s)>=31?.04:0)+(bodyAge(s)>=34?.05:0)-(s.flags.loadMgmt?.04:0)-(s.assets.some(a=>a.eff==='medical')?.04:0);
   if(gpFrac>.3&&chance(p)){
     const r=rnd();let inj;
     if(r<.55)inj={name:pick(['발목 염좌','손가락 탈구','허벅지 타박상','허리 근육 경련']),frac:R(.05,.15),sev:1};
@@ -2128,6 +2134,72 @@ function shoeYear(s){
   return sale;
 }
 
+/* ================= lab: anti-aging & time-reversal devices ================= */
+const bodyAge=s=>Math.max(s.age<19?s.age:18,s.age-(s.youth||0));
+const LAB={
+  anti:{n:'노화방지 장치',cost:3000000,desc:'가동하는 동안 신체 나이가 멈춘다. 은퇴 걱정 없는 몸.',upkeep:100000},
+  rewind:{n:'시간 역행 장치',cost:15000000,desc:'가동할 때마다 신체 나이가 5년 젊어진다. 1년에 한 번, 1회 100억.',use:1000000,need:'anti'},
+};
+function lab(s){if(!s.lab)s.lab={anti:{prog:0,spent:0,done:false,on:false},rewind:{prog:0,spent:0,done:false,usedYr:0}};return s.lab;}
+function labFund(id,amt){
+  const s=S,L=lab(s),P=L[id],D=LAB[id];if(UI.modalOpen||P.done||s.age<19)return;
+  if(D.need&&!L[D.need].done){toast(D.n,`${LAB[D.need].n}부터 완성해야 한다.`,'');return;}
+  amt=Math.min(amt,s.money);if(amt<=0){toast(D.n,'연구비가 부족하다.','');return;}
+  s.money-=amt;P.spent+=amt;P.fundedYr=s.year;
+  const eff=R(.7,1.3)*(1+s.life.smarts/200)*(s.flags.mba?1.1:1);
+  let gain=amt/D.cost*100*eff,note='';
+  if(chance(.12)){gain+=R(5,12);note=' 연구진이 예상 못 한 돌파구를 찾았다!';}
+  else if(chance(.1)){gain*=.3;note=' 실험이 실패해 상당 부분을 날렸다.';}
+  P.prog=Math.min(100,P.prog+gain);
+  log(s,`${D.n} 연구비 ${fmtMoney(amt)} 투입 · 진척도 ${Math.floor(P.prog)}%.${note}`);
+  if(P.prog>=100){P.done=true;
+    lf(s,'fame',20);s.legacy+=15;log(s,`세계 최초 ${D.n} 개발 성공!`,'major');
+    addNews(s,s.year,'과학',`세계 최초 ${D.n} 개발, 주인공은 농구선수 ${s.name}`,id==='anti'?'은퇴한 운동선수가 사재를 털어 만든 연구소가 노화를 멈추는 데 성공했다. 학계는 충격에 빠졌다.':'시간을 거슬러 신체를 되돌리는 장치가 공개됐다. 첫 피험자는 개발자 본인이다.',true);
+    queue=[];save();showModal({cls:'news',kicker:'속보 · 과학',title:`${D.n} 개발 성공`,body:`<p>${id==='anti'?'연구소 불이 꺼지지 않은 지 몇 년. 마침내 세포 시계를 멈추는 데 성공했다. 연구 탭에서 장치를 켤 수 있다.':'모니터 속 세포가 거꾸로 분열하기 시작했다. 시간 역행 장치가 완성됐다.'}</p>`,choices:[{label:'계속',primary:true,act:()=>null}]});return;}
+  toast(D.n,`진척도 ${Math.floor(P.prog)}%.${note}`,'');save();render();
+}
+function antiToggle(){const s=S,P=lab(s).anti;if(!P.done||UI.modalOpen)return;P.on=!P.on;log(s,`노화방지 장치를 ${P.on?'켰다':'껐다'}.`);toast('노화방지 장치',P.on?'가동 시작. 매년 유지비 10억 원.':'정지. 몸이 다시 나이를 먹는다.','');save();render();}
+function rewindUse(){
+  const s=S,P=lab(s).rewind,D=LAB.rewind;if(!P.done||UI.modalOpen)return;
+  if(P.usedYr===s.year){toast(D.n,'장치 냉각 중. 1년에 한 번만 가동할 수 있다.','');return;}
+  if(bodyAge(s)<=20){toast(D.n,'더 젊어질 수 없다. (신체 나이 20세 하한)','');return;}
+  if(s.money<D.use){toast(D.n,`가동 비용 ${fmtMoney(D.use)}이 부족하다.`,'');return;}
+  const before=snap(s);
+  s.money-=D.use;P.usedYr=s.year;const back=Math.min(5,bodyAge(s)-20);s.youth=(s.youth||0)+back;
+  lf(s,'health',30);lf(s,'happy',8);at(s,'athletic',back*1.2);at(s,'stamina',back*1.2);
+  let side='';
+  if(chance(.1)){lf(s,'mental',-15);const k=pick(ATTRS);at(s,k,-4);side=` 부작용: 한동안 ${ATTR_KO[k]} 감각이 돌아오지 않는다.`;}
+  else if(chance(.03)){lf(s,'smarts',-10);side=' 부작용: 최근 몇 년의 기억이 흐릿하다.';}
+  log(s,`시간 역행 장치 가동 · 신체 나이 ${bodyAge(s)+back}세 → ${bodyAge(s)}세.${side}`,'major');
+  if(!s.flags.rewindNews){s.flags.rewindNews=1;addNews(s,s.year,'과학',`${s.name}, 시간 역행 장치로 ${back}년 젊어져`,'거울 앞에 선 그는 한참을 웃었다고 한다.',true);}
+  queue=[];save();showModal({cls:'story',kicker:'시간 역행 장치',title:`신체 나이 ${bodyAge(s)}세`,body:`<div class="result">캡슐 문이 열리자 무릎 통증이 사라져 있었다. 거울 속 얼굴이 ${back}년 전으로 돌아갔다.${esc(side)}</div>${deltas(before,snap(s))}`,choices:[{label:'계속',primary:true,act:()=>null}]});
+}
+function labYear(s){
+  const L=s.lab;if(!L)return;
+  if(L.anti.done&&L.anti.on){
+    if(s.money>=LAB.anti.upkeep){s.money-=LAB.anti.upkeep;s.youth=(s.youth||0)+1;}
+    else{L.anti.on=false;log(s,'유지비가 부족해 노화방지 장치가 멈췄다.','bad');}
+  }
+  ['anti','rewind'].forEach(id=>{const P=L[id];if(!P.done&&P.prog>0&&P.fundedYr!==s.year-1&&chance(.3)){P.prog=Math.max(0,P.prog-3);log(s,`${LAB[id].n} 연구가 정체됐다. 연구비가 끊겨 연구원 일부가 떠났다. (${Math.floor(P.prog)}%)`,'bad');}});
+}
+function labHTML(s){
+  const L=lab(s),ba=bodyAge(s),adult=s.age>=19;
+  const bar=p=>`<div class="bar" style="height:10px;margin:6px 0"><i style="width:${p}%;background:linear-gradient(90deg,#45d391,#72b6ff)"></i></div>`;
+  const card=(id)=>{const D=LAB[id],P=L[id];const locked=D.need&&!L[D.need].done;
+    return `<div class="lab-card ${P.done?'done':''}"><div class="lab-h"><b>${D.n}</b><span class="num">${P.done?'완성':Math.floor(P.prog)+'%'}</span></div><small>${D.desc}</small>
+      ${P.done?'':bar(P.prog)}
+      ${P.done?(id==='anti'?`<div class="btn-row" style="margin-top:8px"><button class="btn ${P.on?'warn':'hot'}" id="labAnti">${P.on?'장치 끄기':'장치 켜기'}</button><span class="sb-note">${P.on?'가동 중 · 신체 나이 고정 · 매년 10억':'꺼짐'}</span></div>`
+        :`<div class="btn-row" style="margin-top:8px"><button class="btn hot" id="labRewind" ${P.usedYr===s.year||ba<=20?'disabled':''}>가동 (100억 · 5년 젊어짐)</button><span class="sb-note">${P.usedYr===s.year?'올해 가동 완료 · 냉각 중':ba<=20?'신체 나이 하한 도달':'부작용 확률 약 13%'}</span></div>`)
+        :locked?`<p class="sb-note">${LAB[D.need].n}을 먼저 완성해야 연구를 시작할 수 있다.</p>`
+        :`<p class="sb-note" style="margin:0 0 6px">총 연구비 약 ${fmtMoney(D.cost)} · 지금까지 ${fmtMoney(P.spent)} · 학업이 높을수록 효율 상승 · 투자를 끊으면 연구가 정체된다</p>
+          <div class="btn-row" style="margin:0">${[100000,500000,2000000].map(v=>`<button class="btn" data-lab="${id}" data-amt="${v}" ${!adult||s.money<v||UI.modalOpen?'disabled':''}>+${fmtMoney(v).replace(' 원','')}</button>`).join('')}<button class="btn" data-lab="${id}" data-amt="${Math.max(0,s.money)}" ${!adult||s.money<=0||UI.modalOpen?'disabled':''}>현금 전부</button></div>`}
+    </div>`;};
+  return `<div class="kv" style="margin-bottom:10px"><div><span>실제 나이</span><b class="num">${s.age}세</b></div><div><span>신체 나이</span><b class="num" style="color:${ba<s.age?'var(--good)':'var(--chalk)'}">${ba}세</b></div></div>
+    ${adult?'':'<p class="sb-note">19세부터 연구소를 운영할 수 있다.</p>'}
+    <div class="own-list">${card('anti')}${card('rewind')}</div>
+    <p class="sb-note" style="margin-top:8px">신체 나이가 운동능력 감소, 부상, 건강, FA 계약 기간, 수명을 결정한다. 은퇴했어도 신체 나이가 38세 이하면 커리어 탭에서 현역 복귀에 도전할 수 있다.</p>`;
+}
+
 /* ================= transitions ================= */
 function schoolChoiceSpec(s,stage){
   const L=LG[stage],o=ovr(s);
@@ -2226,6 +2298,7 @@ function sign(s,c){
   s.contract={team:c.team,salary:Math.round(c.salary/100)*100,years:c.years,practice:!!c.practice,military:!!c.military};
   s.team=c.team;s.stage='pro';joinTeam(s,c.team);
   if(ABROAD[c.team.league]&&!st(s).abroad)st(s).abroad={ch:0,lg:c.team.league};
+  if(s.flags.comeback){s.flags.comeback=false;lf(s,'fame',10);log(s,`실제 나이 ${s.age}세, 신체 나이 ${bodyAge(s)}세로 ${J(c.team.name,'에서')} 현역 복귀!`.replace('에서에서','에서'),'major');addNews(s,s.year,'리그',`은퇴했던 ${s.name}, ${s.age}세에 현역 복귀`,`시간 역행 장치로 신체 나이를 ${bodyAge(s)}세까지 되돌린 ${J(s.name,'이/가')} ${c.team.name} 유니폼을 입는다.`,true);}
 }
 function genOffers(s){
   const o=ovr(s),out=[];
@@ -2236,10 +2309,10 @@ function genOffers(s){
     else if(lg==='gleague'){if(o>=63&&rel<6)n=1;}
     else if(lg==='bleague'||lg==='wleague'){if(rel>=-6)n=1;}
     else if(rel>=-13)n=rel>=-4?3:2;
-    for(let i=0;i<n;i++){if(s.age>=34&&chance((s.age-33)*.13))continue;out.push(makeOffer(s,lg));}
+    for(let i=0;i<n;i++){const ba=bodyAge(s);if(ba>=34&&chance((ba-33)*.13))continue;out.push(makeOffer(s,lg));}
   }
   const cur=s.contract?.team&&!s.contract.military?s.contract.team:(s.flags.lastTeam||null);
-  if(cur){const rel=o-LG[cur.league].level;if(rel>=-12&&!(s.age>=35&&chance(.3)))out.unshift(makeOffer(s,cur.league,cur,true));}
+  if(cur){const rel=o-LG[cur.league].level;if(rel>=-12&&!(bodyAge(s)>=35&&chance(.3)))out.unshift(makeOffer(s,cur.league,cur,true));}
   const seen=new Set();
   return out.filter(x=>!seen.has(x.team.name)&&seen.add(x.team.name)).slice(0,5);
 }
@@ -2247,7 +2320,7 @@ function makeOffer(s,lg,team,resign){
   const L=LG[lg];
   team=team?{...team,str:Math.round(clamp(team.str+R(-3,3),L.level-10,L.level+10))}:makeTeam(lg,pick(TEAMS[lg]),s.year,s.gender);
   const sal=salaryFor(s,lg)*R(.85,1.12)*(resign?1.05:1);
-  const years=s.age>=33?RI(1,2):s.age>=29?RI(1,3):RI(2,5);
+  const ba=bodyAge(s),years=ba>=33?RI(1,2):ba>=29?RI(1,3):RI(2,5);
   return {team,salary:Math.round(sal/100)*100,years,resign:!!resign};
 }
 function faSpec(s,why,offers){
@@ -2374,22 +2447,23 @@ function yearEnd(s,yr){
   nationalSpecs(s,yr).forEach(f=>enqueue(f));
   // age
   s.age++;s.year++;
+  try{labYear(s);}catch(e){console.error(e);}
   const prevH=s.height;
   s.height=+Math.max(s.height,s.adultHeight*gfrac(s.age)).toFixed(1);
   if(s.age<=19&&s.height-prevH>=4)log(s,`키가 ${(s.height-prevH).toFixed(1)}cm 컸다. 이제 ${s.height.toFixed(1)}cm.`,'good');
   // natural development
-  const a=s.age;
+  const a=s.age,ba=bodyAge(s);
   for(const k of ATTRS){
     const c=cap(s,k),v=s.attr[k];let d=0;
-    if(v<c){d=(c-v)*(a<13?.05:a<19?.07:a<23?.05:a<28?.022:0);if(has(s,'genius'))d*=1.3;if(atWC(s))d*=1.7;else if(s.flags.wc&&a<=24&&s.team&&(s.team.league==='nba'||s.team.league==='wnba'))d*=1.5;}
-    if(a>=30){const dec={athletic:1.6,stamina:1.3,inside:.6,rebound:.7,defense:.8,handle:.5,shoot:.2,pass:.1,iq:-.4}[k]*(1+(a-30)*.18);d-=dec*R(.6,1.3);}
+    if(v<c){d=(c-v)*(ba<13?.05:ba<19?.07:ba<23?.05:ba<28?.022:0);if(has(s,'genius'))d*=1.3;if(atWC(s))d*=1.7;else if(s.flags.wc&&a<=24&&s.team&&(s.team.league==='nba'||s.team.league==='wnba'))d*=1.5;}
+    if(ba>=30){const dec={athletic:1.6,stamina:1.3,inside:.6,rebound:.7,defense:.8,handle:.5,shoot:.2,pass:.1,iq:-.4}[k]*(1+(ba-30)*.18);d-=dec*R(.6,1.3);}
     if(s.stage==='army')d-=R(1,2.5);
     s.attr[k]=clamp(v+d*R(.7,1.25),1,maxFor(s,k));
   }
   // life drift
-  const maxH=clamp(100-Math.max(0,a-40)*.9,20,100);
-  s.life.health=clamp(s.life.health+(a<30?14:a<50?8:a<70?3:0),0,maxH);
-  if(a>=60)s.life.health=clamp(s.life.health-R(1,4)*(1+(a-60)/15),0,100);
+  const maxH=clamp(100-Math.max(0,ba-40)*.9,20,100);
+  s.life.health=clamp(s.life.health+(ba<30?14:ba<50?8:ba<70?3:0),0,maxH);
+  if(ba>=60)s.life.health=clamp(s.life.health-R(1,4)*(1+(ba-60)/15),0,100);
   s.life.happy+=(58-s.life.happy)*.15;
   s.life.mental+=(55-s.life.mental)*.1;
   s.life.fame*=isPlaying(s)?.93:.9;
@@ -2437,12 +2511,12 @@ function yearEnd(s,yr){
       return {kicker:`${s.year} 명예의 전당`,title:'명예의 전당 헌액',body:`<p>무대 위, 내 이름이 새겨진 동판이 걸렸다. 객석 맨 앞줄에 ${s.relations.some(r=>r.type==='배우자'&&!r.dead)?'가족들이':'옛 동료들이'} 앉아 있었다.</p>`,choices:[{label:'소감을 말한다',primary:true,act:()=>'"농구공 하나로 여기까지 왔습니다."'}]};});
   }
   // death
-  if(a>=45){
-    let p=.0015*Math.exp((a-45)/8.5);
+  if(ba>=45||a>=150){
+    let p=.0015*Math.exp((ba-45)/8.5);
     if(s.life.health<25)p*=3;if(s.life.health<10)p*=3;
-    if(a>=104||chance(p))enqueue(()=>deathSpec(s));
+    if(ba>=104||a>=150||chance(p))enqueue(()=>deathSpec(s));
   }
-  if(s.life.health<=0&&a<45&&chance(.3))enqueue(()=>deathSpec(s));
+  if(s.life.health<=0&&ba<45&&chance(.3))enqueue(()=>deathSpec(s));
 }
 function transitions(s){
   const a=s.age;
@@ -3147,8 +3221,8 @@ function financeYear(s){
   const pets=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length;if(pets){s.money-=pets*200;up+=pets*200;}
   if(rent||biz||up||inv)log(s,`자산 정산 · 임대 ${sgn(rent)} · 사업 ${sgn(biz)} · 투자 ${sgn(inv)} · 유지비 -${fmtMoney(up)}`,(rent+biz+inv-up)>=0?'good':'bad');
 }
-function cashflow(s){let inc=0,up=0;s.assets.forEach(x=>{inc+=x.income||0;if(x.biz){const b=x.biz;inc+=Math.round(b.base*(x.level||1)*(1+b.fame*s.life.fame)*(b.lo+b.hi)/2);}up+=x.upkeep||0;});up+=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length*200;return {inc,up};}
-const MTABS=[['own','내 자산'],['fin','투자'],['estate','부동산'],['biz','사업'],['life','라이프'],['social','가족 · 사회'],['hair','헤어숍']];
+function cashflow(s){let inc=0,up=0;s.assets.forEach(x=>{inc+=x.income||0;if(x.biz){const b=x.biz;inc+=Math.round(b.base*(x.level||1)*(1+b.fame*s.life.fame)*(b.lo+b.hi)/2);}up+=x.upkeep||0;});up+=s.relations.filter(r=>r.type==='반려견'&&!r.dead).length*200;if(s.lab&&s.lab.anti.done&&s.lab.anti.on)up+=LAB.anti.upkeep;return {inc,up};}
+const MTABS=[['own','내 자산'],['fin','투자'],['estate','부동산'],['biz','사업'],['life','라이프'],['social','가족 · 사회'],['lab','연구소'],['hair','헤어숍']];
 function itemCard(s,it){const why=itemReq(s,it);
   return `<button class="act" data-item="${it.id}" ${why||UI.modalOpen?'disabled':''}><strong>${it.name}</strong><p>${it.desc}</p>${it.tags?`<div class="tags">${it.tags.map(t=>`<i>${t}</i>`).join('')}</div>`:''}<span class="cost">${fmtMoney(itemPrice(s,it))}${it.ap?' · 행동 1회':''}${why?` · ${why}`:''}</span></button>`;}
 function ownedHTML(s){
@@ -3217,9 +3291,9 @@ function render(){
         <div class="card">
           <div class="card-top">
             <span class="pos-badge">${s.pos}</span>
-            ${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar card-av'})}
+            ${avatarSVG(s.look,{age:bodyAge(s),gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar card-av'})}
             <div class="card-name">${esc(s.name)}</div>
-            <div class="card-sub">${s.sig?.nick?`"${esc(s.sig.nick)}" · `:''}${s.age}세 · ${s.height.toFixed(1)}cm · ${POS[s.pos].ko}</div>
+             <div class="card-sub">${s.sig?.nick?`"${esc(s.sig.nick)}" · `:''}${s.age}세${bodyAge(s)<s.age?` (신체 ${bodyAge(s)}세)`:''} · ${s.height.toFixed(1)}cm · ${POS[s.pos].ko}</div>
           </div>
           <div class="card-body">
             <div class="ovr-row">
@@ -3319,6 +3393,7 @@ function careerHTML(s){
     btns.push(`<button class="btn warn" id="btnRetire">${UI.confirmRetire?'정말 은퇴할까? 한 번 더 누르면 은퇴':'은퇴 선언'}</button>`);
     if(s.gender==='m'&&!s.flags.served&&!s.flags.exempt&&s.age>=21)btns.push(`<button class="btn" id="btnEnlist" ${s.flags.enlistNext?'disabled':''}>${s.flags.enlistNext?'시즌 후 입대 예정':'이번 시즌 후 입대 신청'}</button>`);
   }
+  if(s.stage==='retired'&&bodyAge(s)<=38)btns.push(`<button class="btn hot" id="btnComeback" ${UI.modalOpen?'disabled':''}>현역 복귀 도전 (신체 ${bodyAge(s)}세)</button>`);
   if(['elem','middle','high','college'].includes(s.stage)){
     btns.push(`<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">포지션 변경 <select id="posSel" style="background:#0b1527;color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:6px">${Object.keys(POS).map(p=>`<option value="${p}" ${p===s.pos?'selected':''}>${p} ${POS[p].ko}</option>`).join('')}</select></label>`);
   }
@@ -3393,9 +3468,10 @@ function moneyHTML(s){
   let body;
   if(t==='own')body=ownedHTML(s);
   else if(t==='fin')body=finHTML(s);
+  else if(t==='lab')body=labHTML(s);
   else if(t==='hair')body=`<p class="sb-note" style="margin:0 0 8px">변경할 때마다 30만 원</p><div class="look-wrap shop-look"><div class="look-prev">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor(s.team?.name),number:s.team?s.number:'',cls:'avatar big-av'})}</div>${lookEditorHTML(s.look||randomLook(s.gender),s.gender,'hs')}</div>`;
   else body=`<div class="acts">${ITEMS.filter(i=>i.cat===t).map(i=>itemCard(s,i)).join('')}</div>`;
-  const note=s.age<19&&!['hair','life'].includes(t)?`<p class="sb-note" style="margin:0 0 8px">19세부터 직접 돈을 관리한다. 지금은 라이프 탭의 과외·레슨·반려견과 헤어숍만 가족 지원 예산으로 쓸 수 있다.</p>`:'';
+  const note=s.age<19&&!['hair','life','lab'].includes(t)?`<p class="sb-note" style="margin:0 0 8px">19세부터 직접 돈을 관리한다. 지금은 라이프 탭의 과외·레슨·반려견과 헤어숍만 가족 지원 예산으로 쓸 수 있다.</p>`:'';
   return head+note+body;
 }
 function bindGame(){
@@ -3425,6 +3501,9 @@ function bindGame(){
   document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
   document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
   document.querySelectorAll('[data-expand]').forEach(b=>b.onclick=()=>expandAsset(+b.dataset.expand));
+  document.querySelectorAll('[data-lab]').forEach(b=>b.onclick=()=>labFund(b.dataset.lab,+b.dataset.amt));
+  const la=$('#labAnti');if(la)la.onclick=antiToggle;const lr=$('#labRewind');if(lr)lr.onclick=rewindUse;
+  const cb=$('#btnComeback');if(cb)cb.onclick=()=>{if(UI.modalOpen)return;queue=[];S.flags.comeback=true;showModal(faSpec(S,`신체 나이 ${bodyAge(S)}세. 현역 복귀를 선언했다!`));};
   document.querySelectorAll('[data-finsell]').forEach(b=>b.onclick=()=>finSell(b.dataset.finsell));
   document.querySelectorAll('[data-fink]').forEach(b=>b.onclick=()=>{const f=finState();f.k=b.dataset.fink;if(b.dataset.finmode2)f.mode='sell';f.amt=0;if(UI.mtab!=='fin')UI.mtab='fin';render();});
   document.querySelectorAll('[data-finmode]').forEach(b=>b.onclick=()=>{const f=finState();f.mode=b.dataset.finmode;f.amt=0;render();});
