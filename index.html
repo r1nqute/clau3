@@ -800,6 +800,7 @@ function cap(s,k){
   if(k==='stamina'&&has(s,'iron'))c+=8;
   if(k==='iq'&&has(s,'family'))c+=5;
   if(s.strengths&&s.strengths.includes(k))c+=5;
+  if(s.skills)s.skills.forEach(m=>{if(MOVES[m]&&MOVES[m].k===k)c+=4;});
   return clamp(Math.round(c),25,99);
 }
 function ovr(s){
@@ -893,8 +894,8 @@ function moveAway(s,city){if(city&&s.home&&city!==s.home){lf(s,'happy',-3);paren
 function schoolPickChoices(s,stage,list,lg,reqs,onPick){
   const L=LG[lg],o=ovr(s),home=s.home;
   const rows=list.map(([n,c,t])=>({n,c,t,str:schoolStr(L,t)})).sort((a,b)=>(b.c===home)-(a.c===home)||b.t-a.t||b.str-a.str);
-  return rows.map(r=>{const req=reqs(r.t);const ok=req.ok;
-    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`입학 테스트 통과 · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
+  return rows.map(r=>{const req=reqs(r.t,r.n);const ok=req.ok;
+    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`서류 통과 · 실기 시험 후 입학 · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
       disabled:!ok,reason:`${r.c} · ${req.why}`,act:()=>onPick({name:r.n,league:lg,str:r.str,city:ABROAD[lg]?null:r.c})};});
 }
 function newGame(o){
@@ -925,6 +926,7 @@ const ACTS=[
   {id:'shoot',name:'슈팅 훈련',sub:'캐치앤슛, 풀업, 자유투 500개',tags:['슈팅','IQ'],play:1,
     run:s=>{tr(s,'shoot',3.2);tr(s,'iq',.6);lf(s,'health',-2);return pick(['손끝 감각이 조금 더 날카로워졌다.','림이 넓어 보이기 시작했다.','마지막 50개는 눈을 감고도 들어갔다.']);}},
   {id:'drill',name:'슈팅 챌린지',sub:'타이밍 미니게임 5구. 잘 넣을수록 슈팅이 크게 오른다',tags:['미니게임','슈팅'],play:1,mini:1,minAge:9},
+  {id:'legend',name:'레전드 클래스',sub:'은퇴 레전드에게 1대1 레슨 · 시그니처 무브 전수',tags:['레전드','시그니처 무브'],play:1,legend:1,minAge:12},
   {id:'handle',name:'볼핸들링 · 패스',sub:'콘 드리블, 투볼, 원핸드 패스',tags:['볼핸들링','패스'],play:1,
     run:s=>{tr(s,'handle',2.8);tr(s,'pass',2);lf(s,'health',-2);return '공이 손에 붙는 느낌이다.';}},
   {id:'weight',name:'웨이트 트레이닝',sub:'스쿼트, 플라이오메트릭, 코어',tags:['운동능력','골밑','체력'],play:1,minAge:13,
@@ -1334,7 +1336,7 @@ function clutchSpec(s,ctx){
     {t:'풀업 점퍼',sub:'수비수를 앞에 두고 직접 해결한다',p:.32+(A.shoot-lv)*.013+cb,kind:'shot'},
     {t:'림을 향해 돌파',sub:'파울을 얻거나 레이업으로 끝낸다',p:.34+((A.inside+A.handle+A.athletic)/3-lv)*.012+cb,kind:'drive'},
     {t:'오픈 동료에게 킥아웃',sub:'더블팀을 끌어내고 빼 준다',p:.36+((A.pass+A.iq)/2-lv)*.01+cb*.5,kind:'pass'},
-  ].map(o=>({...o,p:clamp(o.p,.08,.88)}));
+  ].map(o=>({...o,p:clamp(o.p+moveBonus(s,o.kind),.08,.9)}));
   const best=opts.reduce((a,b)=>b.p>a.p?b:a);
   return {kicker:ctx.kicker||'CLUTCH · 4Q 0:04',title:ctx.title,body:`<p>${ctx.body}</p>`,auto:()=>chance(best.p)?ctx.win(s,best):ctx.lose(s,best),
     choices:opts.map(o=>({label:o.t,sub:o.sub,tag:`${Math.round(o.p*100)}%`,act:()=>({meter:{kicker:ctx.kicker||'CLUTCH · 4Q 0:04',title:o.t,body:ctx.meterBody||'',p:o.p,button:o.kind==='pass'?'패스!':'슛!',speed:1.25,
@@ -1376,7 +1378,7 @@ function bmOffense(s,M){
     {k:'kick',t:'동료 찬스 만들기',sub:'수비를 끌어당기고 패스',p:.45+((A.pass+A.iq)/2-lv)*.01,pts:2},
   ];
   if(['PF','C'].includes(s.pos)||hRel>2)o.splice(2,0,{k:'post',t:'포스트업',sub:'등지고 밀고 들어간다',p:.44+(A.inside-lv)*.012+hRel*.004+cb,pts:2});
-  return o.map(x=>({...x,p:clamp(x.p,.08,.9)}));
+  return o.map(x=>({...x,p:clamp(x.p+moveBonus(s,x.k),.08,.92)}));
 }
 function bmDefense(s,M){
   const A=s.attr,oo=M.oppO,hRel=s.height-posBase(s)*gfrac(s.age);
@@ -1384,7 +1386,7 @@ function bmDefense(s,M){
     {k:'deny',t:M.star?`${M.star.name} 밀착 마크`:'에이스 밀착 마크',sub:'공을 못 잡게 한다',p:.42+(A.defense-oo)*.012},
     {k:'steal',t:'스틸 노리기',sub:'성공하면 속공 2점, 실패하면 오픈 3점',p:.3+((A.defense+A.athletic)/2-oo)*.01},
     {k:'rim',t:'골밑 지키기',sub:'돌파를 막고 리바운드',p:.45+((A.rebound+A.defense)/2-oo)*.01+hRel*.005},
-  ].map(x=>({...x,p:clamp(x.p,.1,.88)}));
+  ].map(x=>({...x,p:clamp(x.p+moveBonus(s,x.k),.1,.9)}));
 }
 function bmApplyOff(s,M,o,ok,q){
   if(ok){let pts=o.pts;if(o.k==='kick'&&chance(.4))pts=3;if(o.k==='drive'&&q==='perfect')pts=3;
@@ -1748,22 +1750,157 @@ function newsHTML(s){
     :'<div class="empty">아직 뉴스가 없다. 첫 시즌이 끝나면 이적 소식과 리그 결과가 들어온다.</div>';
 }
 
-/* ================= transitions ================= */
-// 월드클래스 3교 입학 기준: 실력 + 재능을 모두 본다. 장안중 출신은 고교 기준이 조금 낮다.
-function wcReq(s,stage){
-  const o=ovr(s),needO=stage==='middle'?37:(s.flags.wc?50:54),needP=70;
-  const ok=o>=needO&&s.pot>=needP;
-  const miss=[o<needO?`종합 ${needO} 필요 (현재 ${o})`:'',s.pot<needP?`잠재력 ★★★ 이상 필요 (현재 ${starStr(potStars(s.pot))})`:''].filter(Boolean).join(' · ');
-  return {ok,why:`입학 테스트 탈락 · ${miss}`};
+/* ================= legend lessons (retired players) ================= */
+// 시그니처 무브: 클러치/빅매치에서 해당 플레이 성공률 +, 관련 능력치 한계치 +4
+const MOVES={
+  dream:{n:'드림 셰이크',k:'inside',kind:['drive','post']},
+  fade:{n:'페이드어웨이',k:'shoot',kind:['shot','three']},
+  stepback:{n:'스텝백 3점',k:'shoot',kind:['shot','three']},
+  cross:{n:'킬러 크로스오버',k:'handle',kind:['drive']},
+  nolook:{n:'노룩 패스',k:'pass',kind:['pass','kick']},
+  bank:{n:'교과서 뱅크슛',k:'iq',kind:['post','drive']},
+  power:{n:'골밑 파워',k:'rebound',kind:['post','drive']},
+  air:{n:'에어 덩크',k:'athletic',kind:['drive']},
+  lock:{n:'락다운 수비',k:'defense',kind:['deny','rim','steal']},
+  killer:{n:'킬러 본능',k:'iq',kind:['shot','three','drive','post','pass','kick']},
+};
+// [이름, 국내/해외, 주특기 능력치 2개, 시그니처, 레슨비(만 원), 요구 조건]
+const LEGENDS={
+  m:[
+    ['문경은','KR',['shoot','iq'],'stepback',300,{age:12}],
+    ['김승현','KR',['pass','handle'],'nolook',300,{age:12}],
+    ['양동근','KR',['defense','iq'],'lock',300,{age:12}],
+    ['서장훈','KR',['inside','rebound'],'power',400,{age:13}],
+    ['김주성','KR',['defense','rebound'],'lock',400,{age:13}],
+    ['현주엽','KR',['inside','pass'],'power',400,{age:13}],
+    ['이상민','KR',['pass','iq'],'nolook',400,{age:13}],
+    ['허재','KR',['shoot','athletic'],'killer',600,{age:14,fame:15}],
+    ['레이 앨런','US',['shoot','stamina'],'stepback',5000,{age:16,ovr:60}],
+    ['스티브 내시','US',['pass','shoot'],'nolook',5000,{age:16,ovr:60}],
+    ['앨런 아이버슨','US',['handle','athletic'],'cross',6000,{age:16,ovr:62}],
+    ['빈스 카터','US',['athletic','inside'],'air',6000,{age:16,ovr:62}],
+    ['덕 노비츠키','US',['shoot','iq'],'fade',7000,{age:17,ovr:65}],
+    ['팀 던컨','US',['defense','inside'],'bank',8000,{age:17,ovr:66}],
+    ['하킴 올라주원','US',['inside','defense'],'dream',8000,{age:17,ovr:66}],
+    ['샤킬 오닐','US',['inside','rebound'],'power',8000,{age:17,ovr:66}],
+    ['마이클 조던','US',['shoot','defense'],'killer',100000,{age:19,ovr:80,fame:70}],
+  ],
+  f:[
+    ['변연하','KR',['shoot','iq'],'stepback',300,{age:12}],
+    ['이미선','KR',['pass','defense'],'nolook',300,{age:12}],
+    ['정선민','KR',['inside','shoot'],'fade',400,{age:13}],
+    ['박찬숙','KR',['inside','rebound'],'power',600,{age:14,fame:15}],
+    ['수 버드','US',['pass','handle'],'nolook',5000,{age:16,ovr:58}],
+    ['캔디스 파커','US',['inside','pass'],'bank',6000,{age:16,ovr:60}],
+    ['리사 레슬리','US',['inside','athletic'],'air',7000,{age:17,ovr:62}],
+    ['다이애나 타우라시','US',['shoot','handle'],'killer',8000,{age:17,ovr:64}],
+    ['마야 무어','US',['shoot','defense'],'fade',8000,{age:17,ovr:64}],
+  ],
+};
+const POS_SPEC={PG:[['pass','handle'],'nolook'],SG:[['shoot','handle'],'stepback'],SF:[['shoot','defense'],'fade'],PF:[['inside','rebound'],'power'],C:[['inside','defense'],'dream']};
+function legendList(s){
+  const base=LEGENDS[s.gender].map(([n,o,ks,mv,fee,req])=>({n,o,ks,mv,fee,req}));
+  // 게임 속에서 은퇴한 실제 스타들도 레슨을 연다
+  const w=s.world,extra=[];
+  if(w&&w.ret)allPlayers().forEach(p=>{if(!w.ret[p.n]||p.gen)return;const L=LG[p.lg];if(!L||p.o<L.level+8)return;
+    const [ks,mv]=POS_SPEC[p.pos]||POS_SPEC.SF;const intl=L.level>=76;
+    extra.push({n:p.n,o:intl?'US':'KR',ks,mv,fee:intl?Math.round(4000+(p.o-L.level)*600):Math.round(300+(p.o-L.level)*40),req:{age:intl?16:13,ovr:intl?60:0},fresh:true});});
+  return base.concat(extra);
 }
+function legendReq(s,L){
+  const r=L.req||{},o=ovr(s),miss=[];
+  if(s.age<(r.age||0))miss.push(`${r.age}세부터`);
+  if(r.ovr&&o<r.ovr)miss.push(`종합 ${r.ovr} 필요 (현재 ${o})`);
+  if(r.fame&&s.life.fame<r.fame)miss.push(`인기 ${r.fame} 필요`);
+  if(s.ap<=0)miss.push('올해 행동 없음');
+  if(wallet(s)<L.fee)miss.push('레슨비 부족');
+  return miss.join(' · ');
+}
+function legendSpec(s){
+  const list=legendList(s);s.lessons=s.lessons||{};s.skills=s.skills||[];
+  return {kicker:`레전드 클래스 · 행동 ${s.ap}/${s.apMax}`,title:'은퇴 레전드에게 배우기',
+    body:`<p>은퇴한 레전드들이 1대1 레슨을 연다. 레슨 1회에 행동 1번. 세 번째 레슨부터 그 레전드의 <b>시그니처 무브</b>를 전수받을 수 있다.</p><p class="sb-note">시그니처 무브: 관련 능력치 한계치 +4, 클러치·빅매치에서 해당 플레이 성공률 +7%p · 보유 ${s.skills.length?s.skills.map(k=>MOVES[k].n).join(', '):'없음'}</p>`,
+    choices:[...list.map(L=>{const why=legendReq(s,L),n=s.lessons[L.n]||0,mv=MOVES[L.mv],got=s.skills.includes(L.mv);
+      return {label:`${L.n}${L.fresh?' · 최근 은퇴':''}`,sub:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · 시그니처 「${mv.n}」${got?' (습득)':''} · 레슨 ${n}회 · ${fmtMoney(L.fee)}`,tag:L.o==='US'?'NBA':'KBL',
+        disabled:!!why,reason:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · ${why}`,act:()=>doLesson(s,L)};}),
+      {label:'닫기',act:()=>null}]};
+}
+const LESSON_LINES={
+  shoot:['"팔꿈치를 림에 맞춰. 손목은 쿠키 통에 손 넣듯이."','"연습은 경기처럼, 경기는 연습처럼."'],
+  pass:['"패스는 동료가 있는 곳이 아니라 갈 곳으로 주는 거야."','"눈은 반대쪽을 봐. 수비는 네 눈을 따라간다."'],
+  handle:['"공을 보지 마. 공이 너를 보게 해."','"한 번 더 낮게. 거기서 반 박자 멈춰."'],
+  inside:['"상대의 무게중심을 먼저 훔쳐."','"골밑은 힘이 아니라 위치 싸움이다."'],
+  defense:['"발이 먼저, 손은 마지막."','"수비는 재능이 아니라 의지야."'],
+  rebound:['"공보다 사람을 먼저 막아. 박스아웃."','"리바운드는 공이 떨어지기 전에 끝난다."'],
+  athletic:['"점프는 무릎이 아니라 엉덩이에서 나온다."','"착지가 좋아야 다음 점프가 있다."'],
+  iq:['"경기를 두 수 앞에서 봐."','"상대 감독이 무엇을 싫어하는지 알아내."'],
+  stamina:['"4쿼터에 다리가 남아 있는 사람이 이긴다."'],
+};
+function doLesson(s,L){
+  if(legendReq(s,L))return null;
+  if(!spend(s,L.fee))return null;
+  s.ap--;s.lessons=s.lessons||{};s.skills=s.skills||[];
+  const n=(s.lessons[L.n]||0)+1;s.lessons[L.n]=n;
+  const gain=L.o==='US'?1.25:1;
+  tr(s,L.ks[0],4.2*gain);tr(s,L.ks[1],2.8*gain);lf(s,'mental',3);lf(s,'health',-2);
+  if(L.o==='US')lf(s,'fame',2);
+  if(n===1){const r=addRel(s,'스승',L.n,60,L.fresh?45:55);r.bud=`${L.o==='US'?'NBA':'KBL'} 레전드 · 스승`;}
+  else{const r=s.relations.find(x=>x.name===L.n&&x.type==='스승');if(r)r.bond=clamp(r.bond+8,0,100);}
+  let txt=`${L.n}: ${pick(LESSON_LINES[L.ks[0]]||LESSON_LINES.iq)} (${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} 집중 레슨 ${n}회 차)`;
+  if(n>=3&&!s.skills.includes(L.mv)&&chance(n===3?.6:.85)){
+    s.skills.push(L.mv);lf(s,'fame',3);lf(s,'mental',5);
+    log(s,`${L.n}에게서 시그니처 무브 「${MOVES[L.mv].n}」를 전수받았다.`,'major');
+    txt+=` 레슨이 끝나고 ${J(L.n,'이/가')} 말했다. "이제 이건 네 거다." 시그니처 무브 「${MOVES[L.mv].n}」 습득!`;
+  }
+  log(s,`레전드 레슨 · ${L.n}: ${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} ${n}회 차`);
+  return {text:txt,nolog:true,next:s.ap>0?legendSpec(s):null};
+}
+const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?.07:0),0);
+
+/* ================= world-class entrance exam ================= */
+const WC_EXAM={
+  '장안중':{o:40,pot:80,extra:[['stamina',40,'줄넘기 2단 뛰기 200개 (체력 40)'],['smarts',50,'수학 경시 예선 통과 (학업 50)']],
+    exam:{n:'서재윤 앞 자유투 실기',tries:3,need:2,attr:'shoot',lv:30,btn:'자유투!',lines:['체육관이 조용하다. 1짱 서재윤이 팔짱을 끼고 본다.','두 번째 자유투. 서재윤이 일부러 기침을 했다.','마지막 한 개. 서재윤이 매점 빵을 걸었다.']}},
+  '서현고':{o:58,feeder:54,pot:80,extra:[['smarts',55,'모의고사 3등급 이상 (학업 55)'],['iq',55,'필기 전술 시험 (농구 IQ 55)']],
+    exam:{n:'슬리퍼 신고 3점 실기',tries:3,need:2,attr:'shoot',lv:46,btn:'슛!',lines:['서현고 전통: 입학 실기는 삼선 슬리퍼를 신고 본다. 박용준이 슬리퍼를 건넸다.','왼쪽 슬리퍼가 벗겨질 것 같다. 집중.','마지막 한 개. 박용준이 응원한다고 소리를 질러서 더 긴장된다.']}},
+  '대진고':{o:58,feeder:54,pot:80,extra:[['mental',60,'선주안 눈싸움 버티기 (멘탈 60)'],['athletic',55,'탄천 계단 왕복 50회 (운동능력 55)']],
+    exam:{n:'선주안 앞 덩크 실기',tries:3,need:2,attr:'athletic',lv:46,btn:'점프!',lines:['대진고 1짱 선주안이 림 옆에 섰다. "세 번 중에 두 번. 못 하면 집에 가."','선주안이 림을 툭툭 친다. 더 높아 보인다.','마지막 점프. 선주안이 헤어밴드를 고쳐 쓴다.']}},
+};
+function wcReq(s,stage,name){
+  const E=WC_EXAM[name];if(!E)return {ok:true};
+  const o=ovr(s),needO=s.flags.wc&&E.feeder?E.feeder:E.o,miss=[];
+  if(o<needO)miss.push(`종합 ${needO} (현재 ${o})`);
+  if(s.pot<E.pot)miss.push(`잠재력 ★★★★ (현재 ${starStr(potStars(s.pot))})`);
+  E.extra.forEach(([k,v,label])=>{const cur=ATTRS.includes(k)?Math.round(s.attr[k]):Math.round(s.life[k]);if(cur<v)miss.push(`${label.split(' (')[0]} 실패 · ${label.match(/\((.*)\)/)[1]} 필요 (현재 ${cur})`);});
+  if(s.flags.wcFail&&s.flags.wcFail[name])miss.unshift('실기 불합격 · 재응시 불가');
+  return {ok:!miss.length,why:`서류 탈락 · ${miss.join(' · ')}`};
+}
+function wcExamCfg(s,stage,team,st){
+  const E=WC_EXAM[team.name].exam;const p=clamp(.45+(s.attr[E.attr]-E.lv)*.012,.12,.85);
+  return {kicker:`${team.name} 입학 실기 · ${st.i+1}/${E.tries} · 성공 ${st.m}`,title:E.n,body:`${E.lines[st.i]} (${E.tries}번 중 ${E.need}번 성공해야 합격)`,p,zone:clamp(p*.42,.05,.3),speed:1.25+st.i*.15,button:E.btn,
+    done:(q,auto)=>{if(made(q,auto))st.m++;st.i++;
+      if(st.m>=E.need)return enterSchool(s,stage,team,`실기 ${st.i}번 만에 ${st.m}개 성공. 합격!`);
+      if(E.tries-st.i<E.need-st.m){s.flags.wcFail=s.flags.wcFail||{};s.flags.wcFail[team.name]=1;lf(s,'mental',-6);log(s,`${team.name} 입학 실기에서 떨어졌다.`,'bad');
+        return {text:`${E.tries}번 중 ${st.m}번 성공. 불합격. ${team.name==='장안중'?'서재윤이 위로의 빵을 건넸다.':team.name==='서현고'?'박용준이 슬리퍼를 돌려받으며 "내년엔 맨발로 해 봐"라고 했다.':'선주안이 말없이 어깨를 두드렸다.'} 다른 학교를 골라야 한다.`,nolog:true,next:schoolChoiceSpec(s,stage)};}
+      return {meter:wcExamCfg(s,stage,team,st)};}};
+}
+function enterSchool(s,stage,team,pre){
+  s.stage=stage;s.team=team;lf(s,'happy',3);
+  if(WC_SCHOOLS.has(team.name)){s.flags.wc=true;s.flags.wcPot=s.flags.wcPot||{};if(!s.flags.wcPot[team.name]){s.flags.wcPot[team.name]=1;s.pot=Math.min(99,s.pot+5);}lf(s,'fame',8);
+    addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 합격`,`입학 실기까지 통과한 ${J(s.name,'이/가')} ${team.name}에 들어간다. 해외 언론도 주목하고 있다.`,false);}
+  const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');
+  return {text:`${pre?pre+' ':''}${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};
+}
+
+/* ================= transitions ================= */
 function schoolChoiceSpec(s,stage){
   const L=LG[stage],o=ovr(s);
   const list=stage==='middle'?SCHOOLS.middle:SCHOOLS.high[s.gender];
   const kname={middle:'중학교',high:'고등학교'}[stage];
   return {kicker:`${s.age}세 · 진학 · 전국 ${list.length}개 학교`,title:`${kname} 농구부를 고르자`,
-    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 입학 테스트가 있다. ${stage==='middle'?'종합 37':'종합 54 (장안중 출신은 50)'} 이상, 잠재력 ★★★ 이상.</p>`:''}`,
-    choices:schoolPickChoices(s,stage,list,stage,t=>t===4?wcReq(s,stage):t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
-      team=>{s.stage=stage;s.team=team;lf(s,'happy',3);if(WC_SCHOOLS.has(team.name)){s.flags.wc=true;s.flags.wcPot=s.flags.wcPot||{};if(!s.flags.wcPot[team.name]){s.flags.wcPot[team.name]=1;s.pot=Math.min(99,s.pot+5);}lf(s,'fame',8);addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 입학`,`NBA 스카우트가 상주하는 ${team.name}에 ${J(s.name,'이/가')} 입학했다. 해외 언론도 주목하고 있다.`,false);}const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');return {text:`${team.name} 농구부 유니폼을 받았다.${mv}`,nolog:true};})};
+    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 서류(종합·잠재력 ★★★★·학교별 특기 조건)를 통과한 뒤 실기 시험을 본다. 실기에서 떨어지면 그 학교는 재응시할 수 없다. ${stage==='middle'?'장안중: 종합 40 · 체력 40 · 학업 50 → 서재윤 앞 자유투':'서현고: 종합 58 · 학업 55 · 농구 IQ 55 → 슬리퍼 3점 / 대진고: 종합 58 · 멘탈 60 · 운동능력 55 → 선주안 앞 덩크 (장안중 출신은 종합 54)'}</p>`:''}`,
+    choices:schoolPickChoices(s,stage,list,stage,(t,n)=>t===4?wcReq(s,stage,n):t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
+      team=>WC_SCHOOLS.has(team.name)?{meter:wcExamCfg(s,stage,team,{i:0,m:0})}:enterSchool(s,stage,team))};
 }
 function collegeChoiceSpec(s,lg){
   const L=LG[lg],o=ovr(s),list=SCHOOLS[lg][s.gender];
@@ -2493,7 +2630,7 @@ const PRESETS={
   care:{n:'몸 관리',slots:['rest','film','counsel','shoot','rest']},
 };
 function routineOf(s){if(!s.routine)s.routine={on:false,bmAuto:false,slots:PRESETS.grow.slots.slice()};return s.routine;}
-function actUsable(s,a){if(!a||!actAvailable(s,a))return false;if(a.yearly&&s.flags.yearly?.[a.id])return false;const c=a.cost?a.cost(s):0;return !c||wallet(s)>=c;}
+function actUsable(s,a){if(!a||a.legend||!actAvailable(s,a))return false;if(a.yearly&&s.flags.yearly?.[a.id])return false;const c=a.cost?a.cost(s):0;return !c||wallet(s)>=c;}
 function autoDrill(s){const p=clamp(.4+(s.attr.shoot-lvl(s))*.012,.15,.88);let m=0;for(let i=0;i<5;i++)if(chance(p))m++;tr(s,'shoot',.7*m);lf(s,'health',-1);return `5개 중 ${m}개 성공.`;}
 function performAct(s,a){
   const cost=a.cost?a.cost(s):0;if(cost&&!spend(s,cost))return null;
@@ -2521,6 +2658,7 @@ function doAct(id){
   const cost=a.cost?a.cost(s):0;
   const before=snap(s);
   if(cost&&!spend(s,cost))return;
+  if(a.legend){queue=[];showModal(legendSpec(s));return;}
   if(a.mini){s.ap--;log(s,`${a.name}에 나섰다.`);save();render();queue=[];showMeter(drillCfg(s,{i:0,m:0,p:0}),before);return;}
   const txt=a.run(s);
   s.ap--;s.flags.yearly=s.flags.yearly||{};if(a.yearly)s.flags.yearly[id]=1;
@@ -2539,6 +2677,7 @@ const REL_ACTS={
   '손주':[{id:'play',t:'놀아주기'}],
   '반려견':[{id:'walk',t:'산책하기'}],
   '전우':[{id:'talk',t:'연락하기'},{id:'dinner',t:'술 한잔'}],
+  '스승':[{id:'talk',t:'안부 연락'},{id:'advice',t:'조언 구하기'}],
   '친구':[{id:'talk',t:'연락하기'},{id:'oneone',t:'1대1 농구'},{id:'dinner',t:'떡볶이 사기'}],
   '라이벌':[{id:'duel',t:'1대1 대결'},{id:'talk',t:'연락하기'}],
   '팀 동료':[{id:'night',t:'야간 훈련 같이'},{id:'dinner',t:'밥 사기'},{id:'advice',t:'조언 구하기'}],
@@ -2557,7 +2696,8 @@ function relAct(rid,aid){
     case 'baby':if(chance(.55)){const c=addRel(s,'자녀',koName(),90,0);lf(s,'happy',15);log(s,`첫울음. ${J(c.name,'이/가')} 태어났다.`,'major');txt=`${J(c.name,'이/가')} 태어났다. 손가락이 놀랍도록 길다.`;}else{bump(4);txt='아직 소식이 없다.';}break;
     case 'night':{bump(RI(7,11));const k=pick(['shoot','handle','defense','iq','pass']);tr(s,k,1.2);lf(s,'health',-2);txt=`${J(r.name,'과/와')} 텅 빈 체육관에 남았다. ${ATTR_KO[k]} 감각이 좋아졌다.`;break;}
     case 'dinner':{const amt=s.age>=19?(s.contract?.salary>20000?200:50):0;s.money-=amt;bump(12);lf(s,'happy',3);txt=r.bud?`탄천 떡볶이집에서 ${J(r.name,'과/와')} 3인분을 해치웠다. ${pick(['사장님이 순대를 서비스로 주셨다.','옛날 얘기만 두 시간 했다.','계산은 가위바위보로 정했다. 졌다.'])}`:r.type==='전우'?`${J(r.name,'과/와')} 소주 한잔. 훈련소 얘기만 나오면 둘 다 웃음이 터진다.`:`${r.name}에게 고기를 샀다. 코트 밖 이야기를 처음 나눴다.`;break;}
-    case 'advice':{const p=allPlayers().find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
+    case 'advice':if(r.type==='스승'){bump(6);tr(s,'iq',1.5);lf(s,'mental',5);txt=`${r.name}: ${pick(['"슬럼프는 실력이 늘기 직전에 온다."','"관중은 결과를 보고, 동료는 과정을 본다."','"오늘 못 한 건 내일 하면 돼. 대신 오늘 할 건 오늘."','"은퇴하고 나서야 알았다. 매일 뛸 수 있다는 게 축복이었다는 걸."'])}`;break;}
+    {const p=allPlayers().find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
     case 'walk':bump(8);lf(s,'happy',5);lf(s,'health',3);txt=`${J(r.name,'과/와')} 공원을 한 바퀴 돌았다. 꼬리가 멈추지 않는다.`;break;
     case 'play':bump(10);lf(s,'happy',7);txt='바닥에 같이 누워 한참을 웃었다.';break;
     case 'teach':bump(8);lf(s,'happy',5);txt=r.age<5?'공이 자기 몸보다 크다. 그래도 던지려고 한다.':'레이업 스텝을 알려줬다. 자세가 제법이다.';break;
@@ -2807,7 +2947,7 @@ function render(){
                 ${s.flags.nat?'<span style="color:var(--led)">국가대표</span>':''}
               </div>
             </div>
-            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
+            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${(s.skills||[]).map(k=>`<span class="trait" style="border-color:var(--led);color:var(--led)">무브 · ${MOVES[k].n}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
           </div>
         </div>
         ${mapPanelHTML(s)}
