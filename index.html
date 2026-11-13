@@ -827,7 +827,7 @@ function cap(s,k){
   if(k==='stamina'&&has(s,'iron'))c+=8;
   if(k==='iq'&&has(s,'family'))c+=5;
   if(s.strengths&&s.strengths.includes(k))c+=5;
-  if(s.skills)s.skills.forEach(m=>{if(MOVES[m]&&MOVES[m].k===k)c+=4;});
+  if(s.skills)s.skills.forEach(m=>{if(MOVES[m]&&MOVES[m].k===k)c+=(s.boughtMv&&s.boughtMv.includes(m))?8:4;});
   if(s.breaks&&s.breaks[k])c=Math.max(c,s.breaks[k]);
   return clamp(Math.round(c),25,maxFor(s,k));
 }
@@ -1134,6 +1134,12 @@ const EVENTS=[
     choices:[
       {t:'직접 가르친다',f:s=>{const c=s.relations.find(r=>r.type==='자녀'&&!r.dead&&r.age>=8&&r.age<=14);c.bond=clamp(c.bond+15,0,100);lf(s,'happy',10);s.flags.kidHoops=c.name;return '주말마다 집 앞 코트에 둘의 그림자가 길게 늘어졌다.';}},
       {t:'하고 싶은 걸 하게 둔다',f:s=>{lf(s,'happy',4);return '아이는 결국 농구부에 들어갔다. 내 등번호를 달고.';}}]},
+  {id:'legend_visit',w:2.2,age:[11,40],cond:s=>isPlaying(s),title:'레전드의 방문',
+    pre:s=>{const pool=legendList(s).filter(L=>!L.req||!L.req.ovr||ovr(s)>=L.req.ovr-10);s.flags.visitL=(pick(pool.length?pool:legendList(s))||{}).n;},
+    body:s=>`훈련이 끝나 갈 무렵 체육관 문이 열렸다. 들어온 사람은 ${s.flags.visitL}. "${s.name}? 네 영상 봤어. 잠깐 시간 돼?"`,
+    choices:[
+      {t:'무료 1대1 레슨을 받는다',sub:'행동·비용 없이 레슨 1회 · 가끔 그 자리에서 무브 전수',f:s=>{const L=legendList(s).find(x=>x.n===s.flags.visitL);if(!L)return '레전드는 사인만 남기고 떠났다.';return lessonCore(s,L,true);}},
+      {t:'사인과 사진만 부탁한다',f:s=>{lf(s,'happy',6);lf(s,'fame',1);return `${s.flags.visitL}의 사인이 라커에 붙었다. 매일 아침 그걸 보고 훈련한다.`;}}]},
   // 이름이 "김하은"이면 운명이 요동친다: 억빠와 억까가 번갈아 온다
   {id:'hx_god',w:7,cond:s=>isHaeun(s),title:'억빠 · 농구의 신 강림',body:'아침에 눈을 떴더니 손끝이 이상하게 뜨겁다. 그날 연습에서 하프라인 슛 열 개 중 아홉 개가 들어갔다. 감독님이 안경을 두 번 닦았다.',
     choices:[{t:'겸손하게 받아들인다',f:s=>{boostAll(s,2.5);lf(s,'fame',6);return '이유는 아무도 모른다. 전 능력치가 올랐다.';}},{t:'"원래 이 정도였는데요?"',f:s=>{boostAll(s,2);lf(s,'fame',9);lf(s,'mental',4);return '인터뷰 클립이 밈이 됐다. 그런데 진짜로 원래 그 정도인 것처럼 보였다.';}}]},
@@ -1841,6 +1847,27 @@ const LEGENDS={
     ['하킴 올라주원','US',['inside','defense'],'dream',8000,{age:17,ovr:66},{n:'더 드림',b:{inside:110}}],
     ['샤킬 오닐','US',['inside','rebound'],'power',8000,{age:17,ovr:66},{n:'디젤',b:{inside:112,rebound:108}}],
     ['마이클 조던','US',['shoot','defense'],'killer',100000,{age:19,ovr:80,fame:70},{n:'GOAT',b:{shoot:115,athletic:115,defense:112}}],
+    ['이충희','KR',['shoot','iq'],'fade',500,{age:13},{n:'슛도사',b:{shoot:106}}],
+    ['우지원','KR',['shoot','stamina'],'stepback',300,{age:12},{n:'코트의 황태자',b:{shoot:104}}],
+    ['추승균','KR',['defense','shoot'],'lock',400,{age:13},{n:'소리 없는 강자',b:{defense:104}}],
+    ['주희정','KR',['pass','stamina'],'nolook',400,{age:13},{n:'철인 가드',b:{stamina:106}}],
+    ['전희철','KR',['shoot','inside'],'fade',400,{age:13},{n:'에어 본',b:{shoot:104}}],
+    ['김병철','KR',['shoot','handle'],'stepback',300,{age:12},{n:'피터팬',b:{shoot:104}}],
+    ['신기성','KR',['handle','pass'],'cross',300,{age:12},{n:'총알 탄 사나이',b:{handle:105}}],
+    ['매직 존슨','US',['pass','iq'],'nolook',9000,{age:17,ovr:66},{n:'쇼타임',b:{pass:114,iq:106}}],
+    ['래리 버드','US',['shoot','iq'],'killer',9000,{age:17,ovr:66},{n:'래리 레전드',b:{shoot:112,iq:108}}],
+    ['카림 압둘자바','US',['inside','iq'],'bank',9000,{age:17,ovr:66},{n:'스카이훅',b:{inside:114}}],
+    ['스카티 피펜','US',['defense','athletic'],'lock',7000,{age:17,ovr:64},{n:'만능 수비수',b:{defense:110}}],
+    ['데니스 로드먼','US',['rebound','defense'],'power',7000,{age:17,ovr:62},{n:'리바운드 왕',b:{rebound:114}}],
+    ['존 스탁턴','US',['pass','defense'],'nolook',7000,{age:17,ovr:64},{n:'어시스트 기계',b:{pass:112}}],
+    ['칼 말론','US',['inside','stamina'],'power',7000,{age:17,ovr:64},{n:'메일맨',b:{inside:108,stamina:108}}],
+    ['레지 밀러','US',['shoot','stamina'],'stepback',6000,{age:16,ovr:62},{n:'밀러 타임',b:{shoot:110}}],
+    ['케빈 가넷','US',['defense','rebound'],'lock',8000,{age:17,ovr:66},{n:'빅 티켓',b:{defense:110,rebound:106}}],
+    ['드웨인 웨이드','US',['inside','athletic'],'air',8000,{age:17,ovr:66},{n:'플래시',b:{athletic:110}}],
+    ['야오밍','US',['inside','rebound'],'power',6000,{age:16,ovr:60},{n:'만리장성',b:{inside:110}}],
+    ['마누 지노빌리','US',['handle','iq'],'cross',6000,{age:16,ovr:62},{n:'유로스텝',b:{handle:108}}],
+    ['카멜로 앤서니','US',['shoot','inside'],'fade',6000,{age:16,ovr:62},{n:'멜로 드라마',b:{shoot:108}}],
+    ['폴 피어스','US',['shoot','iq'],'stepback',6000,{age:16,ovr:62},{n:'더 트루스',b:{shoot:108}}],
   ],
   f:[
     ['변연하','KR',['shoot','iq'],'stepback',300,{age:12},{n:'국보 슈터',b:{shoot:104}}],
@@ -1852,6 +1879,18 @@ const LEGENDS={
     ['리사 레슬리','US',['inside','athletic'],'air',7000,{age:17,ovr:62},{n:'첫 덩크',b:{athletic:110}}],
     ['다이애나 타우라시','US',['shoot','handle'],'killer',8000,{age:17,ovr:64},{n:'화이트 맘바',b:{shoot:110}}],
     ['마야 무어','US',['shoot','defense'],'fade',8000,{age:17,ovr:64},{n:'위너',b:{defense:108,shoot:104}}],
+    ['전주원','KR',['pass','iq'],'nolook',400,{age:13},{n:'코트의 사령관',b:{pass:105}}],
+    ['정은순','KR',['inside','rebound'],'power',400,{age:13},{n:'골밑의 여왕',b:{inside:105}}],
+    ['박정은','KR',['shoot','defense'],'stepback',400,{age:13},{n:'명품 포워드',b:{shoot:104}}],
+    ['김영옥','KR',['handle','shoot'],'cross',300,{age:12},{n:'총알 가드',b:{handle:104}}],
+    ['신정자','KR',['rebound','inside'],'power',300,{age:12},{n:'리바운드 여왕',b:{rebound:105}}],
+    ['셰릴 스웁스','US',['shoot','iq'],'killer',8000,{age:17,ovr:64},{n:'WNBA의 조던',b:{shoot:112}}],
+    ['로렌 잭슨','US',['inside','shoot'],'fade',7000,{age:17,ovr:62},{n:'오지 타워',b:{inside:110}}],
+    ['타미카 캐칭스','US',['defense','stamina'],'lock',7000,{age:17,ovr:62},{n:'수비의 여왕',b:{defense:112}}],
+    ['신시아 쿠퍼','US',['shoot','handle'],'stepback',7000,{age:17,ovr:62},{n:'원조 MVP',b:{shoot:110}}],
+    ['시몬 어거스터스','US',['shoot','iq'],'fade',6000,{age:16,ovr:60},{n:'미드레인지 장인',b:{shoot:108}}],
+    ['린지 웨일런','US',['pass','iq'],'nolook',6000,{age:16,ovr:60},{n:'우승 청부사',b:{iq:108}}],
+    ['실비아 파울스','US',['rebound','inside'],'power',6000,{age:16,ovr:60},{n:'리바운드 마스터',b:{rebound:112}}],
   ],
 };
 const POS_SPEC={PG:[['pass','handle'],'nolook'],SG:[['shoot','handle'],'stepback'],SF:[['shoot','defense'],'fade'],PF:[['inside','rebound'],'power'],C:[['inside','defense'],'dream']};
@@ -1864,6 +1903,11 @@ function legendList(s){
     extra.push({n:p.n,o:intl?'US':'KR',ks,mv,fee:intl?Math.round(4000+(p.o-L.level)*600):Math.round(300+(p.o-L.level)*40),req:{age:intl?16:13,ovr:intl?60:0},fresh:true,sk:{n:`${p.n}의 유산`,b:{[ks[0]]:100+clamp(Math.round((p.o-L.level)/2),2,10)}}});});
   return base.concat(extra);
 }
+function seasonLegends(s,kind){
+  const all=legendList(s),rng=seeded(hashStr(s.name+'|'+kind+'|'+s.year));
+  const arr=all.slice();for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr.slice(0,3);
+}
 function legendReq(s,L){
   const r=L.req||{},o=ovr(s),miss=[];
   if(s.age<(r.age||0))miss.push(`${r.age}세부터`);
@@ -1874,9 +1918,9 @@ function legendReq(s,L){
   return miss.join(' · ');
 }
 function legendSpec(s){
-  const list=legendList(s);s.lessons=s.lessons||{};s.skills=s.skills||[];
+  const list=seasonLegends(s,'class'),total=legendList(s).length;s.lessons=s.lessons||{};s.skills=s.skills||[];
   return {kicker:`레전드 클래스 · 행동 ${s.ap}/${s.apMax}`,title:'은퇴 레전드에게 배우기',
-    body:`<p>은퇴한 레전드들이 1대1 레슨을 연다. 레슨 1회에 행동 1번. <b>3회 차</b>부터 시그니처 무브, <b>5회 차</b>부터 능력치 한계를 100 너머로 여는 <b>시그니처 스킬</b>을 전수받을 수 있다.</p><p class="sb-note">무브: 관련 능력치 한계치 +4, 클러치·빅매치 해당 플레이 +7%p · 보유 ${s.skills.length?s.skills.map(k=>MOVES[k].n).join(', '):'없음'}<br>스킬: 해당 능력치 최대치 99 → 104~115 · 보유 ${(s.sskills||[]).length?s.sskills.join(', '):'없음'}</p>`,
+    body:`<p class="sb-note" style="margin:0 0 6px">이번 시즌 방문 레전드 <b style="color:var(--chalk)">3명</b> · 전체 ${total}명 중 시즌마다 무작위로 바뀐다. 레슨 횟수는 다음에 다시 만나도 이어진다.</p><p>은퇴한 레전드들이 1대1 레슨을 연다. 레슨 1회에 행동 1번. <b>3회 차</b>부터 시그니처 무브, <b>5회 차</b>부터 능력치 한계를 100 너머로 여는 <b>시그니처 스킬</b>을 전수받을 수 있다.</p><p class="sb-note">무브: 관련 능력치 한계치 +4, 클러치·빅매치 해당 플레이 +7%p · 보유 ${s.skills.length?s.skills.map(k=>MOVES[k].n).join(', '):'없음'}<br>스킬: 해당 능력치 최대치 99 → 104~115 · 보유 ${(s.sskills||[]).length?s.sskills.join(', '):'없음'}</p>`,
     choices:[{label:'시그니처 거래소',sub:'레슨 없이 돈으로 산다 · 엄청 비싸다',tag:'₩',act:()=>({spec:sigShopSpec(s)})},...list.map(L=>{const why=legendReq(s,L),n=s.lessons[L.n]||0,mv=MOVES[L.mv],got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);
       return {label:`${L.n}${L.fresh?' · 최근 은퇴':''}`,sub:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · 무브 「${mv.n}」${got?' ✓':''}${L.sk?` · 스킬 「${L.sk.n}」 ${skDesc(L.sk)}${gotS?' ✓':''}`:''} · 레슨 ${n}회 · ${fmtMoney(L.fee)}`,tag:L.o==='US'?'NBA':'KBL',
         disabled:!!why,reason:`${L.ks.map(k=>ATTR_KO[k]).join(' · ')} · ${why}`,act:()=>doLesson(s,L)};}),
@@ -1896,7 +1940,12 @@ const LESSON_LINES={
 function doLesson(s,L){
   if(legendReq(s,L))return null;
   if(!spend(s,L.fee))return null;
-  s.ap--;s.lessons=s.lessons||{};s.skills=s.skills||[];
+  s.ap--;
+  const txt=lessonCore(s,L,false);
+  return {text:txt,nolog:true,next:s.ap>0?legendSpec(s):null};
+}
+function lessonCore(s,L,visit){
+  s.lessons=s.lessons||{};s.skills=s.skills||[];
   const n=(s.lessons[L.n]||0)+1;s.lessons[L.n]=n;
   const gain=L.o==='US'?1.25:1;
   tr(s,L.ks[0],4.2*gain);tr(s,L.ks[1],2.8*gain);lf(s,'mental',3);lf(s,'health',-2);
@@ -1910,47 +1959,48 @@ function doLesson(s,L){
     txt+=` 레슨이 끝나고 ${J(L.n,'이/가')} 말했다. "이제 이건 네 거다." 시그니처 무브 「${MOVES[L.mv].n}」 습득!`;
   }
   if(n>=5&&L.sk&&!(s.sskills||[]).includes(L.sk.n)&&chance(n===5?.5:.8)){learnSkill(s,L);txt+=` 마지막에 ${J(L.n,'이/가')} 아무에게도 안 가르쳐 준 것을 꺼냈다. 시그니처 스킬 「${L.sk.n}」 습득! ${skDesc(L.sk)}`;}
-  log(s,`레전드 레슨 · ${L.n}: ${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} ${n}회 차`);
-  return {text:txt,nolog:true,next:s.ap>0?legendSpec(s):null};
+  else if(visit&&n<3&&!s.skills.includes(L.mv)&&chance(.15)){s.skills.push(L.mv);lf(s,'fame',3);log(s,`${J(L.n,'이/가')} 찾아와 시그니처 무브 「${MOVES[L.mv].n}」를 알려 줬다.`,'major');txt+=` "오늘 기분이 좋네." 그 자리에서 「${MOVES[L.mv].n}」를 통째로 알려 줬다!`;}
+  log(s,`레전드 ${visit?'방문 레슨':'레슨'} · ${L.n}: ${ATTR_KO[L.ks[0]]}·${ATTR_KO[L.ks[1]]} ${n}회 차`);
+  return txt;
 }
 const skDesc=sk=>Object.entries(sk.b).map(([k,v])=>`${ATTR_KO[k]} 한계 ${v}`).join(' · ');
-function learnSkill(s,L){
+function learnSkill(s,L,bought){
   s.breaks=s.breaks||{};s.sskills=s.sskills||[];
-  for(const k in L.sk.b){s.breaks[k]=Math.max(s.breaks[k]||99,L.sk.b[k]);at(s,k,2);}
+  for(const k in L.sk.b){s.breaks[k]=Math.max(s.breaks[k]||99,L.sk.b[k]+(bought?6:0));at(s,k,bought?6:2);}
   s.sskills.push(L.sk.n);lf(s,'fame',5);lf(s,'mental',6);
   log(s,`${L.n}의 시그니처 스킬 「${L.sk.n}」 습득 · ${skDesc(L.sk)} (한계 돌파)`,'major');
 }
 /* ---- 시그니처 거래소: 레슨 없이 돈으로 산다 ---- */
-function sigPrice(s,base){return Math.round(base*Math.pow(1.25,s.flags.sigBuys||0)/1000)*1000;}
-function legendBase(L){return L.n==='마이클 조던'?10000000:L.o==='US'?1500000:300000;}
+function sigPrice(s,base){return Math.round(base*Math.pow(1.4,s.flags.sigBuys||0)/1000)*1000;}
+function legendBase(L){return L.n==='마이클 조던'?30000000:L.o==='US'?5000000:1000000;}
 function sigShopSpec(s){
   s.skills=s.skills||[];s.sskills=s.sskills||[];
-  const list=legendList(s),adult=s.age>=19;
-  const lic=sigPrice(s,500000);
+  const list=seasonLegends(s,'shop'),adult=s.age>=19;
+  const lic=sigPrice(s,2000000);
   return {kicker:`시그니처 거래소 · 현금 ${fmtMoney(s.money)}`,title:'돈으로 사는 전설',
-    body:`<p>레전드 측과 직접 계약해 시그니처를 산다. 비싸고, 살수록 다음 가격이 25%씩 오른다.</p><p class="sb-note">국내 레전드 무브 30억 · NBA 150억 · 조던 1,000억 / 시그니처 스킬은 무브 가격의 두 배${adult?'':' · 19세부터 거래 가능'}</p>`,
+    body:`<p>레전드 측과 직접 계약해 시그니처를 산다. 이번 시즌 매물은 <b>레전드 3명</b>뿐이고 시즌마다 바뀐다. 살수록 다음 가격이 40%씩 오른다.</p><p class="sb-note">국내 레전드 무브 100억 · NBA 500억 · 조던 3,000억 / 스킬은 무브의 2.5배<br>돈으로 산 시그니처는 전수 계약이라 효과가 더 크다: 무브 성공률 +12%p·한계치 +8, 스킬 최대치 +6 추가·즉시 +6${adult?'':' · 19세부터 거래 가능'}</p>`,
     choices:[
       {label:'나만의 시그니처 무브 개발권',sub:sig(s).move||s.flags.sigLicense?'이미 해금됨':`해금 조건 없이 바로 나만의 무브를 만든다 · ${fmtMoney(lic)}`,tag:fmtMoney(lic).replace(' 원',''),disabled:!adult||!!(sig(s).move||s.flags.sigLicense)||s.money<lic,reason:!adult?'19세부터':sig(s).move||s.flags.sigLicense?'이미 해금됨':'돈 부족',
         act:()=>{s.money-=lic;s.flags.sigLicense=true;s.flags.sigBuys=(s.flags.sigBuys||0)+1;log(s,`시그니처 무브 개발권을 ${fmtMoney(lic)}에 샀다.`,'major');return {text:'전담 스킬 트레이너 팀이 꾸려졌다. 커리어 탭에서 나만의 무브를 만들 수 있다.',nolog:true,next:sigShopSpec(s)};}},
       ...list.map(L=>{const got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);const pm=sigPrice(s,legendBase(L));
-        return {label:L.n,sub:`무브 「${MOVES[L.mv].n}」 ${got?'보유':fmtMoney(pm)}${L.sk?` · 스킬 「${L.sk.n}」 ${gotS?'보유':fmtMoney(pm*2)}`:''}`,tag:L.o==='US'?'NBA':'KBL',disabled:!adult||(got&&(gotS||!L.sk)),reason:!adult?'19세부터':'모두 보유',
+        return {label:L.n,sub:`무브 「${MOVES[L.mv].n}」 ${got?'보유':fmtMoney(pm)}${L.sk?` · 스킬 「${L.sk.n}」 ${gotS?'보유':fmtMoney(Math.round(pm*2.5/1000)*1000)}`:''}`,tag:L.o==='US'?'NBA':'KBL',disabled:!adult||(got&&(gotS||!L.sk)),reason:!adult?'19세부터':'모두 보유',
           act:()=>({spec:sigBuySpec(s,L)})};}),
       {label:'← 레전드 클래스',act:()=>({spec:legendSpec(s)})}]};
 }
 function sigBuySpec(s,L){
   s.skills=s.skills||[];s.sskills=s.sskills||[];
-  const pm=sigPrice(s,legendBase(L)),ps=pm*2,got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);
+  const pm=sigPrice(s,legendBase(L)),ps=Math.round(pm*2.5/1000)*1000,got=s.skills.includes(L.mv),gotS=L.sk&&(s.sskills||[]).includes(L.sk.n);
   const buy=(price,fn)=>{s.money-=price;s.flags.sigBuys=(s.flags.sigBuys||0)+1;fn();};
   return {kicker:`시그니처 거래소 · 현금 ${fmtMoney(s.money)}`,title:`${L.n}와의 계약`.replace(/([가-힣])와의/,(m,c)=>hasBatchim(c)?c+'과의':c+'와의'),
     body:`<p>${L.n} 측 변호사가 계약서를 내밀었다. "기술 전수 기간은 비공개, 언론 보도는 사후 승인."</p>`,
     choices:[
-      {label:`무브 「${MOVES[L.mv].n}」`,sub:got?'이미 보유':`${ATTR_KO[MOVES[L.mv].k]} 한계 +4 · 클러치·빅매치 +7%p`,tag:fmtMoney(pm).replace(' 원',''),disabled:got||s.money<pm,reason:got?'이미 보유':`돈 부족 (${fmtMoney(pm)})`,
-        act:()=>{buy(pm,()=>{s.skills.push(L.mv);lf(s,'fame',3);});log(s,`${L.n}의 시그니처 무브 「${MOVES[L.mv].n}」를 ${fmtMoney(pm)}에 샀다.`,'major');return {text:`비공개 캠프 2주. 「${MOVES[L.mv].n}」가 몸에 붙었다.`,nolog:true,next:sigShopSpec(s)};}},
-      ...(L.sk?[{label:`스킬 「${L.sk.n}」 · 한계 돌파`,sub:gotS?'이미 보유':skDesc(L.sk),tag:fmtMoney(ps).replace(' 원',''),disabled:gotS||s.money<ps,reason:gotS?'이미 보유':`돈 부족 (${fmtMoney(ps)})`,
-        act:()=>{buy(ps,()=>learnSkill(s,L));addNews(s,s.year,'사회',`${s.name}, ${L.n}의 비기 「${L.sk.n}」 전수 계약`,`계약 금액은 비공개지만 업계에서는 ${fmtMoney(ps)} 안팎으로 본다.`,false);return {text:`${J(L.n,'이/가')} 마지막 날 말했다. "이제 네 몸이 내 기록을 깰 거다." ${skDesc(L.sk)}`,nolog:true,next:sigShopSpec(s)};}}]:[]),
+      {label:`무브 「${MOVES[L.mv].n}」`,sub:got?'이미 보유':`전수 계약 · ${ATTR_KO[MOVES[L.mv].k]} 한계 +8 · 클러치·빅매치 +12%p`,tag:fmtMoney(pm).replace(' 원',''),disabled:got||s.money<pm,reason:got?'이미 보유':`돈 부족 (${fmtMoney(pm)})`,
+        act:()=>{buy(pm,()=>{s.skills.push(L.mv);s.boughtMv=s.boughtMv||[];s.boughtMv.push(L.mv);at(s,MOVES[L.mv].k,3);lf(s,'fame',3);});log(s,`${L.n}의 시그니처 무브 「${MOVES[L.mv].n}」를 ${fmtMoney(pm)}에 샀다.`,'major');return {text:`비공개 캠프 2주. 「${MOVES[L.mv].n}」가 몸에 붙었다.`,nolog:true,next:sigShopSpec(s)};}},
+      ...(L.sk?[{label:`스킬 「${L.sk.n}」 · 한계 돌파`,sub:gotS?'이미 보유':`전수 계약 · ${Object.entries(L.sk.b).map(([k,v])=>`${ATTR_KO[k]} 한계 ${v+6}`).join(' · ')} · 즉시 +6`,tag:fmtMoney(ps).replace(' 원',''),disabled:gotS||s.money<ps,reason:gotS?'이미 보유':`돈 부족 (${fmtMoney(ps)})`,
+        act:()=>{buy(ps,()=>learnSkill(s,L,true));addNews(s,s.year,'사회',`${s.name}, ${L.n}의 비기 「${L.sk.n}」 전수 계약`,`계약 금액은 비공개지만 업계에서는 ${fmtMoney(ps)} 안팎으로 본다.`,false);return {text:`${J(L.n,'이/가')} 마지막 날 말했다. "이제 네 몸이 내 기록을 깰 거다." ${skDesc(L.sk)}`,nolog:true,next:sigShopSpec(s)};}}]:[]),
       {label:'← 거래소 목록',act:()=>({spec:sigShopSpec(s)})}]};
 }
-const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?.07:0),0)+sigBonus(s,kind);
+const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kind.includes(kind)?((s.boughtMv&&s.boughtMv.includes(k))?.12:.07):0),0)+sigBonus(s,kind);
 
 /* ================= world-class entrance exam ================= */
 const WC_EXAM={
