@@ -208,8 +208,8 @@ tr.champ td{background:rgba(255,196,67,.06)}
 .deltas i.neg{background:rgba(255,103,103,.12);color:var(--bad)}
 
 /* ===== modal ===== */
-.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:rgba(4,8,15,.72);backdrop-filter:blur(4px);overflow-y:auto}
-.sheet{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 40px 80px -30px #000;animation:pop .22s ease}
+.modal{position:fixed;inset:0;z-index:50;display:flex;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:rgba(4,8,15,.72);backdrop-filter:blur(4px);overflow-y:auto}
+.sheet{margin:auto;width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 40px 80px -30px #000;animation:pop .22s ease}
 @keyframes pop{from{transform:translateY(10px) scale(.98);opacity:.4}to{transform:none;opacity:1}}
 .m-kicker{background:#060b14;color:var(--led);font-family:var(--f-num);font-size:19px;line-height:1;padding:10px 18px 6px;letter-spacing:.06em;text-shadow:0 0 10px rgba(255,196,67,.45);border-bottom:1px solid #1d2a40}
 .m-in{padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px}
@@ -1107,7 +1107,7 @@ function bmEndSpec(s,M){
   let ot='';
   if(M.my===M.them){const w=chance(clamp(.5+(s.team.str-M.lv)*.02+(ovr(s)-M.oppO)*.01,.2,.8));const a=RI(4,9),b=RI(1,4);if(w){M.my+=a;M.them+=a-b;}else{M.them+=a;M.my+=a-b;}ot=' (연장)';}
   const win=M.my>M.them,fm=FAME_M[s.team.league]||1;
-  if(win){lf(s,'fame',2.5*fm+1);lf(s,'mental',6);lf(s,'happy',4);s.flags.clutchBoost=.03;s.legacy+=LG[s.team.league].mult*.8;}
+  if(win){lf(s,'fame',2.5*fm+1);lf(s,'mental',6);lf(s,'happy',4);s.flags.clutchBoost=.03;s.legacy+=LG[s.team.league].mult*.3;}
   else{lf(s,'mental',-4);s.flags.clutchBoost=-.015;}
   const line=`빅매치 vs ${M.opp} ${M.my}-${M.them}${ot} ${win?'승리':'패배'} · 4쿼터 ${M.pts}득점 ${M.ast}어시스트 ${M.stops}스톱`;
   log(s,line,win?'good':'');
@@ -1235,15 +1235,72 @@ function joinTeam(s,team){
 }
 const bondTeam=(s,d)=>s.relations.filter(r=>r.type==='팀 동료').forEach(r=>r.bond=clamp(r.bond+d,0,100));
 function chemistry(s){const m=s.relations.filter(r=>r.type==='팀 동료');return m.length?m.reduce((a,r)=>a+r.bond,0)/m.length-50:0;}
+/* ================= transfer / trade (pick any team) ================= */
+function proLeaguesOf(s){return s.gender==='m'?['kbl','bleague','gleague','nba']:['wkbl','wleague','wnba'];}
+function leagueGate(s,lg){
+  const rel=ovr(s)-LG[lg].level;
+  if(lg==='gleague'&&ovr(s)<60)return '종합 60 필요';
+  if(rel<-14)return `종합 ${LG[lg].level-14} 이상 필요`;
+  return null;
+}
+function transferChance(s,t,same){
+  const o=ovr(s),c=s.contract,L=LG[t.league];
+  let p=.32+(o-t.str)*.03+s.life.fame*.004+(s.flags.agent?.12:0);
+  if(same)p+=c.years<=1?.1:c.years>=3?-.1:0;
+  else p+=(o-L.level)*.02-.05;
+  if(s.age>=33)p-=.1;
+  return clamp(p,.04,.88);
+}
+function buyoutFee(s){const c=s.contract;return c&&c.years>0?Math.round(c.salary*c.years*.3/100)*100:0;}
 function tradeSpec(s){
-  const lg=s.team.league,list=TEAMS[lg].filter(n=>n!==s.team.name).sort(()=>rnd()-.5).slice(0,3);
-  const o=ovr(s);
-  return {kicker:`${s.age}세 · 트레이드 요청`,title:'어디로 가고 싶은가',body:'<p>에이전트가 관심을 보이는 구단 셋을 추렸다. 요청이 받아들여질지는 구단 마음이다.</p>',
-    choices:[...list.map(n=>{const t=makeTeam(lg,n,s.year,s.gender);const st=teamStar(lg,n,s.year,s.gender);
-      return {label:n,sub:`전력 ${starStr(teamStars(t.str,lg))} · ${roleLabel(o,t.str)}${st?` · 에이스 ${st.name}`:''}`,
-        act:()=>{if(chance(.55+(s.life.fame-30)*.004)){s.contract.team=t;s.team=t;joinTeam(s,t);lf(s,'mental',-2);log(s,`${J(n,'으로/로')} 트레이드됐다.`,'major');return `${n} 유니폼을 받았다.`;}
-          lf(s,'happy',-3);bondTeam(s,-6);log(s,'트레이드 요청이 거절됐다.','bad');return '구단이 거절했다. 라커룸 분위기가 어색하다.';}};}),
-      {label:'요청을 거둔다',act:()=>null}]};
+  const cur=s.team.league;
+  return {kicker:`${s.age}세 · 이적 시장`,title:'어느 리그로 갈까',
+    body:`<p>지금 소속은 ${esc(s.team.name)} (${LG[cur].name}), 계약 잔여 ${Math.max(0,s.contract.years)}년. 같은 리그는 트레이드 요청, 다른 리그는 바이아웃 후 이적 협상이다. 시도는 1년에 한 번, 둘러보기는 자유.</p>`,
+    choices:[...proLeaguesOf(s).map(lg=>{const g=leagueGate(s,lg);return {label:LG[lg].name+(lg===cur?' (현재 리그)':''),
+      sub:g?'':`${TEAMS[lg].length}개 팀 · 평균 주전 수준 ${LG[lg].level} · 예상 연봉 ${fmtMoney(salaryFor(s,lg))}`,disabled:!!g,reason:g,
+      act:()=>({spec:teamListSpec(s,lg)})};}),{label:'닫기',act:()=>null}]};
+}
+function teamListSpec(s,lg){
+  const o=ovr(s),same=lg===s.team.league;
+  const teams=TEAMS[lg].filter(n=>n!==s.team.name).map(n=>{const st=teamStar(lg,n,s.year,s.gender);const t=makeTeam(lg,n,s.year,s.gender);return {n,st,t};}).sort((a,b)=>b.t.str-a.t.str);
+  return {kicker:`이적 시장 · ${LG[lg].name}`,title:'팀을 고르자',body:`<p>전력이 강한 팀일수록 출전 시간 경쟁이 치열하다.</p>`,
+    choices:[...teams.map(({n,st,t})=>({label:n,sub:`전력 ${starStr(teamStars(t.str,lg))} · ${roleLabel(o,t.str)}${st?` · 에이스 ${st.name} ${st.o}`:''}`,tag:`${Math.round(transferChance(s,t,same)*100)}%`,
+      act:()=>({spec:teamDetailSpec(s,t,lg)})})),{label:'← 리그 다시 고르기',act:()=>({spec:tradeSpec(s)})}]};
+}
+function teamDetailSpec(s,t,lg){
+  const o=ovr(s),same=lg===s.team.league,p=transferChance(s,t,same),fee=same?0:buyoutFee(s);
+  const sal=same?s.contract.salary:Math.round(salaryFor(s,lg)*R(.92,1.08)/100)*100;
+  const yrs=same?Math.max(1,s.contract.years):RI(2,4);
+  const ros=roster(lg,t.name,s.year,s.gender).slice(0,5);
+  const used=s.flags.yearly?.trade;
+  const attempt=(boost,label)=>{
+    s.flags.yearly=s.flags.yearly||{};s.flags.yearly.trade=1;
+    if(fee){if(s.money<fee)return {text:`바이아웃 금액 ${fmtMoney(fee)}이 부족하다.`,nolog:true,next:teamDetailSpec(s,t,lg)};s.money-=fee;}
+    if(chance(clamp(p+boost,.03,.92))){
+      if(same){s.contract.team=t;s.team=t;joinTeam(s,t);}
+      else sign(s,{team:t,salary:sal,years:yrs});
+      lf(s,'mental',-2);lf(s,'happy',4);if(!same)lf(s,'fame',4*(FAME_M[lg]||1));
+      log(s,same?`트레이드 요청이 받아들여져 ${J(t.name,'으로/로')} 이적했다.`:`${J(t.name,'과/와')} ${yrs}년 ${fmtMoney(sal)} 계약으로 ${LG[lg].name} 이적!`,'major');
+      return {text:same?`${t.name} 유니폼을 받았다. 새 동료들이 악수를 청했다.`:`${LG[lg].name} 진출. 공항에 기자들이 몰렸다.`,nolog:true};
+    }
+    if(fee){s.money+=Math.round(fee*.8);}
+    lf(s,'happy',-4);lf(s,'mental',-3);bondTeam(s,-6);
+    log(s,`${t.name} 이적 시도가 무산됐다.`,'bad');
+    return {text:`${t.name}${J(t.name,'이/가').slice(t.name.length)} 거절했다.${fee?' 바이아웃 금액 일부(80%)는 돌려받았다.':''} 소문이 퍼져 라커룸 분위기가 어색하다.`,nolog:true};
+  };
+  const ch=[];
+  if(used)ch.push({label:'올해는 이미 이적을 시도했다',disabled:true,reason:'내년에 다시 시도할 수 있다',act:()=>null});
+  else{
+    ch.push({label:same?'트레이드 요청서 제출':'이적 협상 시작',sub:same?'현재 계약 그대로 팀만 옮긴다':`${fee?`바이아웃 ${fmtMoney(fee)} · `:''}새 계약 ${fmtMoney(sal)} × ${yrs}년`,tag:`${Math.round(p*100)}%`,act:()=>attempt(0)});
+    ch.push({label:'언론에 공개적으로 이적 의사 표명',sub:'압박으로 확률 상승. 대신 현 소속팀 팬과 동료가 등을 돌린다',tag:`${Math.round(clamp(p+.15,.03,.92)*100)}%`,
+      act:()=>{lf(s,'fame',-4);bondTeam(s,-10);return attempt(.15);}});
+    if(s.money>=3000)ch.push({label:'상대 구단 단장과 비밀 식사',sub:'3,000만 원 · 확률 소폭 상승',tag:`${Math.round(clamp(p+.08,.03,.92)*100)}%`,act:()=>{s.money-=3000;return attempt(.08);}});
+  }
+  ch.push({label:'← 다른 팀 보기',act:()=>({spec:teamListSpec(s,lg)})});
+  return {kicker:`이적 시장 · ${LG[lg].name}`,title:t.name,
+    body:`<div class="kv" style="margin-bottom:10px"><div><span>팀 전력</span><b>${starStr(teamStars(t.str,lg))}</b></div><div><span>예상 역할</span><b>${roleLabel(o,t.str)}</b></div><div><span>성공 확률</span><b class="num">${Math.round(p*100)}%</b></div><div><span>${same?'연봉 (유지)':'제시 예상 연봉'}</span><b class="num">${fmtMoney(sal)}</b></div></div>
+      <div class="roster">${ros.map(r=>`<div><span>${esc(r.name)}${r.real?'<i class="real">REAL</i>':''}<small>${r.pos} · ${r.age}세</small></span><b class="${tierCls(r.o)}">${r.o}</b></div>`).join('')}</div>`,
+    choices:ch};
 }
 
 /* ================= transitions ================= */
@@ -1518,7 +1575,7 @@ function yearEnd(s,yr){
   // transitions
   transitions(s);
   // HOF
-  if(s.stage==='retired'&&!s.flags.hof&&s.retiredAge&&a-s.retiredAge>=4&&s.legacy>=150){
+  if(s.stage==='retired'&&!s.flags.hof&&s.retiredAge&&a-s.retiredAge>=4&&s.legacy>=190){
     enqueue(()=>{s.flags.hof=true;lf(s,'fame',15);lf(s,'happy',15);log(s,'농구 명예의 전당에 헌액됐다.','major');
       return {kicker:`${s.year} 명예의 전당`,title:'명예의 전당 헌액',body:`<p>무대 위, 내 이름이 새겨진 동판이 걸렸다. 객석 맨 앞줄에 ${s.relations.some(r=>r.type==='배우자'&&!r.dead)?'가족들이':'옛 동료들이'} 앉아 있었다.</p>`,choices:[{label:'소감을 말한다',primary:true,act:()=>'"농구공 하나로 여기까지 왔습니다."'}]};});
   }
@@ -1851,7 +1908,7 @@ function careerHTML(s){
   const trophies=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const btns=[];
   if(s.stage==='pro'&&!s.contract?.military){
-    btns.push(`<button class="btn" id="btnTrade" ${s.flags.yearly?.trade||UI.modalOpen?'disabled':''}>트레이드 요청</button>`);
+    btns.push(`<button class="btn hot" id="btnTrade" ${UI.modalOpen?'disabled':''}>이적 시장${s.flags.yearly?.trade?' (올해 시도함)':''}</button>`);
     btns.push(`<button class="btn warn" id="btnRetire">${UI.confirmRetire?'정말 은퇴할까? 한 번 더 누르면 은퇴':'은퇴 선언'}</button>`);
     if(s.gender==='m'&&!s.flags.served&&!s.flags.exempt&&s.age>=21)btns.push(`<button class="btn" id="btnEnlist" ${s.flags.enlistNext?'disabled':''}>${s.flags.enlistNext?'시즌 후 입대 예정':'이번 시즌 후 입대 신청'}</button>`);
   }
@@ -1947,7 +2004,7 @@ function bindGame(){
   const ps=$('#posSel');if(ps)ps.onchange=()=>{S.pos=ps.value;log(S,`포지션을 ${POS[S.pos].ko}(으)로 바꿨다.`.replace('(으)로',hasBatchim(POS[S.pos].ko)?'으로':'로'));save();render();};
   const rt=$('#btnRetire');if(rt)rt.onclick=()=>{if(!UI.confirmRetire){UI.confirmRetire=true;render();return;}UI.confirmRetire=false;retire(S);queue=[()=>career2Spec(S,false)];nextModal();};
   const en=$('#btnEnlist');if(en)en.onclick=()=>{S.flags.enlistNext=true;log(S,'이번 시즌이 끝나면 입대하기로 했다.');save();render();};
-  const td=$('#btnTrade');if(td)td.onclick=()=>{S.flags.yearly=S.flags.yearly||{};S.flags.yearly.trade=1;queue=[];showModal(tradeSpec(S));};
+  const td=$('#btnTrade');if(td)td.onclick=()=>{queue=[];showModal(tradeSpec(S));};
 }
 
 /* ================= start screen ================= */
@@ -1996,7 +2053,7 @@ function bindStart(){
 }
 
 /* ================= ending ================= */
-function grade(L){return L>=400?['S+','GOAT']:L>=250?['S','살아있는 전설']:L>=150?['A','명예의 전당']:L>=90?['B','프랜차이즈 스타']:L>=45?['C','꾸준한 프로']:L>=15?['D','코트 위의 노동자']:['F','이루지 못한 꿈'];}
+function grade(L){return L>=520?['S+','GOAT']:L>=320?['S','살아있는 전설']:L>=190?['A','명예의 전당']:L>=110?['B','프랜차이즈 스타']:L>=55?['C','꾸준한 프로']:L>=18?['D','코트 위의 노동자']:['F','이루지 못한 꿈'];}
 function endHTML(s){
   const [g,t]=grade(s.legacy);
   const pro=s.seasons.filter(x=>LG[x.lg].kind==='pro'),gp=pro.reduce((a,x)=>a+x.gp,0);
