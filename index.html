@@ -330,6 +330,19 @@ input:focus{outline:none;border-color:var(--leather)}
 .end-av{display:flex;align-items:flex-end;justify-content:center;gap:4px}
 .end-avatar{width:120px;height:130px}
 .end-av .grade{width:64px;height:64px;font-size:40px;margin-bottom:6px}
+/* news */
+.sheet.news .m-kicker{background:#b3121b;color:#fff;text-shadow:none;border-bottom-color:#7d0c13}
+.sheet.news h2{font-size:23px}
+.news-list{display:flex;flex-direction:column;gap:8px}
+.newsitem{background:var(--panel-2);border-radius:10px;padding:10px 12px;border-left:3px solid var(--line)}
+.newsitem.big{border-left-color:#e0313b}
+.newsitem h4{margin:4px 0 2px;font-size:14.5px;word-break:keep-all}
+.newsitem p{margin:0;font-size:12.5px;color:var(--muted);word-break:keep-all}
+.newsitem .neff{color:var(--led);margin-top:4px}
+.news-meta{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--dim)}
+.news-meta .num{font-size:15px}
+.ntag{font-weight:900;color:var(--info);letter-spacing:.04em}
+.nbig{background:#b3121b;color:#fff;border-radius:4px;padding:0 6px;font-weight:900}
 /* save + skip */
 .code{width:100%;min-width:0;background:#0b1527;border:1px solid var(--line);color:var(--chalk);border-radius:8px;padding:8px 10px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical;word-break:break-all}
 .m-sub{margin:14px 0 6px;font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
@@ -560,6 +573,7 @@ const REAL={
 const TEAMS={sangmu:['국군체육부대 상무']};
 const PLAYERS=[];
 for(const lg in REAL){TEAMS[lg]=REAL[lg].map(([t,ps])=>{ps.forEach(([n,pos,b,o])=>PLAYERS.push({n,pos,b,o,lg,t}));return t;});}
+const TEAMS_BASE=JSON.parse(JSON.stringify(TEAMS));
 function T(s,lg){if(lg==='uleague'||lg==='ncaa')return COLLEGE[s.gender][lg];return TEAMS[lg]||[];}
 /* ===== schools nationwide: [name, city, tier(3 강호/2 중위/1 약체)] ===== */
 const SCHOOLS={
@@ -694,18 +708,18 @@ const SCH=['한빛','새솔','청람','다온','가람','누리','해밀','미�
 const hashStr=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
 const seeded=seed=>()=>{seed=(seed+0x6D2B79F5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
 function rOvr(p,yr){
-  const a0=START_YEAR-p.b;let o=p.o;
+  const a0=(p.y0||START_YEAR)-p.b;let o=p.o+((S&&S.world&&S.world.adj&&S.world.adj[p.n])||0);
   for(let a=a0+1;a<=yr-p.b;a++){if(a<=26)o+=1.2;else if(a>=31)o-=1.1+(a-31)*.35;}
   return Math.round(clamp(o,30,99));
 }
-function rActive(p,yr){const a=yr-p.b;return a>=18&&a<35+(hashStr(p.n)%6)&&rOvr(p,yr)>LG[p.lg].level-15;}
+function rActive(p,yr){const w=S&&S.world;if(w&&w.ret&&w.ret[p.n]&&w.ret[p.n]<yr)return false;const a=yr-p.b,h=hashStr(p.n);const ret=Math.max(35+h%6,START_YEAR-p.b+1+h%2);return a>=18&&a<ret&&rOvr(p,yr)>LG[pLg(p)].level-15;}
 const EN_F={m:['마커스','제일런','타이리스','케빈','앤서니','조던','데빈','브랜던','카일','트레이','이사이아','디안드레'],f:['에이자','브리애나','케일라','나탈리','시드니','알리샤','재스민','테일러','모건','케네디']};
 const EN_L=['존슨','윌리엄스','브라운','데이비스','밀러','윌슨','무어','테일러','토머스','잭슨','해리스','로빈슨','워커','그린','카터'];
 const JP_F={m:['유토','하루키','소타','렌','다이키','가이토'],f:['미유','나나미','아오이','사쿠라','히나','유이']};
 const JP_L=['사토','다나카','스즈키','다카하시','이토','와타나베','야마모토','나카무라'];
 function roster(lg,team,yr,g){
   const L=LG[lg];if(!L)return [];
-  const real=PLAYERS.filter(p=>p.t===team&&rActive(p,yr)).map(p=>({name:p.n,pos:p.pos,age:yr-p.b,o:rOvr(p,yr),real:true}));
+  const real=allPlayers().filter(p=>pTeam(p)===team&&pLg(p)===lg&&rActive(p,yr)).map(p=>({name:p.n,pos:p.pos,age:yr-p.b,o:rOvr(p,yr),real:!p.gen,wp:true}));
   const rng=seeded(hashStr(team)+Math.floor(yr/3)*7919);
   const posList=['PG','SG','SF','PF','C'];
   const fill=[];
@@ -816,7 +830,8 @@ function salaryFor(s,lg){
   const rel=Math.max(0,o-L.level+(L.bonus||6));
   let sal=L.minSal+Math.pow(rel,L.exp)*L.salK+s.life.fame*L.minSal*.01;
   if(s.flags.agent)sal*=1.15;
-  return clamp(sal,L.minSal,L.maxSal);
+  const mul=(s.world&&s.world.salMul&&s.world.salMul[lg])||1;
+  return clamp(sal*mul,L.minSal*mul,L.maxSal*mul);
 }
 
 /* ================= new game ================= */
@@ -866,7 +881,7 @@ function newGame(o){
   if(has(s,'family')){for(const k of ATTRS)s.attr[k]+=4;s.attr.iq+=3;}
   s.strengths=(g.strengths||[]).slice();s.strengths.forEach(k=>s.attr[k]+=6);
   s.flags.famBudget=has(s,'rich')?3000:600;
-  s.home=o.home||'서울';s.look=o.look||randomLook(s.gender);s.team=schoolTeam('elem','mid',s.gender,null,s.home);s.places=[];
+  s.home=o.home||'서울';s.look=o.look||randomLook(s.gender);s.team=schoolTeam('elem','mid',s.gender,null,s.home);s.places=[];worldInit(s);applyWorld(s);
   const dad=koName('m'),mom=koName('f');
   addRel(s,'아버지',dad,RI(60,85),RI(36,44));
   addRel(s,'어머니',mom,RI(65,90),RI(34,42));
@@ -1141,7 +1156,8 @@ function simSeason(s){
     injury=inj;
   }
   gpFrac=clamp(gpFrac,0,1);
-  const games=L.games,gp=Math.round(games*gpFrac*R(.93,1));
+  const shortF=(s.world&&s.world.short&&s.world.short[lg]===s.year)?.6:1;
+  const games=Math.round(L.games*shortF),gp=Math.round(games*gpFrac*R(.93,1));
   const depth=Math.max(0,s.team.str-o);
   let min=clamp(21+rel*1.3+(A.stamina-lv)*.1-depth*.7-(s.flags.loadMgmt?4:0),3,37.5);
   if(s.contract?.practice)min=Math.min(min,12);
@@ -1185,7 +1201,7 @@ function simSeason(s){
   aw.forEach(([k])=>legacy+=(AWL[k]||0)*L.mult);
   s.legacy+=legacy;
   let paid=0;
-  if(s.contract){paid=s.contract.salary;s.money+=Math.round(paid*(s.flags.agent?.92:1));s.contract.years--;}
+  if(s.contract){paid=Math.round(s.contract.salary*shortF);s.money+=Math.round(paid*(s.flags.agent?.92:1));s.contract.years--;}
   s.flags.lastRel=rel;s.flags.clutchBoost=0;s.flags.loadMgmt=false;
   const season={year:s.year,age:s.age,team:s.team.name,lg,gp,games,min:+min.toFixed(1),pts:+pts.toFixed(1),reb:+reb.toFixed(1),ast:+ast.toFixed(1),tp:+(tp*100).toFixed(1),fg:+(fg*100).toFixed(1),
     w:wins,l:games-wins,res:labels[res],champ,awards:aw.map(a=>a[1]),akeys:aw.map(a=>a[0]),ovr:o,injury:injury?.name||null,salary:paid};
@@ -1327,7 +1343,7 @@ function bmEndSpec(s,M){
 
 /* ================= all-star weekend ================= */
 function contestants(s,lg,n){
-  const real=PLAYERS.filter(p=>p.lg===lg&&rActive(p,s.year)).sort(()=>rnd()-.5).slice(0,n).map(p=>p.n);
+  const real=allPlayers().filter(p=>pLg(p)===lg&&rActive(p,s.year)).sort(()=>rnd()-.5).slice(0,n).map(p=>p.n);
   while(real.length<n)real.push(lg==='nba'||lg==='wnba'?pick(EN_F[s.gender])+' '+pick(EN_L):koName(s.gender));
   return real;
 }
@@ -1440,7 +1456,7 @@ function joinTeam(s,team){
   s.relations=s.relations.filter(r=>r.type!=='팀 동료');
   if(!team||!LG[team.league]||LG[team.league].kind==='school')return;
   const lg=team.league==='sangmu'?null:team.league;if(!lg)return;
-  roster(lg,team.name,s.year,s.gender).filter(p=>p.real).slice(0,3).forEach(p=>{const r=addRel(s,'팀 동료',p.name,RI(35,50),p.age);r.real=true;});
+  roster(lg,team.name,s.year,s.gender).filter(p=>p.wp).slice(0,3).forEach(p=>{const r=addRel(s,'팀 동료',p.name,RI(35,50),p.age);r.real=true;});
 }
 const bondTeam=(s,d)=>s.relations.filter(r=>r.type==='팀 동료').forEach(r=>r.bond=clamp(r.bond+d,0,100));
 function chemistry(s){const m=s.relations.filter(r=>r.type==='팀 동료');return m.length?m.reduce((a,r)=>a+r.bond,0)/m.length-50:0;}
@@ -1510,6 +1526,132 @@ function teamDetailSpec(s,t,lg){
     body:`<div class="kv" style="margin-bottom:10px"><div><span>팀 전력</span><b>${starStr(teamStars(t.str,lg))}</b></div><div><span>예상 역할</span><b>${roleLabel(o,t.str)}</b></div><div><span>성공 확률</span><b class="num">${Math.round(p*100)}%</b></div><div><span>${same?'연봉 (유지)':'제시 예상 연봉'}</span><b class="num">${fmtMoney(sal)}</b></div></div>
       <div class="roster">${ros.map(r=>`<div><span>${esc(r.name)}${r.real?'<i class="real">REAL</i>':''}<small>${r.pos} · ${r.age}세</small></span><b class="${tierCls(r.o)}">${r.o}</b></div>`).join('')}</div>`,
     choices:ch};
+}
+
+/* ================= living world: real-player moves & news ================= */
+function W(){return S&&S.world;}
+function allPlayers(){const w=W();return w&&w.added&&w.added.length?PLAYERS.concat(w.added):PLAYERS;}
+function pTeam(p){const w=W(),m=w&&w.mv&&w.mv[p.n];return m?m.t:p.t;}
+function pLg(p){const w=W(),m=w&&w.mv&&w.mv[p.n];return m?m.lg:p.lg;}
+const isKR=p=>!p.n.includes(' ');
+function worldInit(s){if(!s.world)s.world={mv:{},adj:{},ret:{},added:[],news:[],extra:{},salMul:{},short:{},once:{},unread:0};return s.world;}
+function applyWorld(s){for(const lg in TEAMS_BASE)TEAMS[lg]=TEAMS_BASE[lg].concat((s&&s.world&&s.world.extra&&s.world.extra[lg])||[]);}
+function wpick(pairs){const tot=pairs.reduce((a,x)=>a+x[1],0);if(tot<=0)return null;let r=rnd()*tot;for(const [v,w] of pairs){r-=w;if(r<=0)return v;}return pairs[pairs.length-1][0];}
+function addNews(s,yr,tag,h,b,big,eff){
+  const w=worldInit(s);w.news.push({yr,tag,h,b,big:!!big,eff:eff||''});
+  if(w.news.length>250)w.news.splice(0,w.news.length-250);
+  w.unread=(w.unread||0)+1;
+  if(big)log(s,`[속보] ${h}`,'major');
+}
+function teamPower(lg,t,yr,g){const r=roster(lg,t,yr,g);return r.slice(0,3).reduce((a,p)=>a+p.o,0)/3;}
+const WORLD_EVENTS=[
+  {id:'crash',p:.045,run:s=>{const pt=port(s);let loss=0;['stock','etf','coin'].forEach(k=>{if(pt[k]){const nv=Math.round(pt[k]*R(.5,.7));loss+=pt[k]-nv;pt[k]=nv;}});if(pt.gold)pt.gold=Math.round(pt.gold*1.15);
+    let el=0;s.assets.forEach(a=>{if(a.cat==='estate'||a.id==='apt'){const nv=Math.round(a.value*.85);el+=a.value-nv;a.value=nv;}});
+    return {tag:'경제',h:'글로벌 금융위기 발생, 증시 폭락',b:'미국발 신용 경색이 세계 증시를 덮쳤다. 코스피와 나스닥이 하루 만에 10% 넘게 빠졌고 부동산 시장도 얼어붙었다. 금값만 치솟았다.',
+      eff:loss||el?`내 자산 영향: 주식·ETF·코인 ${sgn(-loss)} · 부동산 평가액 ${sgn(-el)}`:'내 자산 영향: 없음 (투자·부동산 미보유)'};}},
+  {id:'coinboom',p:.04,run:s=>{const pt=port(s);let g=0;if(pt.coin){const nv=Math.round(pt.coin*R(2,3.5));g=nv-pt.coin;pt.coin=nv;}
+    return {tag:'경제',h:'비트코인 사상 최고가, 암호화폐 광풍',b:'현물 ETF 자금이 몰리며 암호화폐가 1년 만에 세 배가 됐다. 동료 선수들 단톡방도 코인 이야기뿐이다.',eff:g?`내 암호화폐 ${sgn(g)}`:'암호화폐를 갖고 있었다면…'};}},
+  {id:'estateboom',p:.05,run:s=>{let g=0;s.assets.forEach(a=>{if(a.cat==='estate'||a.id==='apt'){const nv=Math.round(a.value*1.22);g+=nv-a.value;a.value=nv;if(a.income)a.income=Math.round(a.income*1.1);}});
+    return {tag:'경제',h:'부동산 대폭등, 서울 아파트값 사상 최고',b:'금리 인하와 공급 부족이 겹치며 집값이 1년 새 20% 넘게 뛰었다. 임대료도 따라 올랐다.',eff:g?`내 부동산 평가액 ${sgn(g)} · 임대료 +10%`:'내 부동산: 없음'};}},
+  {id:'expansion',once:1,p:.3,cond:(s,yr)=>s.gender==='m'&&yr>=2027,run:s=>{const w=worldInit(s);w.extra.nba=(w.extra.nba||[]).concat(['시애틀 슈퍼소닉스','라스베이거스 확장 구단']);applyWorld(s);
+    return {tag:'리그',h:'NBA, 시애틀·라스베이거스 2개 구단 확장 확정',b:'시애틀에 슈퍼소닉스가 돌아오고 라스베이거스에 새 구단이 생긴다. 리그는 32개 팀 체제가 됐다. 로스터 자리가 늘어 해외 선수에게도 기회가 넓어진다.',eff:'NBA 팀 30개 → 32개'};}},
+  {id:'tvdeal',once:1,p:.25,cond:(s,yr)=>yr>=2027,run:s=>{const w=worldInit(s);const lg=s.gender==='m'?'nba':'wnba';w.salMul[lg]=lg==='nba'?1.3:2.2;
+    return {tag:'리그',h:lg==='nba'?'NBA 역대급 중계권 계약, 샐러리캡 30% 폭등':'WNBA 새 노사협약 타결, 선수 연봉 두 배 이상 인상',b:lg==='nba'?'새 미디어 계약으로 리그 수입이 크게 늘었다. 모든 구단의 지갑이 두꺼워졌다.':'수년간의 협상 끝에 연봉 체계가 전면 개편됐다. 최고 연봉이 처음으로 수억 원대를 넘는다.',eff:`앞으로 ${LG[lg].name} 계약 연봉 ×${w.salMul[lg]}`};}},
+  {id:'lockout',p:.03,cond:s=>s.stage==='pro'&&s.team&&!ABROAD[s.team.league]&&s.team.league!=='sangmu',run:(s,yr)=>{const w=worldInit(s);const lg=s.team.league;w.short[lg]=yr+1;
+    return {tag:'리그',h:`${LG[lg].name} 노사 갈등, 다음 시즌 단축 운영`,b:'구단과 선수협의 협상이 결렬되며 개막이 두 달 넘게 밀렸다. 다음 시즌은 경기 수가 크게 줄어든다.',eff:'다음 시즌 경기 수·연봉 40% 감소'};}},
+  {id:'boom',once:1,p:.15,cond:s=>s.flags.nat||s.legacy>=120,run:s=>{lf(s,'fame',6);return {tag:'사회',h:'"농구 다시 뜬다" 국내 농구 붐',b:'대표팀 선전과 스타 선수들의 활약에 체육관마다 매진 행렬이다. 유소년 농구 교실 등록도 두 배로 늘었다.',eff:'인기 +6'};}},
+];
+function worldYear(s,yr){
+  const w=worldInit(s),g=s.gender,ny=yr+1;
+  const lgs=g==='m'?['kbl','nba','bleague']:['wkbl','wnba','wleague'];
+  const bigs=[];
+  const big=(tag,h,b,eff)=>{addNews(s,yr,tag,h,b,true,eff);bigs.push({tag,h,b,eff});};
+  // development & retirement
+  allPlayers().forEach(p=>{
+    if(!lgs.includes(pLg(p))||w.ret[p.n])return;
+    w.adj[p.n]=clamp((w.adj[p.n]||0)+R(-1.3,1.3),-7,7);
+    if(!rActive(p,ny)&&ny-p.b>=18){
+      w.ret[p.n]=yr;const L=LG[pLg(p)],intl=L.level>=76;const legend=p.o>=L.level+(intl?11:12)||(ny-p.b>=37&&p.o>=L.level+9);
+      if(legend)big('은퇴',`레전드 ${p.n}, 현역 은퇴 선언`,`${pTeam(p)}의 ${p.n}(${ny-p.b}세)이 유니폼을 벗는다. 한 시대가 저물었다. 영구결번 논의가 시작됐다.`);
+      else addNews(s,yr,'은퇴',`${p.n} 은퇴`,`${pTeam(p)}의 ${J(p.n,'이/가')} ${ny-p.b}세에 은퇴를 발표했다.`);
+    }
+  });
+  // trades & FA moves, driven by team strength and age
+  lgs.forEach(lg=>{
+    const L=LG[lg],teams=TEAMS[lg];if(!teams||teams.length<2)return;
+    const n={nba:RI(3,6),kbl:RI(1,3),bleague:RI(0,2),wnba:RI(1,3),wkbl:RI(0,2),wleague:RI(0,1)}[lg];
+    const power={};teams.forEach(t=>power[t]=teamPower(lg,t,ny,g));
+    const sorted=teams.slice().sort((a,b)=>power[b]-power[a]),k=Math.ceil(teams.length/3);
+    const contenders=sorted.slice(0,k),weak=sorted.slice(-k);
+    for(let i=0;i<n;i++){
+      const cands=allPlayers().filter(p=>pLg(p)===lg&&!w.ret[p.n]&&rActive(p,ny)&&!(w.movedYr&&w.movedYr[p.n]>=yr-2));
+      const p=wpick(cands.map(p=>{const t=pTeam(p),age=ny-p.b,o=rOvr(p,ny);let wt=1;if(weak.includes(t))wt+=2;if(age>=30)wt+=1.5;if(o>=L.level+10&&!(age>=29&&weak.includes(t)))wt*=.35;if(age<=25)wt*=.3;if(contenders.includes(t)&&age<30)wt*=.5;return [p,wt];}));
+      if(!p)break;
+      const from=pTeam(p),o=rOvr(p,ny),age=ny-p.b;
+      const pool=(weak.includes(from)&&age>=27?contenders:teams).filter(t=>t!==from);if(!pool.length)continue;
+      const to=pick(pool);
+      w.mv[p.n]={t:to,lg};w.movedYr=w.movedYr||{};w.movedYr[p.n]=yr;
+      const intl=lg==='nba'||lg==='wnba';
+      const kind=intl?(chance(.65)?'트레이드':'FA 이적'):(chance(.7)?'FA 이적':'트레이드');
+      const why=contenders.includes(to)&&weak.includes(from)?`우승을 노리는 ${to}의 승부수다.`:age<=25?`${J(to,"이/가")} 미래를 보고 베팅했다.`:'리빌딩과 전력 보강의 이해가 맞았다.';
+      const body=`${J(p.n,'이/가')} ${to} 유니폼을 입는다. (${age}세 · OVR ${o}) ${why}`;
+      if(o>=L.level+(intl?10:9))big(kind,`[${L.short}] 초대형 ${kind}! ${p.n}, ${from} → ${to}`,body);
+      else addNews(s,yr,kind,`[${L.short}] ${p.n}: ${from} → ${to}`,body);
+    }
+  });
+  // Korean players heading abroad
+  const top=g==='m'?'nba':'wnba';
+  allPlayers().filter(p=>isKR(p)&&!w.ret[p.n]&&lgs.includes(pLg(p))&&pLg(p)!==top&&rActive(p,ny)).forEach(p=>{
+    const o=rOvr(p,ny);if(o>=LG[top].level&&chance(.2)){const to=pick(TEAMS[top]),from=pTeam(p);w.mv[p.n]={t:to,lg:top};
+      big('해외 진출',`${p.n}, ${LG[top].name} 진출! ${J(to,'과/와')} 계약`,`${from}에서 뛰던 ${J(p.n,'이/가')} 꿈의 무대에 선다. 한국 농구 역사에 남을 계약이다.`);}
+  });
+  // drafts: #1 picks join the world
+  lgs.filter(lg=>['nba','kbl','wnba','wkbl'].includes(lg)).forEach(lg=>{
+    const L=LG[lg],intl=lg==='nba'||lg==='wnba';
+    let name;let guard=0;do{name=intl?pick(EN_F[g])+' '+pick(EN_L):koName(g);}while(allPlayers().some(p=>p.n===name)&&guard++<20);
+    const gen=chance(.12),o=Math.round(L.level-(gen?1:7)+R(-2,3)),t=pick(TEAMS[lg]),b=ny-RI(19,22);
+    w.added.push({n:name,pos:pick(['PG','SG','SF','PF','C']),b,o,y0:ny,lg,t,gen:true});
+    if(gen)big('드래프트',`[${L.short}] "세대급 재능" ${name}, ${ny} 드래프트 1순위로 ${t}행`,`스카우트들이 입을 모아 "10년에 한 번 나올 선수"라고 평가한다. 벌써부터 MVP 후보로 거론된다.`);
+    else addNews(s,yr,'드래프트',`[${L.short}] ${ny} 드래프트 1순위: ${name} → ${t}`,`${ny-b}세 ${J(name,'이/가')} 전체 1순위로 ${t}에 지명됐다.`);
+  });
+  if(w.added.length>80)w.added=w.added.filter(p=>!w.ret[p.n]).slice(-80);
+  // champions & MVP of the top leagues
+  lgs.filter(lg=>['nba','kbl','wnba','wkbl'].includes(lg)).forEach(lg=>{
+    const L=LG[lg],teams=TEAMS[lg];
+    const se=s.seasons.find(x=>x.year===yr&&x.lg===lg);
+    const champ=se&&se.champ?se.team:wpick(teams.filter(t=>!se||t!==se.team).map(t=>[t,Math.pow(Math.max(1,teamPower(lg,t,yr,g)-L.level+12),2)]));
+    const myMvp=s.awards.some(a=>a.year===yr&&a.lg===lg&&a.key==='mvp');
+    const best=allPlayers().filter(p=>pLg(p)===lg&&rActive(p,yr)&&!w.ret[p.n]).map(p=>[p,rOvr(p,yr)+R(0,4)]).sort((a,b)=>b[1]-a[1])[0];
+    const mvp=myMvp?s.name:best?best[0].n:'—';
+    addNews(s,yr,'시즌',`[${L.short}] ${seasonLabel({team:{league:lg}},yr)} 시즌 챔피언 ${champ}, MVP ${mvp}`,`${J(champ,'이/가')} 정상에 올랐다. 정규리그 MVP는 ${mvp}.`);
+    if(best&&!myMvp){w.mvps=w.mvps||{};w.mvps[best[0].n]=(w.mvps[best[0].n]||0)+1;if(w.mvps[best[0].n]===3)big('기록',`${best[0].n}, 통산 3번째 ${L.short} MVP`,`역대 손꼽히는 선수 반열에 올랐다. 명예의 전당 입성은 시간문제다.`);}
+  });
+  // big world events (at most one a year)
+  for(const ev of WORLD_EVENTS.filter(e=>!(e.once&&w.once[e.id])&&(!e.cond||e.cond(s,yr))).sort(()=>rnd()-.5)){
+    if(chance(ev.p)){if(ev.once)w.once[ev.id]=1;const r=ev.run(s,yr);if(r)big(r.tag,r.h,r.b,r.eff);break;}
+  }
+  syncMates(s);
+  const PRI={경제:0,리그:0,사회:0,'해외 진출':1,드래프트:2,기록:3,트레이드:4,'FA 이적':4,은퇴:5};
+  bigs.sort((a,b)=>(PRI[a.tag]??9)-(PRI[b.tag]??9));
+  bigs.slice(0,2).forEach(n=>enqueue(()=>({cls:'news',kicker:`속보 · ${n.tag} · ${yr}`,title:n.h,body:`<p>${esc(n.b)}</p>${n.eff?`<div class="result">${esc(n.eff)}</div>`:''}`,choices:[{label:'계속',primary:true,act:()=>null}]})));
+  if(bigs.length>2)log(s,`그 밖에도 큰 소식 ${bigs.length-2}건이 뉴스 탭에 있다.`);
+}
+function syncMates(s){
+  if(!s.team||!LG[s.team.league]||LG[s.team.league].kind==='school'||s.team.league==='sangmu')return;
+  const ros=roster(s.team.league,s.team.name,s.year,s.gender).filter(p=>p.wp);
+  const names=new Set(ros.map(p=>p.name));
+  s.relations.filter(r=>r.type==='팀 동료'&&!names.has(r.name)).forEach(r=>{r.gone=true;const p=allPlayers().find(x=>x.n===r.name);log(s,`팀 동료 ${J(r.name,'이/가')} ${p&&!W().ret[p.n]?pTeam(p)+'(으)로 떠났다.':'팀을 떠났다.'}`);});
+  s.relations=s.relations.filter(r=>!r.gone);
+  const have=new Set(s.relations.filter(r=>r.type==='팀 동료').map(r=>r.name));
+  ros.filter(p=>!have.has(p.name)).slice(0,Math.max(0,3-have.size)).forEach(p=>{const r=addRel(s,'팀 동료',p.name,35,p.age);r.real=true;log(s,`${J(p.name,'이/가')} 우리 팀에 합류했다.`,'good');});
+}
+function newsHTML(s){
+  const w=worldInit(s);w.unread=0;
+  const list=w.news.slice().reverse();
+  const tags=['전체',...new Set(list.map(n=>n.tag))];const f=UI.ntag||'전체';
+  return list.length?`<nav class="subtabs" style="margin-top:0">${tags.map(t=>`<button class="chipb" data-ntag="${t}" aria-pressed="${f===t}">${t}</button>`).join('')}</nav>
+    <div class="news-list">${list.filter(n=>f==='전체'||n.tag===f).slice(0,120).map(n=>`<article class="newsitem ${n.big?'big':''}"><div class="news-meta"><span class="ntag">${esc(n.tag)}</span><span class="num">${n.yr}</span>${n.big?'<span class="nbig">속보</span>':''}</div><h4>${esc(n.h)}</h4><p>${esc(n.b)}</p>${n.eff?`<p class="neff">${esc(n.eff)}</p>`:''}</article>`).join('')}</div>`
+    :'<div class="empty">아직 뉴스가 없다. 첫 시즌이 끝나면 이적 소식과 리그 결과가 들어온다.</div>';
 }
 
 /* ================= transitions ================= */
@@ -1785,7 +1927,7 @@ function yearEnd(s,yr){
     if(r.type==='연인'&&r.bond<25&&chance(.45)){r.dead=true;r.gone=true;lf(s,'happy',-10);log(s,`${J(r.name,'과/와')} 헤어졌다.`,'bad');}
   });
   s.relations=s.relations.filter(r=>!(r.gone));
-  s.relations.filter(r=>r.type==='팀 동료'&&r.real).forEach(r=>{const p=PLAYERS.find(x=>x.n===r.name);if(p&&!rActive(p,s.year)){r.gone=true;log(s,`팀 동료 ${J(r.name,'이/가')} 은퇴했다.`);}});
+  s.relations.filter(r=>r.type==='팀 동료'&&r.real).forEach(r=>{const p=allPlayers().find(x=>x.n===r.name);if(p&&!rActive(p,s.year)){r.gone=true;log(s,`팀 동료 ${J(r.name,'이/가')} 은퇴했다.`);}});
   s.relations=s.relations.filter(r=>!(r.gone));
   // injuries carry handled in sim; growth spurts
   s.ovrHist.push({age:a,o:ovr(s)});
@@ -1796,6 +1938,7 @@ function yearEnd(s,yr){
   // banned
   if(s.flags.banned&&s.stage==='pro'){retire(s);enqueue(()=>career2Spec(s,false));}
   // transitions
+  try{worldYear(s,yr);}catch(e){console.error(e);}
   transitions(s);
   // HOF
   if(s.stage==='retired'&&!s.flags.hof&&s.retiredAge&&a-s.retiredAge>=4&&s.legacy>=190){
@@ -1959,6 +2102,7 @@ function nextModal(){
 function showModal(spec){
   UI.modalOpen=true;
   const m=$('#modal');m.hidden=false;
+  m.querySelector('.sheet').className='sheet '+(spec.cls||'');
   $('#mKicker').textContent=spec.kicker||'';
   $('#mTitle').textContent=spec.title||'';
   $('#mBody').innerHTML=(spec.board||'')+(spec.body||'');
@@ -1993,7 +2137,7 @@ function handleResult(spec,r,before){
 /* ---- timing meter mini-game ---- */
 const meterState={raf:0,active:false,key:null};
 function showMeter(cfg,before){
-  UI.modalOpen=true;$('#modal').hidden=false;
+  UI.modalOpen=true;$('#modal').hidden=false;$('#modal .sheet').className='sheet';
   $('#mKicker').textContent=cfg.kicker||'';
   $('#mTitle').textContent=cfg.title||'';
   const zone=clamp(cfg.zone??clamp((cfg.p??.5)*.55,.06,.46),.05,.6);
@@ -2112,7 +2256,7 @@ function relAct(rid,aid){
     case 'baby':if(chance(.55)){const c=addRel(s,'자녀',koName(),90,0);lf(s,'happy',15);log(s,`첫울음. ${J(c.name,'이/가')} 태어났다.`,'major');txt=`${J(c.name,'이/가')} 태어났다. 손가락이 놀랍도록 길다.`;}else{bump(4);txt='아직 소식이 없다.';}break;
     case 'night':{bump(RI(7,11));const k=pick(['shoot','handle','defense','iq','pass']);tr(s,k,1.2);lf(s,'health',-2);txt=`${J(r.name,'과/와')} 텅 빈 체육관에 남았다. ${ATTR_KO[k]} 감각이 좋아졌다.`;break;}
     case 'dinner':{const amt=s.age>=19?(s.contract?.salary>20000?200:50):0;s.money-=amt;bump(12);lf(s,'happy',3);txt=`${r.name}에게 고기를 샀다. 코트 밖 이야기를 처음 나눴다.`;break;}
-    case 'advice':{const p=PLAYERS.find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
+    case 'advice':{const p=allPlayers().find(x=>x.n===r.name);const theirO=p?rOvr(p,s.year):60;if(theirO>ovr(s)){tr(s,'iq',2);bump(5);txt=`${J(r.name,'이/가')} 수비를 읽는 법을 알려 줬다. "공 없을 때가 더 중요해."`;}else{bump(3);lf(s,'mental',2);txt=`${J(r.name,'은/는')} 웃으며 "네가 나한테 가르쳐 줘야지"라고 했다.`;}break;}
     case 'walk':bump(8);lf(s,'happy',5);lf(s,'health',3);txt=`${J(r.name,'과/와')} 공원을 한 바퀴 돌았다. 꼬리가 멈추지 않는다.`;break;
     case 'play':bump(10);lf(s,'happy',7);txt='바닥에 같이 누워 한참을 웃었다.';break;
     case 'teach':bump(8);lf(s,'happy',5);txt=r.age<5?'공이 자기 몸보다 크다. 그래도 던지려고 한다.':'레이업 스텝을 알려줬다. 자세가 제법이다.';break;
@@ -2304,6 +2448,7 @@ const tierCls=v=>v>=80?'t-elite':v>=65?'t-good':v>=45?'t-mid':'t-low';
 const barColor=(k,v)=>k==='health'?(v<30?'var(--bad)':'var(--good)'):k==='happy'?'var(--led)':k==='mental'?'var(--info)':k==='fame'?'var(--leather)':'#b9a3ff';
 function render(){
   const app=$('#app');
+  applyWorld(S);
   if(!S){app.innerHTML=startHTML();bindStart();return;}
   if(!S.alive){app.innerHTML=endHTML(S);bindEnd();return;}
   const s=S,o=ovr(s);
@@ -2355,7 +2500,7 @@ function render(){
       </aside>
       <section class="mainp">
         <nav class="tabs" role="tablist">
-          ${[['feed','인생 기록'],['act','활동'],['career','커리어'],['people','인간관계'],['money','자산']].map(([id,n])=>`<button class="tab" role="tab" data-tab="${id}" aria-selected="${UI.tab===id}">${n}${id==='act'&&s.ap>0?`<span class="dot">${s.ap}</span>`:''}</button>`).join('')}
+          ${[['feed','인생 기록'],['act','활동'],['career','커리어'],['people','인간관계'],['money','자산'],['news','뉴스']].map(([id,n])=>`<button class="tab" role="tab" data-tab="${id}" aria-selected="${UI.tab===id}">${n}${id==='act'&&s.ap>0?`<span class="dot">${s.ap}</span>`:''}${id==='news'&&UI.tab!=='news'&&s.world?.unread?`<span class="dot">${Math.min(99,s.world.unread)}</span>`:''}</button>`).join('')}
         </nav>
         <div class="panel" id="tabBody">${tabHTML(s)}</div>
       </section>
@@ -2379,6 +2524,7 @@ function tabHTML(s){
   if(UI.tab==='career')return careerHTML(s);
   if(UI.tab==='people')return peopleHTML(s);
   if(UI.tab==='money')return moneyHTML(s);
+  if(UI.tab==='news')return newsHTML(s);
   return feedHTML(s);
 }
 function feedHTML(s){
@@ -2520,6 +2666,7 @@ function bindGame(){
   }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>buyItem(b.dataset.item));
+  document.querySelectorAll('[data-ntag]').forEach(b=>b.onclick=()=>{UI.ntag=b.dataset.ntag;render();});
   document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{UI.mtab=b.dataset.mtab;render();});
   document.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>sellAsset(+b.dataset.sell));
   document.querySelectorAll('[data-expand]').forEach(b=>b.onclick=()=>expandAsset(+b.dataset.expand));
@@ -2669,7 +2816,7 @@ function bindEnd(){$('#btnAgain').onclick=()=>{S=null;try{localStorage.removeIte
 
 /* ================= persistence ================= */
 function save(){try{if(S)localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(raw){S=JSON.parse(raw);UI.tab=localStorage.getItem(SAVE_KEY+':tab')||'feed';}}catch(e){S=null;}}
+function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(raw){S=JSON.parse(raw);applyWorld(S);UI.tab=localStorage.getItem(SAVE_KEY+':tab')||'feed';}}catch(e){S=null;}}
 
 function start(data){
   if(data&&data.S)S=data.S;
