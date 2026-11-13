@@ -301,6 +301,16 @@ input:focus{outline:none;border-color:var(--leather)}
 .epitaph{font-size:16px;color:#dfe6f2;margin:14px auto 0;max-width:46ch;word-break:keep-all}
 
 
+/* custom genetics */
+input[type=range]{width:100%;accent-color:var(--leather)}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.pick-grid.small{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.pick{text-align:left;border:1px solid var(--line);background:#0b1527;border-radius:8px;padding:7px 9px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.pick b{font-size:13px}
+.pick small{font-size:11px;color:var(--muted);line-height:1.35}
+.pick[aria-pressed="true"]{border-color:var(--leather);background:rgba(239,102,32,.14)}
+.pick.neg b{color:#ffb3b3}
+.pick:disabled{opacity:.35}
 /* timing meter */
 .mg{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .mg-track{position:relative;height:34px;border-radius:8px;background:repeating-linear-gradient(90deg,#0b1527 0 10%,#0e1a2e 10% 20%);border:1px solid var(--line);overflow:hidden}
@@ -567,6 +577,7 @@ function cap(s,k){
   if(k==='athletic'&&has(s,'bounce'))c+=8;
   if(k==='stamina'&&has(s,'iron'))c+=8;
   if(k==='iq'&&has(s,'family'))c+=5;
+  if(s.strengths&&s.strengths.includes(k))c+=5;
   return clamp(Math.round(c),25,99);
 }
 function ovr(s){
@@ -658,6 +669,7 @@ function newGame(o){
   s.height=+(s.adultHeight*gfrac(8)).toFixed(1);
   for(const k of ATTRS)s.attr[k]=12+R(0,7)+(POS[s.pos].w[k]||.1)*24;
   if(has(s,'family')){for(const k of ATTRS)s.attr[k]+=4;s.attr.iq+=3;}
+  s.strengths=(g.strengths||[]).slice();s.strengths.forEach(k=>s.attr[k]+=6);
   s.flags.famBudget=has(s,'rich')?3000:600;
   s.team=schoolTeam('elem','mid',s.gender);
   const dad=koName('m'),mom=koName('f');
@@ -1841,7 +1853,7 @@ function render(){
                 ${s.flags.nat?'<span style="color:var(--led)">국가대표</span>':''}
               </div>
             </div>
-            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
+            <div class="traits">${s.traits.map(t=>`<span class="trait ${TRAITS[t].neg?'neg':''}" title="${esc(TRAITS[t].desc)}">${TRAITS[t].ko}</span>`).join('')}${(s.strengths||[]).map(k=>`<span class="trait" style="border-color:var(--maple-dk)">강점 · ${ATTR_KO[k]}</span>`).join('')}${s.injury?`<span class="trait neg">부상: ${esc(s.injury.name)}</span>`:''}</div>
           </div>
         </div>
         <div class="panel p-life">
@@ -2027,25 +2039,52 @@ function startHTML(){
         <div class="field"><label for="fNum">등번호</label><input id="fNum" type="number" min="0" max="99" value="${d.number}"></div>
       </div>
       <div class="panel gen">
-        <h3 style="margin:0">타고난 것 <em>노력으로 바꿀 수 없는 부분</em></h3>
+        <h3 style="margin:0">타고난 것 <em>${d.mode==='custom'?'원하는 대로 설계한다':'노력으로 바꿀 수 없는 부분'}</em></h3>
+        <div class="seg"><button type="button" data-mode="random" aria-pressed="${d.mode!=='custom'}">랜덤 유전자</button><button type="button" data-mode="custom" aria-pressed="${d.mode==='custom'}">직접 설정</button></div>
+        ${d.mode==='custom'?customGenHTML(d):`
         <div class="gen-row"><span>예상 성인 신장</span><b>${Math.round(g.adultHeight-3)}–${Math.round(g.adultHeight+3)}cm</b></div>
         <div class="gen-row"><span>스카우트 잠재력 평가</span><b class="stars" style="font-family:var(--f-body);font-size:20px">${starStr(potStars(g.pot))}</b></div>
         <div class="trait-list">${g.traits.map(t=>`<div class="trait-card ${TRAITS[t].neg?'neg':''}"><b>${TRAITS[t].ko}</b>${TRAITS[t].desc}</div>`).join('')}</div>
-        <button class="btn" id="btnRoll" type="button">유전자 다시 굴리기</button>
+        <button class="btn" id="btnRoll" type="button">유전자 다시 굴리기</button>`}
       </div>
     </div>
     <button class="cta" id="btnStart">8살, 첫 시즌 시작</button>
     <div class="panel how"><b>플레이 방법</b><br>매년 정해진 <b>행동</b>으로 훈련, 휴식, 공부를 고르고 <b>시즌 진행</b>을 누른다. 시즌 중에는 클러치 순간과 사건이 찾아오고, 고교 졸업 뒤엔 대학 · NCAA · 고졸 드래프트 중 길을 고른다. 프로가 되면 FA 협상과 해외 진출, 남자 선수는 병역(상무 · 아시안게임 금메달 면제)까지 겪는다. 은퇴 후에도 인생은 이어지며, 생을 마치면 레거시 등급이 매겨진다.<br><br><b>직접 하는 것들</b><br>슈팅 챌린지 · 매 시즌 빅매치 4쿼터 지휘 · 클러치 슛 타이밍 · 올스타 3점슛/덩크 콘테스트 · FA 연봉 협상 · 기자회견 · 트레이드 행선지 선택 · 팀 동료와의 케미<br><br><span style="color:var(--dim)">KBL·WKBL·NBA·WNBA·B.리그·W리그 팀과 일부 선수는 실제 이름을 쓴다(2025-26 시즌 기준). 능력치는 게임용 추정치이며 이후 이적과 은퇴는 반영되지 않았다. 각 리그·구단과 무관한 팬 게임이다.</span></div>
   </div></div>`;
 }
+const HMIN={m:165,f:155},HMAX={m:226,f:206};
+function traitBlocked(sel,k){return CONFLICT.some(([a,b])=>(a===k&&sel.includes(b))||(b===k&&sel.includes(a)));}
+function potLabel(p){return p>=93?'세대급 재능':p>=85?'슈퍼스타 재목':p>=77?'국가대표 재목':p>=68?'프로 주전감':p>=58?'프로 백업감':'평범한 재능';}
+function customGenHTML(d){
+  const g=d.gen,sel=g.traits,str=g.strengths||[];
+  return `
+  <div class="field"><label for="fPot">잠재력 <span class="stars" id="potStars">${starStr(potStars(g.pot))}</span></label>
+    <input type="range" id="fPot" min="45" max="99" value="${g.pot}">
+    <div class="gen-row" style="border:0;padding:0"><span id="potTxt">${potLabel(g.pot)}</span><b id="potNum">${g.pot}</b></div></div>
+  <div class="field"><label for="fH">성인 신장</label>
+    <input type="range" id="fH" min="${HMIN[d.gender]}" max="${HMAX[d.gender]}" step="0.5" value="${g.adultHeight}">
+    <div class="gen-row" style="border:0;padding:0"><span id="hTxt">${POS[d.pos].ko} 평균 ${posBaseOf(d)}cm</span><b id="hNum">${(+g.adultHeight).toFixed(1)}cm</b></div></div>
+  <div class="field"><span class="lbl">특성 <em style="font-style:normal;font-weight:500;letter-spacing:0;color:var(--dim)">최대 3개 · ${sel.length}/3</em></span>
+    <div class="pick-grid">${Object.keys(TRAITS).filter(k=>k!=='tall').map(k=>{const on=sel.includes(k);const dis=!on&&(sel.length>=3||traitBlocked(sel,k));
+      return `<button type="button" class="pick ${TRAITS[k].neg?'neg':''}" data-trait="${k}" aria-pressed="${on}" ${dis?'disabled':''}><b>${TRAITS[k].ko}</b><small>${TRAITS[k].desc}</small></button>`;}).join('')}</div></div>
+  <div class="field"><span class="lbl">타고난 강점 <em style="font-style:normal;font-weight:500;letter-spacing:0;color:var(--dim)">최대 3개 · 시작 +6, 한계치 +5 · ${str.length}/3</em></span>
+    <div class="pick-grid small">${ATTRS.map(k=>{const on=str.includes(k);return `<button type="button" class="pick" data-str="${k}" aria-pressed="${on}" ${!on&&str.length>=3?'disabled':''}><b>${ATTR_KO[k]}</b></button>`;}).join('')}</div></div>
+  <button class="btn" id="btnRoll" type="button">랜덤으로 채우기</button>`;
+}
+function posBaseOf(d){return POS[d.pos].h-(d.gender==='f'?13:0);}
 function bindStart(){
   const d=UI.draft;
   $('#fName').oninput=e=>d.name=e.target.value;
   $('#fNum').oninput=e=>d.number=clamp(parseInt(e.target.value||'0',10)||0,0,99);
   $('#btnRName').onclick=()=>{d.name=koName(d.gender);render();};
-  document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{if(d.gender!==b.dataset.g){d.gender=b.dataset.g;d.name=koName(d.gender);d.gen=rollGenetics(d.gender);}render();});
+  document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{if(d.gender!==b.dataset.g){d.gender=b.dataset.g;d.name=koName(d.gender);if(d.mode==='custom'){d.gen.adultHeight=clamp(d.gen.adultHeight+(d.gender==='f'?-13:13),HMIN[d.gender],HMAX[d.gender]);}else d.gen=rollGenetics(d.gender);}render();});
   document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{d.pos=b.dataset.p;render();});
-  $('#btnRoll').onclick=()=>{d.gen=rollGenetics(d.gender);render();};
+  $('#btnRoll').onclick=()=>{const st=d.gen.strengths;d.gen=rollGenetics(d.gender);if(d.mode==='custom')d.gen.strengths=st||[];render();};
+  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{d.mode=b.dataset.mode;d.gen.strengths=d.gen.strengths||[];if(d.mode==='custom')d.gen.traits=d.gen.traits.filter(k=>k!=='tall');if(d.mode!=='custom')d.gen.strengths=[];render();});
+  const fp=$('#fPot');if(fp){fp.oninput=()=>{d.gen.pot=+fp.value;$('#potNum').textContent=fp.value;$('#potTxt').textContent=potLabel(+fp.value);$('#potStars').textContent=starStr(potStars(+fp.value));};}
+  const fh=$('#fH');if(fh){fh.oninput=()=>{d.gen.adultHeight=+fh.value;$('#hNum').textContent=(+fh.value).toFixed(1)+'cm';};}
+  document.querySelectorAll('[data-trait]').forEach(b=>b.onclick=()=>{const k=b.dataset.trait,t=d.gen.traits;const i=t.indexOf(k);if(i>=0)t.splice(i,1);else if(t.length<3&&!traitBlocked(t,k))t.push(k);render();});
+  document.querySelectorAll('[data-str]').forEach(b=>b.onclick=()=>{const k=b.dataset.str,t=d.gen.strengths=d.gen.strengths||[];const i=t.indexOf(k);if(i>=0)t.splice(i,1);else if(t.length<3)t.push(k);render();});
   $('#btnStart').onclick=()=>{const name=(d.name||'').trim()||koName(d.gender);S=newGame({...d,name,number:clamp(+d.number||0,0,99)});UI.draft=null;UI.tab='act';save();render();
     showModal({kicker:`${S.year} · 8세`,title:'첫 농구공',body:`<p>아버지가 퇴근길에 낡은 농구공을 사 오셨다. 동네 코트의 림은 그물이 반쯤 찢어져 있다.</p>`,
       choices:[{label:'해가 질 때까지 슛을 쏜다',act:()=>{at(S,'shoot',2);lf(S,'happy',4);return '백 개 중에 열 개가 들어갔다. 열 개가 전부 기억난다.';}},{label:'드리블하며 동네를 한 바퀴 돈다',act:()=>{at(S,'handle',2);lf(S,'happy',4);return '공이 발에 차여 도랑에 빠질 뻔했다. 그래도 신났다.';}}]});};
