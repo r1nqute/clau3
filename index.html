@@ -2037,8 +2037,17 @@ function wcExamCfg(s,stage,team,st){
         return {text:`${E.tries}번 중 ${st.m}번 성공. 불합격. ${team.name==='장안중'?'서재윤이 위로의 빵을 건넸다.':team.name==='서현고'?'박용준이 슬리퍼를 돌려받으며 "내년엔 맨발로 해 봐"라고 했다.':'선주안이 말없이 어깨를 두드렸다.'} 다른 학교를 골라야 한다.`,nolog:true,next:schoolChoiceSpec(s,stage)};}
       return {meter:wcExamCfg(s,stage,team,st)};}};
 }
+// 학교에 들어가면 그 학교의 고정 인물이 반드시 등장한다
+const SCHOOL_BUD={'장안중':['서재윤','장안중 1짱','jy_intro'],'서현고':['박용준','서현고 동료','yj_intro'],'대진고':['선주안','대진고 1짱','ja_derby']};
+function schoolBudSpec(s){
+  const b=s.team&&SCHOOL_BUD[s.team.name];if(!b||bud(s,b[0]))return null;
+  const [name,role,evId]=b,e=EVENTS.find(x=>x.id===evId);
+  if(SET.events!=='off'&&e&&eligible(s,e)){const sp=eventSpec(s,e);if(sp){sp.cat='schoolbud';sp.kicker=`${s.team.name} · 첫 만남`;return sp;}}
+  meetBud(s,name,role,50);log(s,`${s.team.name}에서 ${J(name,'과/와')} 같은 체육관을 쓰게 됐다.`,'good');return null;
+}
 function enterSchool(s,stage,team,pre){
   s.stage=stage;s.team=team;lf(s,'happy',3);
+  if(SCHOOL_BUD[team.name])queue.unshift(()=>schoolBudSpec(s));
   if(WC_SCHOOLS.has(team.name)){s.flags.wc=true;s.flags.wcPot=s.flags.wcPot||{};if(!s.flags.wcPot[team.name]){s.flags.wcPot[team.name]=1;s.pot=Math.min(99,s.pot+5);}lf(s,'fame',8);
     addNews(s,s.year,'사회',`농구 신동 ${s.name}, 월드클래스 명문 ${team.name} 합격`,`입학 실기까지 통과한 ${J(s.name,'이/가')} ${team.name}에 들어간다. 해외 언론도 주목하고 있다.`,false);}
   const mv=moveAway(s,team.city);log(s,`${team.city} ${team.name}에 진학했다.${mv}`,'major');
@@ -2426,6 +2435,7 @@ function ageUp(quiet){
   else if(UI.skip&&s.ap>0)runRoutine(s,false,skipSlots(s));
   const yr=s.year;
   try{storyChapters(s).forEach(f=>enqueue(f));}catch(e){console.error(e);}
+  if(s.team&&SCHOOL_BUD[s.team.name]&&!bud(s,SCHOOL_BUD[s.team.name][0]))enqueue(()=>schoolBudSpec(s));
   if(!quiet){
     const n=s.stage==='pro'?(chance(.55)?2:1):s.age<12?(chance(.6)?1:0):(chance(.3)?2:1);
     if(SET.events!=='off')pickEvents(s,n).forEach(e=>enqueue(()=>eventSpec(s,e)));
