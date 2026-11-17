@@ -482,11 +482,83 @@ input[type=range]{width:100%;accent-color:var(--leather)}
 .roster div.me{outline:1px solid var(--leather)}
 .real{color:var(--led);font-size:10px;font-weight:900;letter-spacing:.08em;margin-left:4px}
 
+/* growth: tier ring, yearly gains, achievements */
+.ovr-wrap{--p:0;position:relative;width:90px;height:90px;flex:none;display:grid;place-items:center}
+.ovr-wrap::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--led) calc(var(--p)*1%),rgba(255,255,255,.09) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3.5px))}
+.ovr-up{position:absolute;z-index:2;right:-8px;top:-4px;font-style:normal;font-family:var(--f-num);font-size:17px;line-height:1;padding:3px 7px 1px;border-radius:999px;background:var(--good);color:#06210f;box-shadow:0 4px 14px -4px rgba(69,211,145,.8)}
+.ovr-up.neg{background:var(--bad);color:#2a0606;box-shadow:none}
+.anim .ovr-up{animation:upPop .7s cubic-bezier(.2,1.6,.4,1) both .25s}
+@keyframes upPop{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+.tier-line{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.tier-line b{color:var(--led);font-size:13.5px}
+.tier-line small{font-size:11.5px;color:var(--muted)}
+.tier-bar{height:5px;border-radius:3px;background:#0b1527;overflow:hidden;margin-top:5px}
+.tier-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--maple),var(--led));border-radius:3px}
+.attrs.has-d .attr{grid-template-columns:78px 1fr 30px 34px}
+.attr em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--good);text-align:right;white-space:nowrap}
+.attr em.neg{color:var(--bad)}
+.attr .track i.gain{background:#b8ffd9;box-shadow:0 0 8px rgba(69,211,145,.9);border-radius:0 4px 4px 0;transform-origin:left center}
+.anim .attr .track i.gain{animation:gainIn .9s ease-out both .2s}
+@keyframes gainIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.grow-card{background:linear-gradient(135deg,rgba(255,196,67,.10),rgba(69,211,145,.06));border:1px solid rgba(255,196,67,.35);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:9px}
+.gc-head{display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.gc-head b{font-size:14px}
+.gc-head span{font-size:13px;color:var(--muted)}
+.gc-main{display:flex;align-items:center;gap:14px}
+.gc-big{font-family:var(--f-num);font-size:46px;line-height:.8;color:var(--good);text-shadow:0 0 18px rgba(69,211,145,.45);text-align:center;min-width:56px}
+.gc-big.neg{color:var(--bad);text-shadow:none}
+.gc-big small{display:block;font-size:10px;letter-spacing:.14em;color:var(--muted);font-family:var(--f-body);font-weight:900;text-shadow:none;margin-top:4px}
+.gc-tier{flex:1;min-width:0;font-size:13px;color:var(--muted);word-break:keep-all}
+.gc-tier b{color:var(--led)}
+.ms{display:flex;flex-wrap:wrap;gap:5px}
+.ms i{font-style:normal;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(255,196,67,.16);color:var(--led);border:1px solid rgba(255,196,67,.4)}
+.anim .grow-card{animation:pop .4s ease}
+/* fast mode: last result rides on top of the next window */
+.carry{background:#0b1527;border-left:3px solid var(--maple);border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:13px}
+.carry .ck{display:block;font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--maple);margin-bottom:2px}
+.carry p{margin:0 0 4px;color:#cdd7e8}
+.carry .deltas{margin-top:2px}
+.news-sub{margin:16px 0 4px;font-family:var(--f-disp);font-weight:400;font-size:19px;line-height:1.25;word-break:keep-all;padding-top:12px;border-top:1px solid var(--line)}
+.news-sub small{display:block;font-family:var(--f-body);font-size:11px;font-weight:900;letter-spacing:.12em;color:#ff6b6b;margin-bottom:2px}
+/* tier up */
+.sheet.tierup .m-kicker{background:linear-gradient(90deg,#5a3d06,#2a1c04);color:var(--led);text-shadow:none;border-bottom-color:#7a5510}
+.tu{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.tu-badge{width:84px;height:84px;flex:none;border-radius:50%;display:grid;place-items:center;align-content:center;background:radial-gradient(circle at 35% 30%,#ffe7a3,var(--led) 55%,#a87708);color:#3a2600;box-shadow:0 0 0 4px rgba(255,196,67,.18),0 0 34px rgba(255,196,67,.55);animation:tuIn .8s cubic-bezier(.2,1.5,.4,1) both}
+.tu-badge b{font-family:var(--f-num);font-size:42px;line-height:.8;font-weight:500}
+.tu-badge small{font-size:9.5px;font-weight:900;letter-spacing:.16em}
+@keyframes tuIn{from{transform:scale(.2) rotate(-90deg);opacity:0}to{transform:none;opacity:1}}
+.tu-path{font-size:14px;color:var(--muted);word-break:keep-all;min-width:0}
+.tu-path s{opacity:.75}
+.tu-path b{display:block;font-family:var(--f-disp);font-weight:400;font-size:26px;line-height:1.15;color:var(--led);margin-top:2px}
+/* season highs */
+.sb-hi{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sb-hi i{font-style:normal;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(69,211,145,.14);color:var(--good);border:1px solid rgba(69,211,145,.4)}
+/* achievements */
+.ach-pop{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);z-index:70;width:min(420px,calc(100% - 32px));background:linear-gradient(135deg,#2a1d05,#0a1220 70%);border:1px solid var(--led);border-radius:12px;padding:10px 14px 10px 56px;box-shadow:0 18px 40px -16px #000,0 0 24px -6px rgba(255,196,67,.5);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
+.ach-pop.show{transform:translate(-50%,0)}
+.ach-pop::before{content:"★";position:absolute;left:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--led);color:#3a2600;font-size:16px;line-height:1}
+.ach-pop small{display:block;font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--led)}
+.ach-pop b{display:block;font-size:15px}
+.ach-pop span{display:block;font-size:12px;color:var(--muted)}
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.ach-grid div{background:var(--panel-2);border-radius:8px;padding:8px 10px;font-size:12px;min-width:0;border:1px solid transparent}
+.ach-grid div b{display:block;font-size:13px}
+.ach-grid div small{display:block;color:var(--muted);word-break:keep-all}
+.ach-grid div.got{border-color:rgba(255,196,67,.45);background:linear-gradient(135deg,rgba(255,196,67,.12),var(--panel-2) 70%)}
+.ach-grid div.got b{color:var(--led)}
+.ach-grid div:not(.got){opacity:.55}
+.ach-bar{height:6px;border-radius:3px;background:#0b1527;overflow:hidden;margin:2px 0 10px}
+.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--maple),var(--led))}
+/* keyboard hint */
+.kbd-hint{font-size:11.5px;color:var(--muted);white-space:nowrap;opacity:.8}
+.kbd-hint kbd{font-family:var(--f-body);font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--chalk)}
+@media (hover:none),(max-width:760px){.kbd-hint{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
 <div id="app"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="achPop" class="ach-pop" role="status" aria-live="polite"></div>
 <div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="sheet">
     <div class="m-kicker" id="mKicker"></div>
@@ -1026,12 +1098,13 @@ function cap(s,k){
   if(s.breaks&&s.breaks[k])c=Math.max(c,s.breaks[k]);
   return clamp(Math.round(c),25,maxFor(s,k));
 }
-function ovr(s){
+function ovrRaw(s){
   const P=POS[s.pos];let o=0;
   for(const k in P.w)o+=s.attr[k]*P.w[k];
   const hb=clamp((s.height-posBase(s)*gfrac(s.age))*0.32,-9,5);
-  return clamp(Math.round(o+hb),1,130);
+  return clamp(o+hb,1,130);
 }
+function ovr(s){return Math.round(ovrRaw(s));}
 const potStars=p=>clamp(Math.round((p-45)/10),1,5);
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(Math.max(0,5-n));
 const WC_SCHOOLS=new Set(['장안중','서현고','대진고']);
@@ -1145,7 +1218,7 @@ function newGame(o){
   addRel(s,'아버지',dad,RI(60,85),RI(36,44));
   addRel(s,'어머니',mom,RI(65,90),RI(34,42));
   if(chance(.5))addRel(s,pick(['형제','자매']),pName(s),RI(45,75),8+pick([-3,-2,2,3]));
-  s.ovrHist.push({age:8,o:ovr(s)});
+  s.ovrHist.push({age:8,o:ovr(s)});s.flags.tierMax=tierIdx(ovr(s));s.y0=growSnap(s);s.ach={};
   log(s,`${s.year}년, ${ctry(s).n}. ${J(s.name,'은/는')} ${s.team.name} 농구부에 들어갔다. 등번호는 ${s.number}번.`,'major');
   if(s.persona.length)log(s,`성격: ${s.persona.map(k=>PERSONAS[k].n).join(', ')}.`);
   if(has(s,'family'))log(s,'거실 벽에는 부모님의 선수 시절 사진이 걸려 있다.');
@@ -1669,7 +1742,7 @@ function simSeason(s){
   if(s.contract){paid=Math.round(s.contract.salary*shortF);s.money+=Math.round(paid*(s.flags.agent?.92:1));s.contract.years--;}
   s.flags.lastRel=rel;s.flags.clutchBoost=0;s.flags.loadMgmt=false;
   const season={year:s.year,age:s.age,team:s.team.name,lg,gp,games,min:+min.toFixed(1),pts:+pts.toFixed(1),reb:+reb.toFixed(1),ast:+ast.toFixed(1),tp:+(tp*100).toFixed(1),fg:+(fg*100).toFixed(1),
-    w:wins,l:games-wins,res:labels[res],champ,awards:aw.map(a=>a[1]),akeys:aw.map(a=>a[0]),ovr:o,injury:injury?.name||null,salary:paid};
+    w:wins,l:games-wins,res:labels[res],champ,awards:aw.map(a=>a[1]),akeys:aw.map(a=>a[0]),ovr:o,role:roleLabel(o,s.team.str),injury:injury?.name||null,salary:paid};
   s.seasons.push(season);
   aw.forEach(a=>s.awards.push({year:s.year,age:s.age,key:a[0],name:a[1],lg}));
   const line=`${s.team.name} · ${wins}승 ${games-wins}패 · ${labels[res]} · 평균 ${season.pts}점 ${season.reb}리바 ${season.ast}어시`;
@@ -1684,6 +1757,9 @@ function seasonSpec(s){
   const lgName=LG[s.team.league].name, yr=s.year, team=s.team.name;
   const se=simSeason(s);
   const win=se.champ;
+  const isP=x=>LG[x.lg].kind==='pro',prev=s.seasons.filter(x=>x!==se&&isP(x)===isP(se)&&x.gp>=x.games*.3),hi=[];
+  if(prev.length&&se.gp>=se.games*.3)[['pts','득점'],['reb','리바운드'],['ast','어시스트']].forEach(([k,n])=>{if(se[k]>=3&&se[k]>Math.max(...prev.map(x=>x[k])))hi.push(`커리어 하이 ${n} ${se[k]}`);});
+  {const RO=['벤치 멤버','로테이션','주전','에이스'],last=s.seasons[s.seasons.length-2];if(last&&last.role&&last.lg===se.lg&&RO.indexOf(se.role)>RO.indexOf(last.role))hi.unshift(`역할 승격 · ${last.role} → ${se.role}`);}
   const aw=se.awards.filter(a=>!a.endsWith('우승'));
   const salaryLine=se.salary?`<div class="sb-note">연봉 ${fmtMoney(se.salary)} 수령${s.flags.agent?' (에이전트 수수료 8% 제외)':''}${s.contract?` · 계약 잔여 ${Math.max(0,s.contract.years)}년`:''}</div>`:'';
   const body=`<div class="sb">
@@ -1691,8 +1767,9 @@ function seasonSpec(s){
     <div class="sb-stats">
       <div><b>${se.pts}</b><span>PTS</span></div><div><b>${se.reb}</b><span>REB</span></div><div><b>${se.ast}</b><span>AST</span></div>
       <div><b>${se.fg}</b><span>FG%</span></div><div><b>${se.tp}</b><span>3P%</span></div></div>
-    <div class="sb-note">${se.gp}/${se.games}경기 출전 · 평균 ${se.min}분${se.injury?` · <span style="color:var(--bad)">부상: ${esc(se.injury)}</span>`:''}</div>
+    <div class="sb-note">${se.gp}/${se.games}경기 출전 · 평균 ${se.min}분 · ${se.role}${se.injury?` · <span style="color:var(--bad)">부상: ${esc(se.injury)}</span>`:''}</div>
     ${aw.length?`<div class="sb-awards">${aw.map(a=>`<i>${esc(a)}</i>`).join('')}</div>`:''}
+    ${hi.length?`<div class="sb-hi">${hi.map(h=>`<i>${esc(h)}</i>`).join('')}</div>`:''}
     ${salaryLine}</div>${(()=>{const rows=standings(s,se);if(!rows)return '';se.rank=rows.findIndex(r=>r[3])+1;return `<h3 style="margin:12px 0 6px;font-size:12px;letter-spacing:.12em;color:var(--muted)">정규리그 순위 · ${se.rank}위</h3>`+standingsHTML(rows);})()}`;
   if(se.akeys.includes('allstar')&&LG[se.lg].kind==='pro')queue.unshift(()=>isPlaying(s)?allStarSpec(s,se.lg==='sangmu'?'kbl':se.lg,yr):null);
   return {cat:'season',kicker:`${seasonLabel(s,yr)} 시즌 결산 · ${lgName}`,title:team,body,choices:[{label:'계속',primary:true,act:()=>null}]};
@@ -1734,8 +1811,10 @@ function bigMatchIntro(s){
   const base=L.kind==='pro'?RI(78,92):L.kind==='college'?RI(60,70):RI(44,56);
   const M={opp:oppName,star,my:base,them:base+RI(-2,6),step:0,pts:0,ast:0,stops:0,lv:L.level,oppO:star?star.o:L.level+RI(0,5),last:''};
   if(s.routine?.bmAuto||!SET.bigmatch)return bmAuto(s,M).spec;
+  if(SET.fast){bmAutoStep(s,M);bmAutoStep(s,M);M.last='';}
+  const left=BM_SEQ.slice(M.step),nO=left.filter(x=>x==='O').length,nD=left.length-nO;
   return {kicker:`${seasonLabel(s,s.year)} 시즌 · 빅매치`,title:`vs ${oppName}`,board:bmBoard(s,M),
-    body:`<p>${star?`상대 에이스는 <b>${esc(star.name)}</b>${star.real?'':''} (OVR ${star.o}). `:''}4쿼터 4분 남기고 ${M.my}-${M.them}. 감독이 나를 부른다.</p><p class="sb-note">공격 3번, 수비 3번을 직접 고른다. 슛은 타이밍 미니게임. 이기면 시즌 성적과 인기가 오른다.</p>`,
+    body:`<p>${star?`상대 에이스는 <b>${esc(star.name)}</b>${star.real?'':''} (OVR ${star.o}). `:''}4쿼터 ${M.step?BM_TIME[M.step].replace(':','분 ')+'초':'4분'} 남기고 ${M.my}-${M.them}. 감독이 나를 부른다.</p><p class="sb-note">공격 ${nO}번, 수비 ${nD}번을 직접 고른다. 슛은 타이밍 미니게임. 이기면 시즌 성적과 인기가 오른다.</p>`,
     choices:[{label:'코트에 들어간다',sub:'공격과 수비를 직접 지휘',act:()=>({spec:bmStep(s,M)})},
       {label:'결과만 본다',sub:'자동으로 시뮬레이션',act:()=>bmAuto(s,M)}]};
 }
@@ -1788,11 +1867,12 @@ function bmStep(s,M){
     body:pbp+`<p>${M.star?`${esc(M.star.name)}${J(M.star.name,'이/가').slice(M.star.name.length)} 공을 잡는다.`:'상대가 공을 몰고 넘어온다.'} 어떻게 막을까?</p>`,
     choices:bmDefense(s,M).map(d=>({label:d.t,sub:d.sub,tag:`${Math.round(d.p*100)}%`,act:()=>{bmApplyDef(s,M,d,chance(d.p));return {spec:bmStep(s,M)};}}))};
 }
+function bmAutoStep(s,M){
+  if(BM_SEQ[M.step]==='O'){const os=bmOffense(s,M);const o=os.reduce((a,b)=>b.p*b.pts>a.p*a.pts?b:a);bmApplyOff(s,M,o,chance(o.p),'good');}
+  else{const ds=bmDefense(s,M);const d=ds.reduce((a,b)=>b.p>a.p?b:a);bmApplyDef(s,M,d,chance(d.p));}
+}
 function bmAuto(s,M){
-  while(M.step<BM_SEQ.length){
-    if(BM_SEQ[M.step]==='O'){const os=bmOffense(s,M);const o=os.reduce((a,b)=>b.p*b.pts>a.p*a.pts?b:a);bmApplyOff(s,M,o,chance(o.p),'good');}
-    else{const ds=bmDefense(s,M);const d=ds.reduce((a,b)=>b.p>a.p?b:a);bmApplyDef(s,M,d,chance(d.p));}
-  }
+  while(M.step<BM_SEQ.length)bmAutoStep(s,M);
   const sp=bmEndSpec(s,M);return {spec:sp};
 }
 function bmEndSpec(s,M){
@@ -2178,10 +2258,10 @@ function worldYear(s,yr){
       // 내가 역사를 바꾸지 않았다면 실제 기록 그대로
       if(se&&se.champ&&rc&&rc.team===se.team)addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 챔피언 ${rc.name} — 역사 그대로`,`실제 역사대로 ${J(rc.name,'이/가')} 정상에 올랐다. 그 우승 사진 한가운데에 ${J(s.name,'이/가')} 서 있다.`,false);
       else if(se&&se.champ&&!rc)addNews(s,yr,'시즌',`[${L.short}] ${seasonLabel({team:{league:lg}},yr)} 시즌 챔피언 ${se.team}`,`${J(se.team,'이/가')} 정상에 올랐다. 그 중심에 ${J(s.name,'이/가')} 있었다.`);
-      else if(se&&se.champ){addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: ${se.team} 우승`,`원래 이 해의 챔피언은 ${J(rc?rc.name:'다른 팀','이었다/였다')}. ${J(s.name,'이/가')} 있는 세계에서는 ${J(se.team,'이/가')} 정상에 올랐다.`,false);}
+      else if(se&&se.champ){s.flags.changedHistory=1;addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: ${se.team} 우승`,`원래 이 해의 챔피언은 ${J(rc?rc.name:'다른 팀','이었다/였다')}. ${J(s.name,'이/가')} 있는 세계에서는 ${J(se.team,'이/가')} 정상에 올랐다.`,false);}
       else if(rc&&!(se&&rc.team===se.team))addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 챔피언 ${rc.name}${rm&&!myMvp?`, MVP ${rm}`:''}`,`${J(rc.name,'이/가')} 정상에 올랐다.${rm&&!myMvp?` 정규리그 MVP는 ${rm}.`:''}`);
       else if(rm&&!myMvp)addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 정규리그 MVP ${rm}`,`${rm}이(가) MVP 트로피를 받았다.`.replace('이(가)',hasBatchim(rm)?'이':'가'));
-      if(myMvp&&rm)addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: MVP ${s.name}`,`원래 이 해의 MVP는 ${J(rm,'이었다/였다')}.`,false);
+      if(myMvp&&rm&&(s.flags.changedHistory=1))addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: MVP ${s.name}`,`원래 이 해의 MVP는 ${J(rm,'이었다/였다')}.`,false);
       return;
     }
     const champ=se&&se.champ?se.team:wpick(teams.filter(t=>!se||t!==se.team).map(t=>[t,Math.pow(Math.max(1,teamPower(lg,t,yr,g)-L.level+12),2)]));
@@ -2197,8 +2277,11 @@ function worldYear(s,yr){
   syncMates(s);
   const PRI={경제:0,리그:0,사회:0,'해외 진출':1,드래프트:2,기록:3,트레이드:4,'FA 이적':4,은퇴:5};
   bigs.sort((a,b)=>(PRI[a.tag]??9)-(PRI[b.tag]??9));
-  bigs.slice(0,2).forEach(n=>enqueue(()=>({cat:'news',cls:'news',kicker:`속보 · ${n.tag} · ${yr}`,title:n.h,body:`<p>${esc(n.b)}</p>${n.eff?`<div class="result">${esc(n.eff)}</div>`:''}`,choices:[{label:'계속',primary:true,act:()=>null}]})));
-  if(bigs.length>2)log(s,`그 밖에도 큰 소식 ${bigs.length-2}건이 뉴스 탭에 있다.`);
+  const showN=SET.fast?3:2,shown=bigs.slice(0,showN);
+  if(SET.fast&&shown.length>1)enqueue(()=>({cat:'news',cls:'news',kicker:`속보 ${shown.length}건 · ${yr}`,title:shown[0].h,
+    body:shown.map((n,i)=>`${i?`<h3 class="news-sub"><small>${esc(n.tag)}</small>${esc(n.h)}</h3>`:''}<p>${esc(n.b)}</p>${n.eff?`<div class="result">${esc(n.eff)}</div>`:''}`).join(''),choices:[{label:'계속',primary:true,act:()=>null}]}));
+  else shown.forEach(n=>enqueue(()=>({cat:'news',cls:'news',kicker:`속보 · ${n.tag} · ${yr}`,title:n.h,body:`<p>${esc(n.b)}</p>${n.eff?`<div class="result">${esc(n.eff)}</div>`:''}`,choices:[{label:'계속',primary:true,act:()=>null}]})));
+  if(bigs.length>showN)log(s,`그 밖에도 큰 소식 ${bigs.length-showN}건이 뉴스 탭에 있다.`);
 }
 function syncMates(s){
   if(!s.team||!LG[s.team.league]||LG[s.team.league].kind==='school'||s.team.league==='sangmu')return;
@@ -2843,18 +2926,19 @@ let queue=[];
 function enqueue(fn){queue.push(fn);}
 function ageUp(quiet){
   if(UI.modalOpen||!S||!S.alive)return;
-  const s=S;queue=[];
+  const s=S;queue=[];UI.yearRun=true;UI.carry=null;if(!s.y0)s.y0=growSnap(s);
   if(s.routine?.on&&s.ap>0)runRoutine(s,!quiet&&!UI.skip);
   else if(UI.skip&&s.ap>0)runRoutine(s,false,skipSlots(s));
+  if(s.routine?.rel)autoBond(s);
   const yr=s.year;
   try{storyChapters(s).forEach(f=>enqueue(f));}catch(e){console.error(e);}
   if(s.team&&SCHOOL_BUD[s.team.name]&&!bud(s,SCHOOL_BUD[s.team.name][0]))enqueue(()=>schoolBudSpec(s));
   if(!quiet){
-    const n=s.stage==='pro'?(chance(.55)?2:1):s.age<12?(chance(.6)?1:0):(chance(.3)?2:1);
+    const fast=SET.fast,n=s.stage==='pro'?(chance(fast?.4:.55)?2:1):s.age<12?(chance(fast?.45:.6)?1:0):(chance(fast?.2:.3)?2:1);
     if(SET.events!=='off')pickEvents(s,n).forEach(e=>enqueue(()=>eventSpec(s,e)));
   }
   if(isPlaying(s)&&!s.flags.banned){
-    if(!quiet&&s.age>=13&&(s.stage!=='middle'||chance(.6)))enqueue(()=>isPlaying(s)?bigMatchIntro(s):null);
+    if(!quiet&&s.age>=13&&(s.stage!=='middle'||chance(.6))&&(!SET.fast||chance(.65)))enqueue(()=>isPlaying(s)?bigMatchIntro(s):null);
     else if(!quiet&&s.age>=10&&chance(.45))enqueue(()=>isPlaying(s)?seasonClutch(s):null);
     enqueue(()=>isPlaying(s)?seasonSpec(s):null);
   }
@@ -2919,6 +3003,7 @@ function yearEnd(s,yr){
   s.relations=s.relations.filter(r=>!(r.gone));
   // injuries carry handled in sim; growth spurts
   s.ovrHist.push({age:a,o:ovr(s)});
+  {const tu=tierCheck(s);if(tu)enqueue(()=>tu);}
   // stage AP
   s.apMax=AP_BY[s.stage]||3;s.ap=s.apMax;s.flags.yearly={};
   if(s.life.happy<15&&!s.flags.lowWarned){s.flags.lowWarned=1;log(s,'요즘 아무것도 즐겁지 않다. 쉬어야 할 때다.','bad');}
@@ -3148,6 +3233,182 @@ function pickEnding(s){const e=endingStats(s);return ENDINGS.find(x=>{try{return
 function endingsSeen(){try{return JSON.parse(localStorage.getItem(ENDKEY)||'[]');}catch(e){return [];}}
 function recordEnding(s){if(!s.endingId)s.endingId=pickEnding(s).id;const seen=endingsSeen();if(!seen.includes(s.endingId)){seen.push(s.endingId);try{localStorage.setItem(ENDKEY,JSON.stringify(seen));}catch(e){}}return s.endingId;}
 
+/* ================= growth: tiers, yearly report, achievements ================= */
+const TIERS=[[0,'농구 꿈나무'],[35,'동네 에이스'],[44,'학교 에이스'],[51,'지역 유망주'],[57,'전국구 유망주'],[63,'프로 지망생'],[68,'프로 주전급'],[73,'리그 정상급'],[78,'월드클래스'],[83,'슈퍼스타'],[88,'MVP급'],[93,'레전드'],[98,'농구의 신'],[106,'규격 외']];
+const TIER_TXT=['',
+  '동네 농구장에서 내 이름을 아는 사람이 생겼다. 편을 가를 때 제일 먼저 뽑힌다.',
+  '학교 체육관에서 나보다 잘하는 애가 없다. 체육 선생님이 농구부 코치에게 전화를 걸었다.',
+  '지역 대회 관계자들이 내 경기를 따로 메모하기 시작했다.',
+  '전국 대회 팸플릿에 내 사진이 실렸다. 스카우트 수첩에 이름이 적혔다.',
+  '프로 구단 스카우트가 연습 경기를 보러 왔다. "몇 년 뒤가 기대되는 선수."',
+  '프로 무대에서 주전으로 뛸 수 있는 몸과 기술을 갖췄다.',
+  '리그에서 손꼽히는 선수가 됐다. 상대 감독이 나만을 위한 수비 전술을 짠다.',
+  '세계 어느 리그에 가도 통하는 선수. 해외 스카우트의 연락이 끊이지 않는다.',
+  '관중석이 내 유니폼으로 가득하다. 슈퍼스타의 영역에 들어섰다.',
+  '매 시즌 MVP 후보로 거론된다. 기자들이 내 기록을 레전드와 비교하기 시작했다.',
+  '살아 있는 레전드. 어린 선수들이 내 무브를 따라 한다.',
+  '농구의 신. 이 이상은 없다고들 했다.',
+  '측정 불가. 인간의 한계를 넘어섰다.'];
+function tierIdx(o){let i=0;for(let j=0;j<TIERS.length;j++)if(o>=TIERS[j][0])i=j;return i;}
+function tierInfo(s){
+  const raw=ovrRaw(s),i=tierIdx(Math.round(raw)),lo=TIERS[i][0],nx=TIERS[i+1];
+  return {i,name:TIERS[i][1],next:nx?nx[1]:null,at:nx?nx[0]:null,need:nx?Math.max(.1,nx[0]-.5-raw):0,pct:nx?clamp((raw-(lo-.5))/(nx[0]-lo)*100,0,100):100};
+}
+function tierCheck(s){
+  const i=tierIdx(ovr(s));
+  if(s.flags.tierMax==null){s.flags.tierMax=i;return null;}
+  if(i<=s.flags.tierMax||!(isPlaying(s)||s.stage==='army'))return null;
+  const from=s.flags.tierMax;s.flags.tierMax=i;
+  log(s,`등급 상승: ${TIERS[from][1]} → ${TIERS[i][1]}`,'major');
+  return tierSpec(s,from,i);
+}
+function tierReward(s){if(s.flags.tierRw===s.flags.tierMax)return;s.flags.tierRw=s.flags.tierMax;lf(s,'fame',3);lf(s,'mental',5);lf(s,'happy',4);s.ap+=1;}
+function tierSpec(s,from,i){
+  const nx=TIERS[i+1];
+  return {cat:'tier',cls:'tierup',kicker:`${s.age}세 · ${s.year} · 등급 상승`,title:'한 단계 올라섰다',
+    body:`<div class="tu"><div class="tu-badge"><b>${i+1}</b><small>TIER</small></div><div class="tu-path"><s>${TIERS[from][1]}</s> →<b>${TIERS[i][1]}</b></div></div><p>${TIER_TXT[i]}</p>
+      <div class="deltas"><i>인기 +3</i><i>멘탈 +5</i><i>행복 +4</i><i>올해 행동 +1</i></div>
+      ${nx?`<p class="sb-note" style="margin:8px 0 0">다음 등급 「${nx[1]}」 · OVR ${nx[0]}부터</p>`:''}`,
+    auto:()=>{tierReward(s);return null;},
+    choices:[{label:'다음 목표를 향해',primary:true,act:()=>{tierReward(s);return null;}}]};
+}
+// 한 해 동안의 성장 기록 (매년 끝날 때 계산)
+function growSnap(s){return {o:ovrRaw(s),a:{...s.attr},h:s.height};}
+function finishYear(s){
+  const y0=s.y0;s.y0=growSnap(s);
+  if(!y0||!s.alive)return;
+  const d={},ms=[];
+  for(const k of ATTRS){const v0=y0.a[k]??s.attr[k],v1=s.attr[k];d[k]=Math.round((v1-v0)*10)/10;
+    for(const th of [50,60,70,80,90,100])if(v0<th&&v1>=th)ms.push(`${ATTR_KO[k]} ${th}`);}
+  s.lastGrow={age:s.age,from:y0.o,to:ovrRaw(s),d,ms,h:Math.round((s.height-y0.h)*10)/10};
+  if(ms.length)log(s,`능력치 돌파: ${ms.join(', ')}`,'good');
+  if(!UI.skip)UI.growAnimUntil=Date.now()+1600;
+}
+const growShown=s=>isPlaying(s)||s.stage==='army';
+function curGrow(s){const g=s.lastGrow;return g&&g.age===s.age&&growShown(s)?g:null;}
+function growCardHTML(s){
+  const g=curGrow(s);if(!g)return '';
+  const dO=Math.round(g.to)-Math.round(g.from),t=tierInfo(s);
+  const list=ATTRS.map(k=>[k,g.d[k]]).filter(x=>Math.abs(x[1])>=.1).sort((a,b)=>b[1]-a[1]);
+  const ups=list.filter(x=>x[1]>0).slice(0,5),downs=list.filter(x=>x[1]<0).slice(-3);
+  return `<div class="grow-card"><div class="gc-head"><b>${g.age-1}세 → ${g.age}세 성장 리포트</b><span class="num">OVR ${g.from.toFixed(1)} → ${g.to.toFixed(1)}${g.h>=.5?` · 키 +${g.h}cm`:''}</span></div>
+    <div class="gc-main"><div class="gc-big ${dO<0?'neg':''}">${dO>0?'+':''}${dO}<small>OVR</small></div>
+      <div class="gc-tier">등급 <b>${t.name}</b>${t.next?` · 다음 「${t.next}」까지 OVR ${t.need.toFixed(1)}`:' · 최고 등급'}<div class="tier-bar"><i style="width:${t.pct.toFixed(1)}%"></i></div></div></div>
+    ${ups.length||downs.length?`<div class="deltas">${ups.map(([k,v])=>`<i>${ATTR_KO[k]} +${v.toFixed(1)}</i>`).join('')}${downs.map(([k,v])=>`<i class="neg">${ATTR_KO[k]} ${v.toFixed(1)}</i>`).join('')}</div>`:''}
+    ${g.ms.length?`<div class="ms">${g.ms.map(m=>`<i>${esc(m)} 돌파</i>`).join('')}</div>`:''}</div>`;
+}
+function countUp(el,a,b){if(!el||a===b)return;const t0=performance.now(),dur=900;const step=now=>{const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);el.textContent=Math.round(a+(b-a)*e);if(k<1)requestAnimationFrame(step);};el.textContent=a;requestAnimationFrame(step);}
+
+// 업적
+const proA=(s,k)=>s.awards.filter(a=>a.key===k&&LG[a.lg]&&LG[a.lg].kind==='pro').length;
+const proS=s=>s.seasons.filter(x=>LG[x.lg].kind==='pro');
+const ACH=[
+  ['o50','반에서 제일 잘하는 애','종합 능력치 50',s=>ovr(s)>=50],
+  ['o60','전국구','종합 능력치 60',s=>ovr(s)>=60],
+  ['o70','프로의 문턱을 넘다','종합 능력치 70',s=>ovr(s)>=70],
+  ['o80','월드클래스','종합 능력치 80',s=>ovr(s)>=80],
+  ['o90','살아 있는 전설','종합 능력치 90',s=>ovr(s)>=90],
+  ['o100','인간 초월','종합 능력치 100',s=>ovr(s)>=100],
+  ['a90','스페셜리스트','능력치 하나를 90까지',s=>ATTRS.some(k=>s.attr[k]>=90)],
+  ['a100','한계 돌파','능력치 하나가 100을 넘다',s=>ATTRS.some(k=>s.attr[k]>=100)],
+  ['tall','거인','키 2m 돌파 (여자 190cm)',s=>s.height>=(s.gender==='f'?190:200)],
+  ['wc','월드클래스 스쿨','장안중 · 서현고 · 대진고에서 뛰다',s=>atWC(s)||s.seasons.some(x=>WC_SCHOOLS.has(x.team))],
+  ['school','전국 제패','학생 대회 우승',s=>s.awards.some(a=>a.key==='champ'&&LG[a.lg]&&LG[a.lg].kind!=='pro')],
+  ['pro','프로 데뷔','프로 무대에서 첫 시즌',s=>proS(s).length>0],
+  ['dream','꿈의 무대','NBA · WNBA 코트를 밟다',s=>s.seasons.some(x=>x.lg==='nba'||x.lg==='wnba')],
+  ['roy','신인왕','프로 신인왕',s=>proA(s,'roy')>0],
+  ['allstar','별들의 무대','프로 올스타 선정',s=>proA(s,'allstar')>0],
+  ['allstar5','올스타 단골','올스타 5회',s=>proA(s,'allstar')>=5],
+  ['scoring','득점 기계','프로 득점왕',s=>proA(s,'scoring')>0],
+  ['dpoy','자물쇠','프로 수비상',s=>proA(s,'dpoy')>0],
+  ['mvp','MVP','정규리그 MVP',s=>proA(s,'mvp')>0],
+  ['mvp3','시대의 지배자','MVP 3회',s=>proA(s,'mvp')>=3],
+  ['champ','챔피언','프로 우승',s=>proA(s,'champ')>0],
+  ['champ3','왕조','프로 우승 3회',s=>proA(s,'champ')>=3],
+  ['fmvp','파이널의 주인공','파이널 MVP',s=>proA(s,'fmvp')>0],
+  ['pts25','에이스','프로 한 시즌 평균 25점',s=>proS(s).some(x=>x.pts>=25&&x.gp>=x.games*.5)],
+  ['dd','더블더블 머신','프로 한 시즌 평균 더블더블',s=>proS(s).some(x=>x.gp>=x.games*.5&&[x.pts,x.reb,x.ast].filter(v=>v>=10).length>=2)],
+  ['clutch','클러치의 신','클러치 순간 10번 성공',s=>(s.flags.clutchMakes||0)>=10],
+  ['nat','국가대표','성인 국가대표 발탁',s=>!!s.flags.nat],
+  ['medal','시상대','국제대회 메달',s=>s.awards.some(a=>['olympic','ag_gold','ag_silver','ag_bronze'].includes(a.key))],
+  ['history','역사를 바꾸다','실제 역사의 챔피언 · MVP를 바꾸다',s=>!!s.flags.changedHistory],
+  ['iron','철인','프로 15시즌',s=>proS(s).length>=15],
+  ['sig','나만의 무기','시그니처 무브 완성',s=>!!(s.sig&&s.sig.move)],
+  ['skill','레전드의 제자','레전드 시그니처 스킬 습득',s=>(s.sskills||[]).length>0],
+  ['hof','명예의 전당','명예의 전당 헌액',s=>!!s.flags.hof],
+  ['love','첫사랑','연인이 생기다',s=>s.relations.some(r=>r.type==='연인'||r.type==='배우자')],
+  ['married','평생의 짝','결혼',s=>s.relations.some(r=>r.type==='배우자')],
+  ['parent','부모가 되다','아이가 태어나다',s=>s.relations.some(r=>r.type==='자녀')],
+  ['bond5','평생 인연','가족 밖의 누군가와 인연 Lv.5',s=>s.relations.some(r=>!r.dead&&r.bond>=80&&!['아버지','어머니','형제','자매','자녀','손주'].includes(r.type))],
+  ['rich1','10억 클럽','순자산 10억',s=>netWorth(s)>=100000],
+  ['rich2','100억 클럽','순자산 100억',s=>netWorth(s)>=1000000],
+  ['lab','시간을 거스르다','연구소 장치 완성',s=>!!(s.lab&&((s.lab.anti&&s.lab.anti.done)||(s.lab.rewind&&s.lab.rewind.done)))],
+  ['long','구순 잔치','90세까지 살다',s=>s.age>=90],
+];
+const ACH_KEY=SAVE_KEY+':ach';
+function achAll(){try{return JSON.parse(localStorage.getItem(ACH_KEY)||'[]');}catch(e){return [];}}
+function achCheck(s){
+  if(!s||!s.flags||!s.attr)return;
+  const quiet=!s.ach;s.ach=s.ach||{};const got=[];
+  for(const [id,n,d,f] of ACH){if(s.ach[id])continue;let ok=false;try{ok=!!f(s);}catch(e){}if(ok){s.ach[id]={age:s.age,year:s.year};got.push([id,n,d]);}}
+  if(!got.length)return;
+  const all=achAll();got.forEach(([id])=>{if(!all.includes(id))all.push(id);});try{localStorage.setItem(ACH_KEY,JSON.stringify(all));}catch(e){}
+  if(quiet)return; // 예전 저장 파일: 이미 이룬 업적은 조용히 기록만
+  log(s,`업적 달성: ${got.map(g=>g[1]).join(' · ')}`,'good');
+  if(SET.achPop&&!UI.skip)achPop(got);
+}
+const achQ=[];let achT=null;
+function achPop(list){achQ.push(...list);if(achQ.length>4)achQ.splice(0,achQ.length-4);if(!achT)achNext();}
+function achNext(){
+  const el=$('#achPop');if(!el)return;const it=achQ.shift();
+  if(!it){achT=null;el.classList.remove('show');return;}
+  el.innerHTML=`<small>업적 달성</small><b>${esc(it[1])}</b><span>${esc(it[2])}</span>`;el.classList.add('show');
+  achT=setTimeout(()=>{el.classList.remove('show');achT=setTimeout(achNext,380);},2300);
+}
+function achHTML(s,inCareer){
+  const got=s.ach||{},n=ACH.filter(a=>got[a[0]]).length,all=achAll().filter(id=>ACH.some(a=>a[0]===id)).length;
+  return `<h3${inCareer?' style="margin-top:18px"':''}>업적 <em>이번 생 ${n} / ${ACH.length} · 도감 ${all} / ${ACH.length}</em></h3><div class="ach-bar"><i style="width:${(n/ACH.length*100).toFixed(1)}%"></i></div>
+  <div class="ach-grid">${ACH.map(([id,nm,d])=>{const g=got[id];return `<div class="${g?'got':''}"><b>${esc(nm)}</b><small>${esc(d)}${g?` · ${g.age}세`:''}</small></div>`;}).join('')}</div>`;
+}
+
+// 인연 자동 챙기기 (루틴 옵션)
+const AUTO_REL=['talk','date','play','walk'],AUTO_REL_T=['아버지','어머니','형제','자매','연인','배우자','자녀','손주','반려견'];
+function autoBond(s){
+  let n=0;
+  s.relations.filter(r=>!r.dead&&AUTO_REL_T.includes(r.type)).forEach(r=>{
+    const a=(REL_ACTS[r.type]||[]).find(a=>AUTO_REL.includes(a.id)&&(!a.min||s.age>=a.min)&&!s.flags.relDone[r.id+':'+a.id]);
+    if(a&&relCore(s,r,a.id)!=null)n++;});
+  if(n)log(s,`바쁜 와중에도 소중한 사람들을 챙겼다. (${n}명)`);
+  return n;
+}
+
+// 키보드: Space/Enter = 진행 · 숫자 = 선택지
+function kbChoice(){return document.querySelector('#mChoices button.primary:not(:disabled)')||document.querySelector('#mChoices button:not(:disabled)');}
+function kbNext(){const b=$('#btnNext');if(b&&!b.disabled&&!UI.modalOpen){b.click();return true;}return false;}
+const kbSkip=t=>{const tag=(t&&t.tagName)||'';return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable);};
+document.addEventListener('keydown',e=>{
+  if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||kbSkip(e.target))return;
+  if(meterState.active||!S||!S.alive)return;
+  const t=e.target,onBtn=t&&(t.tagName==='BUTTON'||t.tagName==='A');
+  if(!$('#modal').hidden){
+    if(/^[1-9]$/.test(e.key)){const b=[...document.querySelectorAll('#mChoices button:not(:disabled)')][+e.key-1];if(b){e.preventDefault();b.click();}return;}
+    if(e.key==='Enter'&&!onBtn){const b=kbChoice();if(b){e.preventDefault();b.click();}}
+    else if(e.key===' '&&!onBtn)e.preventDefault();
+    return;
+  }
+  if(onBtn)return;
+  if(e.key==='Enter'){if(kbNext())e.preventDefault();}
+  else if(e.key===' ')e.preventDefault(); // 스페이스는 손을 뗄 때 진행 (다음 창 버튼이 눌리지 않도록)
+});
+document.addEventListener('keyup',e=>{
+  if(e.key!==' '||e.ctrlKey||e.metaKey||e.altKey||kbSkip(e.target))return;
+  const t=e.target;if(t&&(t.tagName==='BUTTON'||t.tagName==='A'))return;
+  if(meterState.active||!S||!S.alive)return;
+  if(!$('#modal').hidden){const b=kbChoice();if(b)b.click();return;}
+  kbNext();
+});
+const carryHTML=c=>`<div class="carry"><span class="ck">↳ ${esc(c.title)}</span><p>${esc(c.text)}</p>${c.d||''}</div>`;
+
 /* ================= time skip ================= */
 function skipStart(s){return {age:s.age,year:s.year,o:ovr(s),money:netWorth(s),legacy:s.legacy,fame:s.life.fame};}
 function skipMenuSpec(s){
@@ -3197,7 +3458,7 @@ const fmtDate=t=>new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeri
 function exportCode(st){return 'BBL1:'+btoa(unescape(encodeURIComponent(JSON.stringify(st))));}
 function importCode(t){t=(t||'').trim().replace(/\s+/g,'');if(!t.startsWith('BBL1:'))throw new Error('형식');const o=JSON.parse(decodeURIComponent(escape(atob(t.slice(5)))));if(!o||!o.name||!o.attr||!o.life)throw new Error('내용');return o;}
 function loadState(o,from){
-  S=o;queue=[];UI.skip=null;UI.draft=null;UI.tab='feed';closeModal();save();render();
+  S=o;queue=[];UI.skip=null;UI.carry=null;UI.yearRun=false;UI.draft=null;UI.tab='feed';closeModal();save();render();
   toast('불러오기',`${from}: ${o.name} · ${o.age}세 시점으로 돌아왔다.`,'');
 }
 function slotRowsHTML(withSave){
@@ -3236,10 +3497,13 @@ function saveMenu(){
 
 /* ================= settings: hide windows you don't need ================= */
 const SET_KEY=SAVE_KEY+':settings';
-const SET_DEF={newsPop:true,season:true,clutch:true,bigmatch:true,allstar:true,story:true,events:'show',results:true,toasts:true,meter:true};
+const SET_DEF={fast:true,newsPop:true,season:true,clutch:true,bigmatch:true,allstar:true,story:true,events:'show',results:true,toasts:true,meter:true,tier:true,achPop:true};
 let SET=(()=>{try{return {...SET_DEF,...JSON.parse(localStorage.getItem(SET_KEY)||'{}')};}catch(e){return {...SET_DEF};}})();
 function saveSet(){try{localStorage.setItem(SET_KEY,JSON.stringify(SET));}catch(e){}}
 const SET_ROWS=[
+  ['fast','빠른 진행','선택 결과를 다음 창 위에 붙여 보여 주고, 사건·빅매치 횟수를 줄이고, 빅매치는 종료 2분 전부터 · 키보드 Space/Enter로 진행, 숫자키로 선택'],
+  ['tier','등급 상승 축하','끄면 등급이 올라도 창 없이 보상만 받는다'],
+  ['achPop','업적 알림','화면 위쪽에 업적 달성 배너를 띄운다'],
   ['newsPop','속보 뉴스 팝업','끄면 이적·은퇴·세계 사건은 뉴스 탭에만 쌓인다'],
   ['season','시즌 결산 창','끄면 성적은 인생 기록과 커리어 탭에만 남는다'],
   ['bigmatch','빅매치 직접 지휘','끄면 매 시즌 빅매치가 자동으로 진행된다'],
@@ -3253,7 +3517,7 @@ const SET_ROWS=[
 function suppressed(spec){
   const c=spec.cat;
   return (c==='news'&&!SET.newsPop)||(c==='season'&&!SET.season)||(c==='clutch'&&!SET.clutch)||(c==='bigmatch'&&!SET.bigmatch)||
-    (c==='allstar'&&!SET.allstar)||(c==='story'&&!SET.story)||(c==='event'&&SET.events==='auto');
+    (c==='allstar'&&!SET.allstar)||(c==='story'&&!SET.story)||(c==='event'&&SET.events==='auto')||(c==='tier'&&!SET.tier);
 }
 function autoSuppressed(spec){
   if(autoResolve(spec))return true;
@@ -3264,7 +3528,7 @@ function autoSuppressed(spec){
 function settingsSpec(){
   const sw=([k,label,sub])=>`<label class="set-row"><span><b>${label}</b><small>${sub}</small></span><span class="switch"><input type="checkbox" data-set="${k}" ${SET[k]?'checked':''}><span></span></span></label>`;
   const ev=[['show','직접 고르기'],['auto','자동 선택'],['off','안 일어남']];
-  return {kicker:'설정 · 이 브라우저에 저장',title:'필요 없는 창 끄기',
+  return {kicker:'설정 · 이 브라우저에 저장',title:'진행 설정 · 필요 없는 창 끄기',
     body:`<div class="set-list">${SET_ROWS.map(sw).join('')}
       <div class="set-row"><span><b>랜덤 사건</b><small>연애·스캔들·동네 이벤트 등 해마다 일어나는 사건 · 자동은 첫 번째 선택지를 고른다</small></span><span class="seg" style="flex:1 1 100%">${ev.map(([v,l])=>`<button type="button" data-setev="${v}" aria-pressed="${SET.events===v}">${l}</button>`).join('')}</span></div></div>
       <p class="sb-note" style="margin-top:10px">진학, 드래프트, FA 계약, 입대, 은퇴 후 진로처럼 인생을 바꾸는 결정은 끌 수 없다.</p>
@@ -3273,7 +3537,7 @@ function settingsSpec(){
     onShow:()=>{
       document.querySelectorAll('#mBody [data-set]').forEach(i=>i.onchange=()=>{SET[i.dataset.set]=i.checked;saveSet();});
       document.querySelectorAll('#mBody [data-setev]').forEach(b=>b.onclick=()=>{SET.events=b.dataset.setev;saveSet();document.querySelectorAll('#mBody [data-setev]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
-      $('#setAllOff').onclick=()=>{SET_ROWS.forEach(([k])=>SET[k]=false);SET.events='auto';saveSet();showModal(settingsSpec());};
+      $('#setAllOff').onclick=()=>{SET_ROWS.forEach(([k])=>SET[k]=k==='fast');SET.events='auto';saveSet();showModal(settingsSpec());};
       $('#setReset').onclick=()=>{SET={...SET_DEF};saveSet();showModal(settingsSpec());};
     }};
 }
@@ -3281,11 +3545,13 @@ function settingsSpec(){
 /* ================= modal ================= */
 const SNAP_LIFE={happy:'행복',health:'건강',mental:'멘탈',fame:'인기',smarts:'학업'};
 function snap(s){const o={OVR:ovr(s),'키':s.height};for(const k in SNAP_LIFE)o[SNAP_LIFE[k]]=s.life[k];for(const k of ATTRS)o[ATTR_KO[k]]=s.attr[k];o['돈']=s.money;o['가족 예산']=s.flags.famBudget||0;return o;}
+const ATTR_KO_SET=new Set(Object.values(ATTR_KO));
 function deltas(a,b){
   const out=[];
   for(const k in a){
     const d=b[k]-a[k];
     if(k==='돈'||k==='가족 예산'){if(Math.abs(d)>=1)out.push(`<i class="${d<0?'neg':''}">${k} ${d>0?'+':'-'}${fmtMoney(Math.abs(d))}</i>`);continue;}
+    if(ATTR_KO_SET.has(k)){if(Math.abs(d)>=.05)out.push(`<i class="${d<0?'neg':''}">${k} ${d>0?'+':''}${d.toFixed(1)}</i>`);continue;}
     const r=Math.round(d);
     if(r!==0)out.push(`<i class="${r<0?'neg':''}">${k} ${r>0?'+':''}${r}</i>`);
   }
@@ -3305,7 +3571,10 @@ function nextModal(){
     if(suppressed(spec)&&autoSuppressed(spec))continue;
     showModal(spec);return;
   }
+  if(UI.carry&&S&&S.alive){const c=UI.carry;UI.carry=null;showModal({kicker:'결과',title:c.title,body:`<div class="result">${esc(c.text)}</div>${c.d}`,choices:[{label:'계속',primary:true,act:()=>null}]});return;}
+  UI.carry=null;
   closeModal();
+  if(UI.yearRun){UI.yearRun=false;if(S&&S.alive)finishYear(S);}
   save();render();
   if(UI.skip){
     if(!S||!S.alive){UI.skip=null;return;}
@@ -3319,7 +3588,8 @@ function showModal(spec){
   m.querySelector('.sheet').className='sheet '+(spec.cls||'');
   $('#mKicker').textContent=spec.kicker||'';
   $('#mTitle').textContent=spec.title||'';
-  $('#mBody').innerHTML=(spec.board||'')+(spec.body||'');
+  const carry=UI.carry;UI.carry=null;
+  $('#mBody').innerHTML=(carry?carryHTML(carry):'')+(spec.board||'')+(spec.body||'');
   const box=$('#mChoices');box.innerHTML='';
   spec.choices.forEach(c=>{
     const b=document.createElement('button');
@@ -3342,10 +3612,13 @@ function handleResult(spec,r,before){
   const d=deltas(before,snap(S));
   render();
   if(r==null){nextModal();return;}
-  if(typeof r==='string'){log(S,`${spec.title}: ${r}`);if(!SET.results){toast(spec.title,r,d);nextModal();return;}resultView(spec,r,d,null);return;}
+  const fastOK=SET.fast&&SET.results;
+  if(typeof r==='string'){log(S,`${spec.title}: ${r}`);if(!SET.results){toast(spec.title,r,d);nextModal();return;}if(fastOK&&queue.length){UI.carry={title:spec.title,text:r,d};nextModal();return;}resultView(spec,r,d,null);return;}
   if(r.meter){showMeter(r.meter,before);return;}
   if(r.spec){showModal(r.spec);return;}
-  if(r.text){if(!r.nolog)log(S,`${spec.title}: ${r.text}`);if(!SET.results){toast(spec.title,r.text,d);if(r.next)showModal(r.next);else nextModal();return;}resultView(spec,r.text,d,r.next||null,r.board);return;}
+  if(r.text){if(!r.nolog)log(S,`${spec.title}: ${r.text}`);if(!SET.results){toast(spec.title,r.text,d);if(r.next)showModal(r.next);else nextModal();return;}
+    if(fastOK&&!r.board&&(r.next||queue.length)){UI.carry={title:spec.title,text:r.text,d};if(r.next)showModal(r.next);else nextModal();return;}
+    resultView(spec,r.text,d,r.next||null,r.board);return;}
   nextModal();
 }
 /* ---- timing meter mini-game ---- */
@@ -3445,6 +3718,7 @@ function doAct(id){
   log(s,`${a.name}: ${txt}`);
   toast(a.name,txt,deltas(before,snap(s)));
   save();render();
+  const tu=tierCheck(s);if(tu){queue=[];showModal(tu);}
 }
 const REL_ACTS={
   '아버지':[{id:'talk',t:'대화하기'},{id:'gift',t:'용돈 드리기',min:19}],
@@ -3464,11 +3738,15 @@ const REL_ACTS={
 };
 function relAct(rid,aid){
   const s=S,r=s.relations.find(x=>x.id===rid);if(!r||r.dead||UI.modalOpen)return;
-  const before=snap(s);let txt='';
+  const before=snap(s);const txt=relCore(s,r,aid);if(txt==null)return;
+  log(s,txt);toast(`${r.type} ${r.name}`,txt,deltas(before,snap(s)));save();render();
+}
+function relCore(s,r,aid){
+  const rid=r.id;let txt='';
   const bump=(n)=>r.bond=clamp(r.bond+bondGain(r,n),0,100);
   switch(aid){
     case 'talk':bump(RI(5,10));lf(s,'happy',3);txt=pick([`${J(r.name,'과/와')} 오랜만에 긴 이야기를 나눴다.`,`${r.name}의 잔소리마저 반가웠다.`]);break;
-    case 'gift':{const amt=s.stage==='pro'&&s.contract?.salary>20000?2000:300;if(s.money<amt){toast('용돈 드리기','통장 잔고가 부족하다.','');return;}s.money-=amt;bump(15);lf(s,'happy',5);txt=`${fmtMoney(amt)}을 드렸다. "이런 거 안 해도 된다"면서도 웃으셨다.`;break;}
+    case 'gift':{const amt=s.stage==='pro'&&s.contract?.salary>20000?2000:300;if(s.money<amt){toast('용돈 드리기','통장 잔고가 부족하다.','');return null;}s.money-=amt;bump(15);lf(s,'happy',5);txt=`${fmtMoney(amt)}을 드렸다. "이런 거 안 해도 된다"면서도 웃으셨다.`;break;}
     case 'oneone':bump(8);at(s,'handle',.6);lf(s,'happy',4);txt=chance(.6)?`이겼다. ${r.name}의 표정이 일그러졌다.`:(r.bud?`졌다. ${J(r.name,'은/는')} 이긴 기념으로 떡볶이를 얻어먹고 갔다.`:'졌다. 집에서는 아직 서열이 안 바뀐다.');break;
     case 'date':bump(RI(6,12));lf(s,'happy',6);if(s.age>=19)s.money-=50;txt=pick(['한강에서 치킨을 먹었다.','경기 없는 날, 영화를 봤다.','같이 걷기만 해도 좋았다.']);break;
     case 'propose':if(r.bond>=65&&chance(.4+r.bond/200)){r.type='배우자';bump(10);lf(s,'happy',18);log(s,`${J(r.name,'과/와')} 결혼했다.`,'major');txt=`${J(r.name,'이/가')} 눈물을 흘리며 고개를 끄덕였다.`;}else{bump(-15);lf(s,'happy',-8);lf(s,'mental',-5);txt='"조금만 더 생각해 볼게." 반지가 주머니로 돌아갔다.';}break;
@@ -3484,7 +3762,7 @@ function relAct(rid,aid){
     case 'duel':{const p=clamp(.5+(ovr(s)-(s.flags.rivalO||ovr(s)+RI(-4,4)))*.04,.15,.85);if(chance(p)){lf(s,'mental',6);lf(s,'fame',1);txt=`${J(r.name,'을/를')} 11대 8로 이겼다.`;}else{lf(s,'mental',-4);boostAll(s,.3);txt=`${r.name}에게 졌다. 분해서 잠이 안 온다.`;}bump(3);break;}
   }
   s.flags.relDone[rid+':'+aid]=1;s.flags.relDone[rid]=(s.flags.relDone[rid]||0)+1;
-  log(s,txt);toast(`${r.type} ${r.name}`,txt,deltas(before,snap(s)));save();render();
+  return txt;
 }
 function findLove(){
   const s=S;if(partner(s)||s.flags.relDone.find||UI.modalOpen)return;
@@ -3699,12 +3977,13 @@ function render(){
   const app=$('#app');
   applyWorld(S);
   if(!S){app.innerHTML=startHTML();bindStart();return;}
+  achCheck(S);
   if(!S.alive){app.innerHTML=endHTML(S);bindEnd();return;}
   const s=S,o=ovr(s);
   const curStage=s.stage==='pro'&&s.contract?.military?'군 복무 (상무)':STAGE_KO[s.stage];
   const teamLine=s.team?`${s.team.name} · ${LG[s.team.league].name}`:s.career2?s.career2.title+(s.flags.headCoach?' (감독)':''):curStage;
   app.innerHTML=`
-  <div class="wrap">
+  <div class="wrap ${Date.now()<(UI.growAnimUntil||0)?'anim':''}">
     <header class="top">
       <div class="brand">${ballSVG('brand-ball')}<span>버저비터 <b>라이프</b></span></div>
       <div class="top-right"><span class="chip-led" aria-label="연도">${s.year}</span><button class="ghost icon" id="btnSet" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="ghost" id="btnSave">저장</button><button class="ghost settle" id="btnSettle">인생 정산</button><button class="ghost" id="btnNew">새 인생</button></div>
@@ -3720,11 +3999,13 @@ function render(){
           </div>
           <div class="card-body">
             <div class="ovr-row">
-              <div class="ovr" aria-label="종합 능력치 ${o}"><span>${isPlaying(s)||s.stage==='army'?o:'—'}<small>OVR</small></span></div>
+              ${(()=>{const pl=growShown(s),t=tierInfo(s),g=curGrow(s),dO=g?Math.round(g.to)-Math.round(g.from):0;
+                return `<div class="ovr-wrap" style="--p:${pl?t.pct.toFixed(1):0}" title="${pl?`등급 ${t.name}${t.next?` · 다음 등급까지 ${t.need.toFixed(1)}`:''}`:''}"><div class="ovr" aria-label="종합 능력치 ${o}"><span><b id="ovrNum" style="font-weight:inherit">${pl?o:'—'}</b><small>OVR</small></span></div>${pl&&dO?`<em class="ovr-up ${dO<0?'neg':''}">${dO>0?'+':''}${dO}</em>`:''}</div>`;})()}
               <div class="ovr-meta">
                 <strong>${esc(teamLine)}</strong>
                 <span>${esc(curStage)}${s.contract&&!s.contract.military?` · 연봉 ${fmtMoney(s.contract.salary)}`:''}</span>
                 <span>잠재력 <span class="stars">${starStr(potStars(s.pot))}</span></span>
+                ${growShown(s)?(()=>{const t=tierInfo(s);return `<span class="tier-line"><b>${t.name}</b><small>${t.next?`다음 「${t.next}」 OVR ${t.at}`:'최고 등급'}</small></span>`;})():''}
                 ${s.flags.nat?'<span style="color:var(--led)">국가대표</span>':''}
               </div>
             </div>
@@ -3742,8 +4023,8 @@ function render(){
         </div>
         <div class="panel p-attr">
           <h3>능력치 <em>| 표시는 현재 한계치</em></h3>
-          <div class="attrs">
-            ${ATTRS.map(k=>{const v=Math.round(s.attr[k]),c=cap(s,k),brk=maxFor(s,k)>99;return `<div class="attr ${brk?'brk':''}" title="${brk?`한계 돌파 · 최대 ${maxFor(s,k)}`:''}"><span>${ATTR_KO[k]}${brk?' ⚡':''}</span><div class="track"><i style="width:${Math.min(100,v)}%;background:${v>99?'linear-gradient(90deg,var(--led),#ff5ad1,#7b8bff)':v>=80?'var(--led)':v>=65?'var(--good)':v>=45?'#7f97bd':'#4b5f84'}"></i><u style="left:${Math.min(99.5,c)}%"></u></div><b class="${v>99?'t-break':tierCls(v)}">${v}</b></div>`;}).join('')}
+          <div class="attrs ${curGrow(s)?'has-d':''}">
+            ${(()=>{const g=curGrow(s);return ATTRS.map(k=>{const v=Math.round(s.attr[k]),c=cap(s,k),brk=maxFor(s,k)>99,dv=g?g.d[k]:0,v0=clamp(s.attr[k]-dv,0,100);return `<div class="attr ${brk?'brk':''}" title="${brk?`한계 돌파 · 최대 ${maxFor(s,k)}`:''}"><span>${ATTR_KO[k]}${brk?' ⚡':''}</span><div class="track"><i style="width:${Math.min(100,v)}%;background:${v>99?'linear-gradient(90deg,var(--led),#ff5ad1,#7b8bff)':v>=80?'var(--led)':v>=65?'var(--good)':v>=45?'#7f97bd':'#4b5f84'}"></i>${dv>=.3&&v0<100?`<i class="gain" style="left:${v0.toFixed(1)}%;width:${Math.min(dv,100-v0).toFixed(1)}%"></i>`:''}<u style="left:${Math.min(99.5,c)}%"></u></div><b class="${v>99?'t-break':tierCls(v)}">${v}</b>${g?`<em class="${dv<0?'neg':''}">${Math.abs(dv)>=.1?(dv>0?'+':'')+dv.toFixed(1):''}</em>`:''}</div>`;}).join('');})()}
           </div>
         </div>
       </aside>
@@ -3756,8 +4037,9 @@ function render(){
     </div>
   </div>
   <div class="bar-bottom"><div class="wrap bar-inner">
-    <div class="pips" aria-label="남은 행동 ${s.ap}/${s.apMax}">${Array.from({length:s.apMax},(_,i)=>`<span class="pip ${i<s.ap?'on':''}"></span>`).join('')}<span style="margin-left:4px">행동 ${s.ap}/${s.apMax}${s.routine?.on?' · <b style="color:var(--leather-hi)">자동 루틴 ON</b>':''}</span></div>
+    <div class="pips" aria-label="남은 행동 ${s.ap}/${s.apMax}">${Array.from({length:Math.max(s.apMax,s.ap)},(_,i)=>`<span class="pip ${i<s.ap?'on':''}"></span>`).join('')}<span style="margin-left:4px">행동 ${s.ap}/${s.apMax}${s.ap>s.apMax?' · 등급 보너스 +'+(s.ap-s.apMax):''}${s.routine?.on?' · <b style="color:var(--leather-hi)">자동 루틴 ON</b>':''}</span></div>
     <div style="display:flex;gap:8px;align-items:center">
+ <span class="kbd-hint"><kbd>Space</kbd> 진행 · <kbd>1</kbd>~<kbd>4</kbd> 선택</span>
       <button class="ff" id="btnSkip" ${UI.modalOpen?'disabled':''} aria-label="시간 건너뛰기">건너뛰기 ⏩</button>
       <button class="next" id="btnNext" ${UI.modalOpen?'disabled':''}>
         <span><span class="yr-mini">${isPlaying(s)?seasonLabel(s,s.year)+' 시즌':s.year+'년'}</span><span class="big">${isPlaying(s)?'시즌 진행':'1년 보내기'}</span></span>
@@ -3779,7 +4061,7 @@ function tabHTML(s){
 function feedHTML(s){
   const groups=[];let cur=null;
   for(let i=s.log.length-1;i>=0;i--){const e=s.log[i];if(!cur||cur.age!==e.age){cur={age:e.age,year:e.year,items:[]};groups.push(cur);}cur.items.push(e);}
-  return `<div class="feed">${groups.slice(0,60).map(g=>`<div class="yr"><div class="yr-age num">${g.age}세<small>${g.year}</small></div><ul>${g.items.map(e=>`<li class="${e.tone}">${esc(e.text)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  return growCardHTML(s)+`<div class="feed">${groups.slice(0,60).map(g=>`<div class="yr"><div class="yr-age num">${g.age}세<small>${g.year}</small></div><ul>${g.items.map(e=>`<li class="${e.tone}">${esc(e.text)}</li>`).join('')}</ul></div>`).join('')}</div>`;
 }
 function routineHTML(s){
   const r=routineOf(s),n=Math.min(s.apMax,5);
@@ -3791,14 +4073,15 @@ function routineHTML(s){
     <div class="rt-foot">
       <div class="rt-presets">${Object.entries(PRESETS).map(([k,p])=>`<button class="btn" data-preset="${k}">${p.n}</button>`).join('')}</div>
       <label class="switch small"><input type="checkbox" id="rtBm" ${r.bmAuto?'checked':''}><span></span>빅매치 자동 진행</label>
+      <label class="switch small"><input type="checkbox" id="rtRel" ${r.rel?'checked':''}><span></span>인연 자동 챙기기</label>
       <button class="btn hot" id="rtNow" ${s.ap<=0||UI.modalOpen?'disabled':''}>지금 루틴 실행</button>
     </div>
-    <p class="sb-note" style="margin:6px 0 0">할 수 없는 행동(돈 부족, 나이·시기 제한)은 루틴의 다른 행동이나 휴식으로 대체된다. 슈팅 챌린지는 확률로 판정된다.</p>
+    <p class="sb-note" style="margin:6px 0 0">할 수 없는 행동(돈 부족, 나이·시기 제한)은 루틴의 다른 행동이나 휴식으로 대체된다. 슈팅 챌린지는 확률로 판정된다. 인연 자동 챙기기를 켜면 매년 가족·연인·자녀와 대화·데이트 같은 무료 교류를 알아서 한다.</p>
   </div>`;
 }
 function actHTML(s){
   const list=ACTS.filter(a=>actAvailable(s,a));
-  return `${routineHTML(s)}<div class="ap-head"><span>올해 남은 행동 <b class="num" style="font-size:20px;color:var(--chalk)">${s.ap}</b> / ${s.apMax} · 다 쓰지 않아도 시즌은 진행된다</span><span>${s.age<19?'비용은 가족 지원 예산에서 나간다':''}</span></div>
+  return `${growCardHTML(s)}${routineHTML(s)}<div class="ap-head"><span>올해 남은 행동 <b class="num" style="font-size:20px;color:var(--chalk)">${s.ap}</b> / ${s.apMax} · 다 쓰지 않아도 시즌은 진행된다</span><span>${s.age<19?'비용은 가족 지원 예산에서 나간다':''}</span></div>
   <div class="acts">${list.map(a=>{const cost=a.cost?a.cost(s):0;const used=a.yearly&&s.flags.yearly?.[a.id];const poor=cost&&wallet(s)<cost;
     return `<button class="act" data-act="${a.id}" ${s.ap<=0||used||poor||UI.modalOpen?'disabled':''}><strong>${a.name}</strong><p>${typeof a.sub==='function'?a.sub(s):a.sub}</p><div class="tags">${a.tags.map(t=>`<i>${t}</i>`).join('')}</div>${cost?`<span class="cost">${fmtMoney(cost)}${poor?' · 부족':''}</span>`:''}${used?'<span class="cost">올해 이미 참가</span>':''}</button>`;}).join('')}</div>`;
 }
@@ -3836,6 +4119,7 @@ function careerHTML(s){
   ${sparkSVG(s)}
   <h3 style="margin-top:14px">트로피 케이스</h3>
   ${trophies.length?`<div class="trophies">${trophies.map(([n,c])=>`<div class="trophy"><b>${c}</b>${esc(n)}</div>`).join('')}</div>`:'<div class="empty">아직 트로피가 없다. 첫 우승은 어디서 나올까.</div>'}
+  ${achHTML(s,true)}
   <h3 style="margin-top:18px">시즌별 기록</h3>
   ${s.seasons.length?`<div class="table-wrap"><table><thead><tr><th>시즌</th><th>팀</th><th>리그</th><th>나이</th><th>OVR</th><th>G</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>FG%</th><th>3P%</th><th>성적</th><th>수상</th></tr></thead><tbody>
   ${s.seasons.slice().reverse().map(x=>`<tr class="${x.champ?'champ':''}"><td class="num">${x.year}</td><td>${esc(x.team)}</td><td>${LG[x.lg].short}</td><td class="num">${x.age}</td><td class="num">${x.ovr}</td><td class="num">${x.gp}</td><td class="num">${x.min}</td><td class="num">${x.pts}</td><td class="num">${x.reb}</td><td class="num">${x.ast}</td><td class="num">${x.fg}</td><td class="num">${x.tp}</td><td>${x.w}-${x.l} · ${esc(x.res)}</td><td class="award-mini">${esc(x.awards.join(', '))}</td></tr>`).join('')}
@@ -3898,6 +4182,7 @@ function moneyHTML(s){
   return head+note+body;
 }
 function bindGame(){
+  {const g=curGrow(S);if(g&&Date.now()<(UI.growAnimUntil||0)&&UI.countFor!==g){UI.countFor=g;countUp($('#ovrNum'),Math.round(g.from),ovr(S));}}
   $('#btnNext').onclick=()=>{UI.confirmRetire=false;ageUp(false);};
   $('#btnSkip').onclick=()=>{if(UI.modalOpen)return;queue=[];showModal(skipMenuSpec(S));};
   $('#btnSave').onclick=saveMenu;
@@ -3916,6 +4201,7 @@ function bindGame(){
     document.querySelectorAll('[data-slot]').forEach(sel=>sel.onchange=()=>{routineOf(S).slots[+sel.dataset.slot]=sel.value;save();});
     document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{routineOf(S).slots=PRESETS[b.dataset.preset].slots.slice();save();render();});
     $('#rtNow').onclick=()=>{if(UI.modalOpen)return;runRoutine(S,true);save();render();};
+    $('#rtRel').onchange=e=>{routineOf(S).rel=e.target.checked;save();render();};
   }
   document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>relAct(+b.dataset.rel,b.dataset.ra));
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>buyItem(b.dataset.item));
@@ -4110,6 +4396,7 @@ function endHTML(s){
       <div><span>최고 능력치</span><b class="num">${Math.max(...s.ovrHist.map(p=>p.o))}</b></div>
     </div></div>
     <div class="panel"><h3>결정적 순간들</h3><div class="feed">${majors.map(e=>`<div class="yr"><div class="yr-age num">${e.age}세<small>${e.year}</small></div><ul><li class="major">${esc(e.text)}</li></ul></div>`).join('')}</div></div>
+    <div class="panel">${achHTML(s)}</div>
     ${dex}
     <button class="cta" id="btnAgain">새 인생 시작</button>
   </div></div>`;
