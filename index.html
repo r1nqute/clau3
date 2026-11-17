@@ -672,7 +672,7 @@ const HIST=[
   ['데니스 로드먼','PF',1961,84,'nba',[[1986,'디트로이트 피스톤스'],[1993,'샌안토니오 스퍼스'],[1995,'시카고 불스']],39],
   ['패트릭 유잉','C',1962,90,'nba',[[1985,'뉴욕 닉스']],39],['존 스탁턴','PG',1962,89,'nba',[[1984,'유타 재즈']],41],
   ['클라이드 드렉슬러','SG',1962,90,'nba',[[1983,'포틀랜드 트레일블레이저스'],[1995,'휴스턴 로키츠']],35],
-  ['마이클 조던','SG',1963,99,'nba',[[1984,'시카고 불스'],[2001,'워싱턴 위저즈']],40],['하킴 올라주원','C',1963,95,'nba',[[1984,'휴스턴 로키츠']],39],
+  ['마이클 조던','SG',1963,99,'nba',[[1984,'시카고 불스'],[2001,'워싱턴 위저즈']],40,[[1993,1993],[1998,2000]]],['하킴 올라주원','C',1963,95,'nba',[[1984,'휴스턴 로키츠']],39],
   ['찰스 바클리','PF',1963,93,'nba',[[1984,'필라델피아 세븐티식서스'],[1992,'피닉스 선즈'],[1996,'휴스턴 로키츠']],37],
   ['칼 말론','PF',1963,92,'nba',[[1985,'유타 재즈'],[2003,'LA 레이커스']],40],['데이비드 로빈슨','C',1965,93,'nba',[[1989,'샌안토니오 스퍼스']],38],
   ['스카티 피펜','SF',1965,91,'nba',[[1987,'시카고 불스'],[1998,'휴스턴 로키츠'],[1999,'포틀랜드 트레일블레이저스']],38],
@@ -703,7 +703,7 @@ const HIST=[
   ['다이애나 타우라시','SG',1982,94,'wnba',[[2004,'피닉스 머큐리']],42],['린지 웨일런','PG',1982,87,'wnba',[[2004,'코네티컷 선'],[2010,'미네소타 링스']],37],
   ['시몬 어거스터스','SG',1984,89,'wnba',[[2006,'미네소타 링스']],35],['실비아 파울스','C',1985,91,'wnba',[[2008,'시카고 스카이'],[2015,'미네소타 링스']],37],
   ['캔디스 파커','PF',1986,93,'wnba',[[2008,'LA 스파크스'],[2021,'시카고 스카이'],[2023,'라스베이거스 에이시스']],37],['마야 무어','SF',1989,93,'wnba',[[2011,'미네소타 링스']],29],
-].map(([n,pos,b,o,lg,st,ret])=>({n,pos,b,o,lg,st,t:st[st.length-1][1],ret,y0:b+27,hist:true}));
+].map(([n,pos,b,o,lg,st,ret,gaps])=>({n,pos,b,o,lg,st,t:st[st.length-1][1],ret,gaps,y0:b+27,hist:true}));
 // 현역 실제 선수들의 과거 소속 (그 시대로 시작하면 이 팀에서 뛴다)
 const STINTS={'르브론 제임스':[[2003,'클리블랜드 캐벌리어스'],[2010,'마이애미 히트'],[2014,'클리블랜드 캐벌리어스'],[2018,'LA 레이커스']],
   '케빈 듀랜트':[[2007,'오클라호마시티 썬더'],[2016,'골든스테이트 워리어스'],[2019,'브루클린 네츠'],[2023,'피닉스 선즈'],[2025,'휴스턴 로키츠']],
@@ -883,8 +883,8 @@ function rOvr(p,yr){
   return Math.round(clamp(o,30,99));
 }
 function rActive(p,yr){const w=S&&S.world;if(w&&w.ret&&w.ret[p.n]&&w.ret[p.n]<yr)return false;const a=yr-p.b,h=hashStr(p.n);
-  if(p.hist)return a>=19&&a<p.ret&&yr>=p.st[0][0];
-  const ret=Math.max(35+h%6,DATA_YEAR-p.b+1+h%2);const debut=p.st?p.st[0][0]:0;return a>=18&&yr>=debut&&a<ret&&rOvr(p,yr)>LG[pLg(p)].level-15;}
+  if(p.hist)return a>=19&&a<p.ret&&yr>=p.st[0][0]&&!(p.gaps&&p.gaps.some(([f,t])=>yr>=f&&yr<=t));
+  const ret=Math.max(35+h%6,DATA_YEAR-p.b+1+h%2);const debut=p.st?p.st[0][0]:(p.gen?0:p.b+20);return a>=18&&yr>=debut&&a<ret&&rOvr(p,yr)>LG[pLg(p)].level-15;}
 const EN_F={m:['마커스','제일런','타이리스','케빈','앤서니','조던','데빈','브랜던','카일','트레이','이사이아','디안드레'],f:['에이자','브리애나','케일라','나탈리','시드니','알리샤','재스민','테일러','모건','케네디']};
 const EN_L=['존슨','윌리엄스','브라운','데이비스','밀러','윌슨','무어','테일러','토머스','잭슨','해리스','로빈슨','워커','그린','카터'];
 const JP_F={m:['유토','하루키','소타','렌','다이키','가이토'],f:['미유','나나미','아오이','사쿠라','히나','유이']};
@@ -1344,7 +1344,57 @@ const EVENTS=[
     choices:[
       {t:'무료 1대1 레슨을 받는다',sub:'행동·비용 없이 레슨 1회 · 가끔 그 자리에서 무브 전수',f:s=>{const L=legendList(s).find(x=>x.n===s.flags.visitL);if(!L)return '레전드는 사인만 남기고 떠났다.';return lessonCore(s,L,true);}},
       {t:'사인과 사진만 부탁한다',f:s=>{lf(s,'happy',6);lf(s,'fame',1);return `${s.flags.visitL}의 사인이 라커에 붙었다. 매일 아침 그걸 보고 훈련한다.`;}}]},
-  // ---- 인연 레벨이 높은 사람과의 이벤트 (Lv.4 이상) ----
+  // ---- 친밀도 단계별 이벤트: 서먹함(Lv.1) · 가까워지는 중(Lv.2~3) · 절친(Lv.4) ----
+  {id:'lb_parent_cold',w:3,age:[19,60],cond:s=>!!rgPick(s,['아버지','어머니'],0,24),title:'서먹한 명절',pre:s=>rgSet(s,['아버지','어머니'],0,24),
+    body:s=>`명절인데 ${hbR(s).type}와 식탁에서 나눈 말이 "밥 더 줄까" 한마디뿐이다. 언제부터 이렇게 됐을까.`,
+    choices:[{t:'먼저 말을 꺼낸다',f:s=>{hbBond(s,16);lf(s,'happy',5);return '"그동안 연락 못 해서 죄송해요." 한참 말이 없다가, 접시에 갈비가 한가득 올라왔다.';}},
+      {t:'훈련 핑계로 일찍 일어난다',f:s=>{hbBond(s,-5);lf(s,'happy',-4);return '현관문을 닫는데 "조심히 가라"는 목소리가 작게 들렸다.';}}]},
+  {id:'lb_partner_cold',w:4,cond:s=>!!rgPick(s,['연인','배우자'],0,29),title:'권태기',pre:s=>rgSet(s,['연인','배우자'],0,29),
+    body:s=>`${J(hbR(s).name,'과/와')} 마주 앉아 각자 휴대폰만 본 지 한 시간째다. 마지막으로 같이 웃은 게 언제였더라.`,
+    choices:[{t:'솔직하게 대화한다',f:s=>{hbBond(s,14);lf(s,'mental',-2);return '서운했던 걸 서로 다 꺼냈다. 새벽 두 시에야 끝났지만 속은 후련하다.';}},
+      {t:'깜짝 이벤트를 준비한다',sub:'200만 원',cond:s=>s.age>=19,f:s=>{s.money-=200;if(chance(.7)){hbBond(s,22);lf(s,'happy',6);return '처음 만난 장소에 꽃과 편지를 숨겨 뒀다. 오랜만에 예전 표정을 봤다.';}hbBond(s,4);return '"이런 거 말고 평소에 잘해." 그래도 꽃은 화병에 꽂혀 있다.';}},
+      {t:'시간이 해결해 주겠지',f:s=>{hbBond(s,-9);const r=hbR(s);if(r.bond<12&&r.type==='연인'){r.dead=true;r.gone=true;s.relations=s.relations.filter(x=>x!==r);lf(s,'happy',-10);log(s,`${J(r.name,'과/와')} 헤어졌다.`,'bad');return '시간은 해결해 주지 않았다. 짐을 챙겨 나가는 뒷모습을 봤다.';}return '아무 일도 없었다. 그게 문제였다.';}}]},
+  {id:'lb_mate_cold',w:4,cond:s=>s.stage==='pro'&&!!rgPick(s,['팀 동료'],0,24),title:'패스가 오지 않는다',pre:s=>rgSet(s,['팀 동료'],0,24),
+    body:s=>`오픈 찬스에서 손을 들었는데 ${J(hbR(s).name,'이/가')} 못 본 척 직접 슛을 던졌다. 오늘만 세 번째다.`,
+    choices:[{t:'경기 후 밥을 먹자고 한다',f:s=>{hbBond(s,14);return '삼겹살 4인분. 알고 보니 내가 인터뷰에서 한 말이 와전됐던 거였다.';}},
+      {t:'실력으로 인정받는다',f:s=>{if(chance(clamp(.45+(ovr(s)-lvl(s))*.03,.15,.85))){hbBond(s,10);lf(s,'mental',3);return '다음 경기 결승 득점. 벤치에서 그가 먼저 주먹을 내밀었다.';}hbBond(s,-4);s.flags.clutchBoost=(s.flags.clutchBoost||0)-.01;return '무리하다 턴오버만 늘었다. 라커룸 공기가 더 차가워졌다.';}},
+      {t:'감독에게 이야기한다',f:s=>{hbBond(s,-7);bondTeam(s,-2);return '감독이 팀 미팅에서 공개적으로 언급했다. 고자질했다는 눈총이 따갑다.';}}]},
+  {id:'mb_mate_room',w:3,cond:s=>s.stage==='pro'&&!!rgPick(s,['팀 동료'],25,59),title:'원정길 룸메이트',pre:s=>rgSet(s,['팀 동료'],25,59),
+    body:s=>`원정 숙소 방 배정표에 ${hbR(s).name}의 이름이 내 이름 옆에 있다. 아직은 좀 어색한 사이다.`,
+    choices:[{t:'밤새 수다를 떤다',f:s=>{hbBond(s,12);lf(s,'health',-2);lf(s,'happy',4);return '어릴 때 좋아한 선수, 첫 월급으로 산 것. 새벽 세 시에 룸서비스 라면을 시켰다.';}},
+      {t:'내일 상대 영상을 같이 본다',f:s=>{hbBond(s,8);tr(s,'iq',1.5);return '서로 못 보던 걸 짚어 줬다. 다음 날 경기에서 눈빛만으로 스크린 타이밍이 맞았다.';}},
+      {t:'이어폰을 끼고 일찍 잔다',f:s=>{lf(s,'health',3);return '컨디션은 좋았다. 사이는 그대로다.';}}]},
+  {id:'mb_sibling',w:2,age:[16,60],cond:s=>!!rgPick(s,['형제','자매'],25,59),title:'형제의 고민',pre:s=>rgSet(s,['형제','자매'],25,59),
+    body:s=>`${J(hbR(s).name,'이/가')} 밤늦게 전화를 걸어왔다. "나 요즘 뭘 해야 할지 모르겠어. 너는 좋겠다, 하고 싶은 게 분명해서."`,
+    choices:[{t:'끝까지 들어준다',f:s=>{hbBond(s,13);lf(s,'happy',3);return '두 시간 통화. 끊기 전에 "고맙다"는 말을 처음 들었다.';}},
+      {t:'용돈을 보낸다',sub:'500만 원',cond:s=>s.age>=19&&s.money>=500,f:s=>{s.money-=500;hbBond(s,5);return '"돈 달라는 얘기가 아니었는데." 그래도 고맙다고는 했다.';}},
+      {t:'"나도 힘들어"',f:s=>{hbBond(s,-6);return '통화가 어색하게 끝났다.';}}]},
+  {id:'mb_friend_favor',w:3,age:[16,60],cond:s=>!!rgPick(s,['친구','전우','라이벌'],25,59),title:'급한 부탁',pre:s=>rgSet(s,['친구','전우','라이벌'],25,59),
+    body:s=>`${J(hbR(s).name,'이/가')} 연락했다. "이번 주말 이사하는데, 엘리베이터가 없는 5층이야."`,
+    choices:[{t:'직접 가서 냉장고를 든다',f:s=>{hbBond(s,14);lf(s,'health',-3);return '키 큰 사람이 계단에서 얼마나 불리한지 알게 됐다. 짜장면은 맛있었다.';}},
+      {t:'이삿짐 업체를 불러 준다',sub:'100만 원',cond:s=>s.age>=19,f:s=>{s.money-=100;hbBond(s,7);return '"돈으로 때우네." 웃으면서 한 말이지만 반은 진심 같다.';}},
+      {t:'경기 일정을 핑계 댄다',f:s=>{hbBond(s,-8);return '그 주말에 경기는 없었다. SNS에 올린 사진을 그가 봤다.';}}]},
+  {id:'l4_parent',w:2,age:[22,60],cond:s=>!!rgPick(s,['아버지','어머니'],60,79),title:'부모님의 건강검진',pre:s=>rgSet(s,['아버지','어머니'],60,79),
+    body:s=>`${hbR(s).type}가 요즘 계단을 오를 때 자주 쉰다. 병원은 한사코 안 가시겠다고 한다.`,
+    choices:[{t:'직접 모시고 간다',sub:'300만 원',f:s=>{s.money-=300;hbBond(s,12);lf(s,'happy',5);return '결과는 "관리만 잘하시면 됩니다." 돌아오는 차 안에서 내 어릴 적 이야기를 한참 하셨다.';}},
+      {t:'예약만 해 드린다',f:s=>{hbBond(s,4);return '예약 문자를 세 번 보냈다. 가셨는지는 모르겠다.';}}]},
+  {id:'l4_partner_live',once:1,w:3,age:[21,45],cond:s=>!!rgPick(s,['연인'],60,84),title:'"같이 살까?"',pre:s=>rgSet(s,['연인'],60,84),
+    body:s=>`${J(hbR(s).name,'이/가')} 내 냉장고를 열어 보더니 말했다. "유통기한 지난 게 반이야. 그냥 같이 살자."`,
+    choices:[{t:'좋다고 한다',f:s=>{hbBond(s,14);lf(s,'happy',10);lf(s,'health',5);s.flags.cohab=true;return '이삿날 농구공 열두 개를 어디 둘지로 첫 싸움을 했다. 식탁은 따뜻해졌다.';}},
+      {t:'아직은 혼자가 편하다',f:s=>{hbBond(s,-6);return '"알았어." 냉장고 문이 조금 세게 닫혔다.';}}]},
+  {id:'l4_mate_cf',w:2,cond:s=>s.stage==='pro'&&s.life.fame>=25&&!!rgPick(s,['팀 동료'],60,79),title:'동반 광고 제안',pre:s=>rgSet(s,['팀 동료'],60,79),
+    body:s=>`치킨 브랜드가 ${hbR(s).name}와 나, 둘이 함께 나오는 광고를 제안했다. 콘셉트는 "코트 밖에서도 환상의 콤비".`,
+    choices:[{t:'같이 찍는다',f:s=>{const m=1500+Math.round(s.life.fame*40);s.money+=m;hbBond(s,10);lf(s,'fame',4);return `촬영 내내 NG는 전부 웃음 때문이었다. 출연료 ${fmtMoney(m)}.`;}},
+      {t:'혼자 찍겠다고 한다',f:s=>{const m=2500+Math.round(s.life.fame*60);s.money+=m;hbBond(s,-14);bondTeam(s,-3);return `출연료는 ${fmtMoney(m)}로 늘었다. 라커룸에서 그가 내 쪽을 보지 않는다.`;}}]},
+  {id:'l4_rival_bet',w:2,cond:s=>isPlaying(s)&&!!rgPick(s,['라이벌'],60,79),title:'시즌 내기',pre:s=>rgSet(s,['라이벌'],60,79),
+    body:s=>`${J(hbR(s).name,'이/가')} 메시지를 보냈다. "이번 시즌 평균 득점 내기 하자. 지는 사람이 이긴 사람 유니폼 입고 인증샷."`,
+    choices:[{t:'받아들인다',f:s=>{s.flags.clutchBoost=(s.flags.clutchBoost||0)+.015;hbBond(s,8);tr(s,'shoot',1);return '내기가 걸리자 슛 연습 시간이 30분 늘었다.';}},
+      {t:'"유치하게…" 하고 넘긴다',f:s=>{hbBond(s,-3);return '"쫄았네"라는 답장이 왔다.';}}]},
+  {id:'l4_mentor_task',w:2,cond:s=>isPlaying(s)&&!!rgPick(s,['스승'],60,84),title:'스승의 숙제',pre:s=>rgSet(s,['스승'],60,84),
+    body:s=>`${J(hbR(s).name,'이/가')} 종이 한 장을 내밀었다. "한 달 동안 매일 왼손으로만 레이업 200개. 못 하겠으면 지금 말해."`,
+    choices:[{t:'한 달을 채운다',f:s=>{hbBond(s,12);tr(s,'handle',2.5);tr(s,'inside',2);lf(s,'health',-3);return '30일째 되는 날 영상을 보냈다. 답장은 한 줄. "이제 오른손도 그렇게 해."';}},
+      {t:'일주일 하다 만다',f:s=>{hbBond(s,-8);return '스승은 아무 말도 하지 않았다. 그게 더 무서웠다.';}}]},
+  // ---- 인연 레벨이 높은 사람과의 이벤트 (Lv.5) ----
   {id:'hb_parent',w:3,cond:s=>!!hbPick(s,['아버지','어머니'],80)&&isPlaying(s),title:'관중석의 부모님',pre:s=>hbSet(s,['아버지','어머니'],80),
     body:s=>`경기 전 몸을 푸는데 관중석에서 익숙한 목소리가 들렸다. ${hbR(s).type}다. 직접 만든 응원 피켓에 내 이름이 삐뚤빼뚤 적혀 있다.`,
     choices:[{t:'그 경기를 바친다',f:s=>{s.flags.clutchBoost=(s.flags.clutchBoost||0)+.03;lf(s,'mental',8);lf(s,'happy',8);hbBond(s,4);return '득점할 때마다 관중석을 가리켰다. 그 시즌 가장 잘 풀린 경기였다.';}}]},
@@ -1512,14 +1562,16 @@ const EVENTS=[
 const BOND_TIERS=[[0,'서먹함'],[20,'아는 사이'],[40,'가까운 사이'],[60,'절친'],[80,'평생 인연']];
 const bondLv=b=>BOND_TIERS.filter(([t])=>b>=t).length;
 const bondLabel=b=>BOND_TIERS[bondLv(b)-1][1];
-const bondGain=(r,n)=>n>0?n*.5*(1-r.bond/130)*(S&&per(S,'outgoing')?1.4:1)*(S&&per(S,'introvert')?.85:1)*(S&&per(S,'humble')?1.1:1):n;
+const bondGain=(r,n)=>n>0?n*.85*(1-r.bond/190)*(S&&per(S,'outgoing')?1.4:1)*(S&&per(S,'introvert')?.85:1)*(S&&per(S,'humble')?1.1:1):n;
+function rgPick(s,types,min,max){return s.relations.find(r=>!r.dead&&types.includes(r.type)&&r.bond>=min&&r.bond<=max);}
+function rgSet(s,types,min,max){const c=s.relations.filter(r=>!r.dead&&types.includes(r.type)&&r.bond>=min&&r.bond<=max);const r=pick(c);s.flags.hbId=r?r.id:null;}
 function hbPick(s,types,min){return s.relations.find(r=>!r.dead&&types.includes(r.type)&&r.bond>=min);}
 function hbSet(s,types,min){const c=s.relations.filter(r=>!r.dead&&types.includes(r.type)&&r.bond>=min);const r=pick(c);s.flags.hbId=r?r.id:null;}
 const hbR=s=>s.relations.find(r=>r.id===s.flags.hbId)||{name:'그 사람',type:'친구',bond:0};
 function hbBond(s,d){const r=s.relations.find(x=>x.id===s.flags.hbId);if(r)r.bond=clamp(r.bond+d,0,100);}
 function bud(s,name){return s.relations.find(r=>r.name===name&&r.bud&&!r.dead);}
 function meetBud(s,name,role,bond){let r=bud(s,name);if(!r){r=addRel(s,'친구',name,bond,s.age+(role.includes('1짱')?1:0));r.bud=role;log(s,`${role} ${J(name,'과/와')} 엮이기 시작했다.`,'good');}return r;}
-function budBond(s,name,d){const r=bud(s,name);if(r)r.bond=clamp(r.bond+(d>0?d*.6*(1-r.bond/130):d),0,100);}
+function budBond(s,name,d){const r=bud(s,name);if(r)r.bond=clamp(r.bond+(d>0?d*.9*(1-r.bond/190):d),0,100);}
 function endorseAmt(s){const top=s.team&&LG[s.team.league].mult>=2;return Math.round((s.life.fame*s.life.fame*(top?8:1.6))/100)*100+1000;}
 function eligible(s,e){
   if(e.once&&s.flags.used[e.id])return false;
@@ -1564,7 +1616,8 @@ function simSeason(s){
     injury=inj;
   }
   gpFrac=clamp(gpFrac,0,1);
-  const shortF=(s.world&&s.world.short&&s.world.short[lg]===s.year)?.6:1;
+  const shortF=(s.world&&s.world.short&&s.world.short[lg]===s.year)?((s.world.shortF&&s.world.shortF[lg])||.6):1;
+  const rcNow=s.year<DATA_YEAR?realCh(lg,titleYear(lg,s.year)):null,destined=!!(rcNow&&rcNow.team===s.team.name);
   const games=Math.round(L.games*shortF),gp=Math.round(games*gpFrac*R(.93,1));
   const depth=atWC(s)?0:Math.max(0,s.team.str-o);
   let min=clamp(21+rel*1.3+(A.stamina-lv)*.1-depth*.7-(s.flags.loadMgmt?4:0),3,37.5);
@@ -1579,15 +1632,16 @@ function simSeason(s){
   const tp=clamp(.25+(A.shoot-lv)*.005+A.shoot*.0008+R(-.02,.02),.1,.47);
   const fg=clamp(.41+(A.inside-lv)*.0025+(['PF','C'].includes(s.pos)?.05:0)+(A.iq-lv)*.0012+R(-.02,.02),.32,.66);
   const impact=rel*m*.012*(gp/games)+(s.flags.clutchBoost||0)+chemistry(s)*.0008;
-  const wp=clamp(.5+(s.team.str-lv)*.03+impact,.06,.94);
+  const wp=clamp(.5+(s.team.str-lv)*.03+impact+(destined?.14:0),.06,.94);
   const wins=Math.round(games*clamp(wp+R(-.05,.05),.03,.97)),pct=wins/games;
   const school=L.kind!=='pro';
   const labels=school?['전국대회 우승','준우승','4강','8강','예선 탈락']:lg==='nba'||lg==='wnba'?['파이널 우승','파이널 준우승','컨퍼런스 결승','플레이오프 진출','플레이오프 탈락']:['챔피언결정전 우승','챔피언결정전 준우승','4강 플레이오프','6강 플레이오프','플레이오프 탈락'];
   let res=4;
-  if(pct>=(school?.45:.5)){const tc=clamp((pct-.48)*1.9+(rel>10&&gpFrac>.6?.08:0),.02,.75);const r=rnd();res=r<tc?0:r<tc+.17?1:r<tc+.42?2:3;}
+  if(pct>=(school?.45:.5)||destined){const tc=destined?.72:clamp((pct-.48)*1.9+(rel>10&&gpFrac>.6?.08:0),.02,.75);const r=rnd();res=r<tc?0:r<tc+.17?1:r<tc+.42?2:3;}
+  if(res===0&&s.year===2019&&(lg==='kbl'||lg==='wkbl')&&(s.startYear||START_YEAR)<=2019){res=1;log(s,'코로나19로 시즌이 조기 종료됐다. 우승팀은 가려지지 않았다.','bad');}
   const champ=res===0;
   // awards
-  const aw=[],AWL={mvp:20,fmvp:12,champ:10,allstar:3,scoring:5,dpoy:4,roy:5};
+  const aw=[],AWL={mvp:12,fmvp:8,champ:7,allstar:2,scoring:3,dpoy:2.5,roy:4};
   const sh=L.short,played=gp>=games*.5,isPro=L.kind==='pro';
   if(played&&rel>=12&&pct>=.55&&chance(clamp(.25+(rel-12)*.07+(pct-.55),0,.92)))aw.push(['mvp',`${sh} MVP`]);
   if(champ&&played&&rel>=6&&isPro&&chance(.7))aw.push(['fmvp',`${sh} 파이널 MVP`]);
@@ -1607,8 +1661,9 @@ function simSeason(s){
   if(aw.some(a=>a[0]==='mvp'))lf(s,'mental',6);
   if(rel<-5&&isPro)lf(s,'mental',-6),lf(s,'happy',-4);
   if(min<10&&isPro)lf(s,'happy',-5);
-  let legacy=(pts+reb*.7+ast*.9)*(gp/games)*L.mult*.5;
+  let legacy=(pts+reb*.7+ast*.9)*(gp/games)*L.mult*.35;
   aw.forEach(([k])=>legacy+=(AWL[k]||0)*L.mult);
+  legacy=Math.min(legacy,45*L.mult); // 한 시즌에 쌓을 수 있는 레거시 상한 (리그 수준에 비례)
   s.legacy+=legacy;
   let paid=0;
   if(s.contract){paid=Math.round(s.contract.salary*shortF);s.money+=Math.round(paid*(s.flags.agent?.92:1));s.contract.years--;}
@@ -1941,6 +1996,72 @@ function teamDetailSpec(s,t,lg){
     choices:ch};
 }
 
+/* ================= real timeline (through 2025): champions, MVPs, events ================= */
+// 값: 현재 구단명, 또는 [현재 구단명(없으면 null), 당시 이름]
+const _M='울산 현대모비스 피버스',_K='부산 KCC 이지스',_D='원주 DB 프로미',_J='안양 정관장 레드부스터스',_O='고양 소노 스카이거너스';
+const REAL_CH={
+  nba:{1970:'뉴욕 닉스',1971:'밀워키 벅스',1972:'LA 레이커스',1973:'뉴욕 닉스',1974:'보스턴 셀틱스',1975:'골든스테이트 워리어스',1976:'보스턴 셀틱스',1977:'포틀랜드 트레일블레이저스',1978:['워싱턴 위저즈','워싱턴 불리츠'],1979:['오클라호마시티 썬더','시애틀 슈퍼소닉스'],
+    1980:'LA 레이커스',1981:'보스턴 셀틱스',1982:'LA 레이커스',1983:'필라델피아 세븐티식서스',1984:'보스턴 셀틱스',1985:'LA 레이커스',1986:'보스턴 셀틱스',1987:'LA 레이커스',1988:'LA 레이커스',1989:'디트로이트 피스톤스',
+    1990:'디트로이트 피스톤스',1991:'시카고 불스',1992:'시카고 불스',1993:'시카고 불스',1994:'휴스턴 로키츠',1995:'휴스턴 로키츠',1996:'시카고 불스',1997:'시카고 불스',1998:'시카고 불스',1999:'샌안토니오 스퍼스',
+    2000:'LA 레이커스',2001:'LA 레이커스',2002:'LA 레이커스',2003:'샌안토니오 스퍼스',2004:'디트로이트 피스톤스',2005:'샌안토니오 스퍼스',2006:'마이애미 히트',2007:'샌안토니오 스퍼스',2008:'보스턴 셀틱스',2009:'LA 레이커스',
+    2010:'LA 레이커스',2011:'댈러스 매버릭스',2012:'마이애미 히트',2013:'마이애미 히트',2014:'샌안토니오 스퍼스',2015:'골든스테이트 워리어스',2016:'클리블랜드 캐벌리어스',2017:'골든스테이트 워리어스',2018:'골든스테이트 워리어스',2019:'토론토 랩터스',
+    2020:'LA 레이커스',2021:'밀워키 벅스',2022:'골든스테이트 워리어스',2023:'덴버 너기츠',2024:'보스턴 셀틱스',2025:'오클라호마시티 썬더'},
+  kbl:{1997:[_M,'부산 기아 엔터프라이즈'],1998:[_K,'대전 현대 다이냇'],1999:[_K,'대전 현대 걸리버스'],2000:['서울 SK 나이츠','청주 SK 나이츠'],2001:['서울 삼성 썬더스','수원 삼성 썬더스'],2002:[_O,'대구 동양 오리온스'],2003:[_D,'원주 TG 엑써스'],
+    2004:[_K,'전주 KCC 이지스'],2005:[_D,'원주 TG삼보 엑써스'],2006:'서울 삼성 썬더스',2007:[_M,'울산 모비스 피버스'],2008:[_D,'원주 동부 프로미'],2009:[_K,'전주 KCC 이지스'],2010:[_M,'울산 모비스 피버스'],2011:[_K,'전주 KCC 이지스'],
+    2012:[_J,'안양 KGC인삼공사'],2013:[_M,'울산 모비스 피버스'],2014:[_M,'울산 모비스 피버스'],2015:[_M,'울산 모비스 피버스'],2016:[_O,'고양 오리온'],2017:[_J,'안양 KGC인삼공사'],2018:'서울 SK 나이츠',2019:_M,
+    2021:[_J,'안양 KGC인삼공사'],2022:'서울 SK 나이츠',2023:[_J,'안양 KGC인삼공사'],2024:_K,2025:'창원 LG 세이커스'},
+  wnba:{1997:'휴스턴 코메츠',1998:'휴스턴 코메츠',1999:'휴스턴 코메츠',2000:'휴스턴 코메츠',2001:'LA 스파크스',2002:'LA 스파크스',2003:[null,'디트로이트 쇼크'],2004:'시애틀 스톰',2005:[null,'새크라멘토 모나크스'],2006:[null,'디트로이트 쇼크'],
+    2007:'피닉스 머큐리',2008:[null,'디트로이트 쇼크'],2009:'피닉스 머큐리',2010:'시애틀 스톰',2011:'미네소타 링스',2012:'인디애나 피버',2013:'미네소타 링스',2014:'피닉스 머큐리',2015:'미네소타 링스',2016:'LA 스파크스',
+    2017:'미네소타 링스',2018:'시애틀 스톰',2019:'워싱턴 미스틱스',2020:'시애틀 스톰',2021:'시카고 스카이',2022:'라스베이거스 에이시스',2023:'라스베이거스 에이시스',2024:'뉴욕 리버티',2025:'라스베이거스 에이시스'},
+  wkbl:{2008:'인천 신한은행 에스버드',2009:'인천 신한은행 에스버드',2010:'인천 신한은행 에스버드',2011:'인천 신한은행 에스버드',2012:'인천 신한은행 에스버드',2013:'아산 우리은행 우리WON',2014:'아산 우리은행 우리WON',2015:'아산 우리은행 우리WON',
+    2016:'아산 우리은행 우리WON',2017:'아산 우리은행 우리WON',2018:'아산 우리은행 우리WON',2019:'청주 KB스타즈',2021:'용인 삼성생명 블루밍스',2022:'청주 KB스타즈',2023:'아산 우리은행 우리WON',2024:'아산 우리은행 우리WON',2025:'부산 BNK 썸'},
+};
+const REAL_MVP={
+  nba:{1970:'윌리스 리드',1971:'카림 압둘자바',1972:'카림 압둘자바',1973:'데이브 코웬스',1974:'카림 압둘자바',1975:'밥 맥아두',1976:'카림 압둘자바',1977:'카림 압둘자바',1978:'빌 월튼',1979:'모제스 말론',
+    1980:'카림 압둘자바',1981:'줄리어스 어빙',1982:'모제스 말론',1983:'모제스 말론',1984:'래리 버드',1985:'래리 버드',1986:'래리 버드',1987:'매직 존슨',1988:'마이클 조던',1989:'매직 존슨',
+    1990:'매직 존슨',1991:'마이클 조던',1992:'마이클 조던',1993:'찰스 바클리',1994:'하킴 올라주원',1995:'데이비드 로빈슨',1996:'마이클 조던',1997:'칼 말론',1998:'마이클 조던',1999:'칼 말론',
+    2000:'샤킬 오닐',2001:'앨런 아이버슨',2002:'팀 던컨',2003:'팀 던컨',2004:'케빈 가넷',2005:'스티브 내시',2006:'스티브 내시',2007:'덕 노비츠키',2008:'코비 브라이언트',2009:'르브론 제임스',
+    2010:'르브론 제임스',2011:'데릭 로즈',2012:'르브론 제임스',2013:'르브론 제임스',2014:'케빈 듀랜트',2015:'스테판 커리',2016:'스테판 커리',2017:'러셀 웨스트브룩',2018:'제임스 하든',2019:'야니스 아데토쿤보',
+    2020:'야니스 아데토쿤보',2021:'니콜라 요키치',2022:'니콜라 요키치',2023:'조엘 엠비드',2024:'니콜라 요키치',2025:'셰이 길저스알렉산더'},
+  wnba:{1997:'신시아 쿠퍼',1998:'신시아 쿠퍼',1999:'욜란다 그리피스',2000:'셰릴 스웁스',2001:'리사 레슬리',2002:'셰릴 스웁스',2003:'로렌 잭슨',2004:'리사 레슬리',2005:'셰릴 스웁스',2006:'리사 레슬리',2007:'로렌 잭슨',2008:'캔디스 파커',2009:'다이애나 타우라시',
+    2010:'로렌 잭슨',2011:'타미카 캐칭스',2012:'티나 찰스',2013:'캔디스 파커',2014:'마야 무어',2015:'엘레나 델레 던',2016:'네카 오그우미케',2017:'실비아 파울스',2018:'브리애나 스튜어트',2019:'엘레나 델레 던',
+    2020:'에이자 윌슨',2021:'존쿠엘 존스',2022:'에이자 윌슨',2023:'브리애나 스튜어트',2024:'에이자 윌슨',2025:'에이자 윌슨'},
+};
+const realCh=(lg,titleYear)=>{const v=REAL_CH[lg]&&REAL_CH[lg][titleYear];if(!v)return null;return Array.isArray(v)?{team:v[0],name:v[1]}:{team:v,name:v};};
+// WNBA는 여름 리그라 시즌 연도 = 우승 연도, 나머지는 시즌 시작 연도 + 1
+const titleYear=(lg,seasonYear)=>lg==='wnba'?seasonYear:seasonYear+1;
+// 실제 사건: [연도, 분류, 제목, 본문, 속보 여부, 효과 함수(선택)]
+const scalePort=(s,m)=>{const pt=port(s);let d=0;for(const k in m){if(pt[k]){const nv=Math.round(pt[k]*m[k]);d+=nv-pt[k];pt[k]=nv;}}return d;};
+const scaleEstate=(s,f)=>{let d=0;s.assets.forEach(a=>{if(a.cat==='estate'||a.id==='apt'){const nv=Math.round(a.value*f);d+=nv-a.value;a.value=nv;}});return d;};
+const REAL_EVENTS=[
+  [1984,'국가대표','한국 여자농구, LA 올림픽 은메달','박찬숙이 이끈 대표팀이 올림픽 구기 종목 사상 첫 은메달을 따냈다.',0],
+  [1991,'리그','매직 존슨, 전격 은퇴 발표','LA 레이커스의 상징이 코트를 떠난다. 쇼타임의 시대가 막을 내렸다.',1],
+  [1992,'국가대표','바르셀로나 올림픽 "드림팀" 금메달','조던, 매직, 버드가 한 팀에 모였다. 평균 44점 차 전승 우승. 전 세계가 NBA에 빠져들었다.',1],
+  [1993,'리그','마이클 조던, 전성기에 은퇴 선언','3연패 직후였다. "더는 증명할 것이 없다." 시카고가 침묵에 잠겼다.',1],
+  [1995,'리그','"I\'m back." 마이클 조던 복귀','두 단어짜리 보도자료 한 장에 리그가 뒤집혔다.',1],
+  [1998,'경제','IMF 외환위기','기업이 줄줄이 무너지고 주가와 집값이 폭락했다. 농구단을 운영하던 모기업들도 흔들린다.',1,s=>{const a=scalePort(s,{stock:.45}),b=scaleEstate(s,.75);return a||b?`내 자산 영향: 국내 주식 ${sgn(a)} · 부동산 ${sgn(b)}`:'내 자산 영향: 없음';}],
+  [1998,'리그','NBA 직장폐쇄, 50경기 단축 시즌','구단주와 선수협의 협상 결렬로 개막이 석 달 넘게 미뤄졌다.',0,s=>{const w=worldInit(s);w.short.nba=1998;w.shortF=w.shortF||{};w.shortF.nba=.61;return '이번 NBA 시즌은 50경기';}],
+  [1999,'리그','마이클 조던, 두 번째 은퇴','"더 라스트 샷"으로 여섯 번째 우승을 차지한 뒤 다시 코트를 떠났다.',1],
+  [2001,'경제','닷컴 버블 붕괴','기술주가 반 토막 났다.',0,s=>{const a=scalePort(s,{etf:.65,stock:.75});return a?`내 자산 영향: 주식·ETF ${sgn(a)}`:'';}],
+  [2001,'리그','마이클 조던, 워싱턴에서 두 번째 복귀','서른여덟의 조던이 워싱턴 유니폼을 입고 돌아왔다.',0],
+  [2003,'국가대표','한국 남자농구, 부산 아시안게임 금메달','결승에서 야오밍의 중국을 연장 끝에 꺾었다. 20년 만의 금메달.',1,null,s=>!(s.flags.nat&&ctry(s).zone==='KR'&&s.gender==='m')],
+  [2006,'리그','코비 브라이언트, 한 경기 81득점','토론토전에서 나온 기록. 역대 한 경기 득점 2위다.',0],
+  [2007,'경제','부동산 급등','수도권 집값이 2년 새 크게 뛰었다.',0,s=>{const b=scaleEstate(s,1.2);return b?`내 부동산 평가액 ${sgn(b)}`:'';}],
+  [2008,'국가대표','베이징 올림픽 "리딤팀" 금메달','코비와 르브론이 이끈 미국이 4년 전의 굴욕을 씻었다.',0],
+  [2009,'경제','글로벌 금융위기','리먼 브라더스 파산 이후 세계 증시가 무너졌다.',1,s=>{const a=scalePort(s,{stock:.55,etf:.6,gold:1.15}),b=scaleEstate(s,.85);return a||b?`내 자산 영향: 투자 ${sgn(a)} · 부동산 ${sgn(b)}`:'내 자산 영향: 없음';}],
+  [2010,'리그','르브론 제임스 "디시전": 마이애미행','생방송 특집 프로그램에서 이적을 발표했다. 클리블랜드 팬들이 유니폼을 불태웠다.',1],
+  [2011,'리그','NBA 직장폐쇄, 66경기 단축 시즌','개막이 크리스마스로 밀렸다.',0,s=>{const w=worldInit(s);w.short.nba=2011;w.shortF=w.shortF||{};w.shortF.nba=.8;return '이번 NBA 시즌은 66경기';}],
+  [2012,'리그','"린새니티"','무명의 제러미 린이 뉴욕을 뒤흔들었다. 아시아계 가드에 대한 편견이 흔들린다.',0],
+  [2015,'국가대표','한국 남자농구, 인천 아시안게임 금메달','이란을 꺾고 12년 만에 정상에 섰다.',1,null,s=>!(s.flags.nat&&ctry(s).zone==='KR'&&s.gender==='m')],
+  [2016,'리그','골든스테이트 73승 신기록, 우승은 클리블랜드','정규리그 역대 최다승을 세운 워리어스가 파이널에서 3승 1패 뒤 역전패했다.',1],
+  [2018,'경제','비트코인 광풍','1년 만에 스무 배 가까이 올랐다.',0,s=>{const a=scalePort(s,{coin:6});return a?`내 암호화폐 ${sgn(a)}`:'';}],
+  [2019,'경제','암호화폐 폭락','고점 대비 80% 하락.',0,s=>{const a=scalePort(s,{coin:.25});return a?`내 암호화폐 ${sgn(a)}`:'';}],
+  [2019,'리그','',' ',0,s=>{const w=worldInit(s);w.shortF=w.shortF||{};w.short.nba=2019;w.shortF.nba=.88;w.short.kbl=2019;w.shortF.kbl=.8;w.short.wkbl=2019;w.shortF.wkbl=.9;return '';},null,true],
+  [2020,'사회','코로나19 팬데믹, 전 세계 리그 중단','NBA는 3월에 멈췄다가 올랜도 "버블"에서 무관중으로 재개했다. KBL과 WKBL은 시즌을 조기 종료했다.',1,s=>{const a=scalePort(s,{stock:.8,etf:.85});return a?`내 자산 영향: 투자 ${sgn(a)}`:'';}],
+  [2021,'경제','유동성 랠리: 주식·코인·부동산 동반 급등','제로 금리에 돈이 풀렸다.',0,s=>{const a=scalePort(s,{coin:4,etf:1.35,stock:1.3}),b=scaleEstate(s,1.25);return a||b?`내 자산 영향: 투자 ${sgn(a)} · 부동산 ${sgn(b)}`:'';}],
+  [2023,'경제','긴축과 폭락','금리 인상에 기술주와 암호화폐가 무너졌다.',0,s=>{const a=scalePort(s,{coin:.35,etf:.8});return a?`내 자산 영향: 투자 ${sgn(a)}`:'';}],
+];
+
 /* ================= living world: real-player moves & news ================= */
 function W(){return S&&S.world;}
 const BASEP=PLAYERS.concat(HIST);
@@ -1986,10 +2107,11 @@ function worldYear(s,yr){
   const lgs=g==='m'?['kbl','nba','bleague']:['wkbl','wnba','wleague'];
   const bigs=[];
   const big=(tag,h,b,eff)=>{addNews(s,yr,tag,h,b,true,eff);bigs.push({tag,h,b,eff});};
+  const real=ny<=DATA_YEAR; // 2026년까지는 실제 역사대로: 임의 이적·가상 신인·무작위 사건 없음
   // development & retirement
   allPlayers().forEach(p=>{
     if(!lgs.includes(pLg(p))||w.ret[p.n])return;
-    w.adj[p.n]=clamp((w.adj[p.n]||0)+R(-1.3,1.3),-7,7);
+    if(!real||p.gen)w.adj[p.n]=clamp((w.adj[p.n]||0)+R(-1.3,1.3),-7,7);
     if(!rActive(p,ny)&&rActive(p,yr)){
       w.ret[p.n]=yr;const L=LG[pLg(p)],intl=L.level>=76;const legend=p.o>=L.level+(intl?11:12)||(ny-p.b>=37&&p.o>=L.level+9);
       if(legend)big('은퇴',`레전드 ${p.n}, 현역 은퇴 선언`,`${pTeam(p)}의 ${p.n}(${ny-p.b}세)이 유니폼을 벗는다. 한 시대가 저물었다. 영구결번 논의가 시작됐다.`);
@@ -2002,8 +2124,12 @@ function worldYear(s,yr){
     if(s.team&&s.team.league===lg&&!conv[s.team.name]&&!TEAMS_BASE[lg].includes(s.team.name))conv[s.team.name]=pick(TEAMS_BASE[lg]);
     if(s.team&&s.team.league===lg&&conv[s.team.name]){const old=s.team.name;s.team.name=conv[old];if(s.contract&&s.contract.team)s.contract.team.name=conv[old];log(s,`${old} 농구단이 프로 구단 「${s.team.name}」으로 바뀌었다.`,'major');}
     for(const n in w.mv){const m=w.mv[n];if(m.lg===lg&&conv[m.t])m.t=conv[m.t];}}
+  // 실제 사건 (2026년 이전)
+  REAL_EVENTS.forEach(([ey,tag,h,b,isBig,fx,cond,silent])=>{if(ey!==ny||w.once['r'+ey+h])return;w.once['r'+ey+h]=1;if(cond&&!cond(s))return;
+    let eff='';if(fx){try{eff=fx(s)||'';}catch(e){console.error(e);}}if(silent)return;
+    addNews(s,ny,tag,h,b,!!isBig,eff);if(isBig)bigs.push({tag,h,b,eff});});
   // trades & FA moves, driven by team strength and age
-  lgs.forEach(lg=>{
+  if(!real)lgs.forEach(lg=>{
     const L=LG[lg],teams=TEAMS[lg];if(!teams||teams.length<2)return;
     const n={nba:RI(3,6),kbl:RI(1,3),bleague:RI(0,2),wnba:RI(1,3),wkbl:RI(0,2),wleague:RI(0,1)}[lg];
     const power={};teams.forEach(t=>power[t]=teamPower(lg,t,ny,g));
@@ -2027,12 +2153,12 @@ function worldYear(s,yr){
   });
   // Korean players heading abroad
   const top=g==='m'?'nba':'wnba';
-  allPlayers().filter(p=>isKR(p)&&!w.ret[p.n]&&lgs.includes(pLg(p))&&pLg(p)!==top&&rActive(p,ny)).forEach(p=>{
+  if(!real)allPlayers().filter(p=>isKR(p)&&!w.ret[p.n]&&lgs.includes(pLg(p))&&pLg(p)!==top&&rActive(p,ny)).forEach(p=>{
     const o=rOvr(p,ny);if(o>=LG[top].level&&chance(.2)){const to=pick(TEAMS[top]),from=pTeam(p);w.mv[p.n]={t:to,lg:top};
       big('해외 진출',`${p.n}, ${LG[top].name} 진출! ${J(to,'과/와')} 계약`,`${from}에서 뛰던 ${J(p.n,'이/가')} 꿈의 무대에 선다. 한국 농구 역사에 남을 계약이다.`);}
   });
   // drafts: #1 picks join the world
-  lgs.filter(lg=>['nba','kbl','wnba','wkbl'].includes(lg)).forEach(lg=>{
+  if(!real)lgs.filter(lg=>['nba','kbl','wnba','wkbl'].includes(lg)).forEach(lg=>{
     const L=LG[lg],intl=lg==='nba'||lg==='wnba';
     let name;let guard=0;do{name=intl?pick(EN_F[g])+' '+pick(EN_L):koName(g);}while(allPlayers().some(p=>p.n===name)&&guard++<20);
     const gen=chance(.12),o=Math.round(L.level-(gen?1:7)+R(-2,3)),t=pick(TEAMS[lg]),b=ny-RI(19,22);
@@ -2045,15 +2171,27 @@ function worldYear(s,yr){
   lgs.filter(lg=>['nba','kbl','wnba','wkbl'].includes(lg)).forEach(lg=>{
     const L=LG[lg],teams=TEAMS[lg];
     const se=s.seasons.find(x=>x.year===yr&&x.lg===lg);
-    const champ=se&&se.champ?se.team:wpick(teams.filter(t=>!se||t!==se.team).map(t=>[t,Math.pow(Math.max(1,teamPower(lg,t,yr,g)-L.level+12),2)]));
+    if(lg==='wnba'&&yr<1997)return;
+    const rc=real?realCh(lg,titleYear(lg,yr)):null,rm=real&&REAL_MVP[lg]?REAL_MVP[lg][titleYear(lg,yr)]:null;
     const myMvp=s.awards.some(a=>a.year===yr&&a.lg===lg&&a.key==='mvp');
+    if(real){
+      // 내가 역사를 바꾸지 않았다면 실제 기록 그대로
+      if(se&&se.champ&&rc&&rc.team===se.team)addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 챔피언 ${rc.name} — 역사 그대로`,`실제 역사대로 ${J(rc.name,'이/가')} 정상에 올랐다. 그 우승 사진 한가운데에 ${J(s.name,'이/가')} 서 있다.`,false);
+      else if(se&&se.champ&&!rc)addNews(s,yr,'시즌',`[${L.short}] ${seasonLabel({team:{league:lg}},yr)} 시즌 챔피언 ${se.team}`,`${J(se.team,'이/가')} 정상에 올랐다. 그 중심에 ${J(s.name,'이/가')} 있었다.`);
+      else if(se&&se.champ){addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: ${se.team} 우승`,`원래 이 해의 챔피언은 ${J(rc?rc.name:'다른 팀','이었다/였다')}. ${J(s.name,'이/가')} 있는 세계에서는 ${J(se.team,'이/가')} 정상에 올랐다.`,false);}
+      else if(rc&&!(se&&rc.team===se.team))addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 챔피언 ${rc.name}${rm&&!myMvp?`, MVP ${rm}`:''}`,`${J(rc.name,'이/가')} 정상에 올랐다.${rm&&!myMvp?` 정규리그 MVP는 ${rm}.`:''}`);
+      else if(rm&&!myMvp)addNews(s,yr,'시즌',`[${L.short}] ${titleYear(lg,yr)} 정규리그 MVP ${rm}`,`${rm}이(가) MVP 트로피를 받았다.`.replace('이(가)',hasBatchim(rm)?'이':'가'));
+      if(myMvp&&rm)addNews(s,yr,'시즌',`[${L.short}] 역사가 바뀌었다: MVP ${s.name}`,`원래 이 해의 MVP는 ${J(rm,'이었다/였다')}.`,false);
+      return;
+    }
+    const champ=se&&se.champ?se.team:wpick(teams.filter(t=>!se||t!==se.team).map(t=>[t,Math.pow(Math.max(1,teamPower(lg,t,yr,g)-L.level+12),2)]));
     const best=allPlayers().filter(p=>pLg(p)===lg&&rActive(p,yr)&&!w.ret[p.n]).map(p=>[p,rOvr(p,yr)+R(0,4)]).sort((a,b)=>b[1]-a[1])[0];
     const mvp=myMvp?s.name:best?best[0].n:'—';
     addNews(s,yr,'시즌',`[${L.short}] ${seasonLabel({team:{league:lg}},yr)} 시즌 챔피언 ${champ}, MVP ${mvp}`,`${J(champ,'이/가')} 정상에 올랐다. 정규리그 MVP는 ${mvp}.`);
     if(best&&!myMvp){w.mvps=w.mvps||{};w.mvps[best[0].n]=(w.mvps[best[0].n]||0)+1;if(w.mvps[best[0].n]===3)big('기록',`${best[0].n}, 통산 3번째 ${L.short} MVP`,`역대 손꼽히는 선수 반열에 올랐다. 명예의 전당 입성은 시간문제다.`);}
   });
   // big world events (at most one a year)
-  for(const ev of WORLD_EVENTS.filter(e=>!(e.once&&w.once[e.id])&&(!e.cond||e.cond(s,yr))).sort(()=>rnd()-.5)){
+  if(!real)for(const ev of WORLD_EVENTS.filter(e=>!(e.once&&w.once[e.id])&&(!e.cond||e.cond(s,yr))).sort(()=>rnd()-.5)){
     if(chance(ev.p)){if(ev.once)w.once[ev.id]=1;const r=ev.run(s,yr);if(r)big(r.tag,r.h,r.b,r.eff);break;}
   }
   syncMates(s);
@@ -2771,7 +2909,7 @@ function yearEnd(s,yr){
   if(a>=66)s.money+=Math.round(1200+(s.flags.pensionBonus||0));
   // relations
   s.flags.relDone={};
-  s.relations.forEach(r=>{if(r.dead)return;r.age++;r.bond=clamp(r.bond-(r.type==='라이벌'?1:r.bond>=70?4:2),0,100);
+  s.relations.forEach(r=>{if(r.dead)return;r.age++;r.bond=clamp(r.bond-(r.type==='라이벌'?1:r.bond>=80?3:r.bond>=60?2:1.5),0,100);
     if(r.type==='아버지'||r.type==='어머니'){if(r.age>=68&&chance(.012*Math.exp((r.age-68)/6))){r.dead=true;lf(s,'happy',-22);lf(s,'mental',-10);log(s,`${r.type} ${J(r.name,'이/가')} 세상을 떠나셨다. 향년 ${r.age}세.`,'bad');}}
     if(r.type==='반려견'&&r.age>=12&&chance(.25)){r.dead=true;lf(s,'happy',-15);log(s,`반려견 ${J(r.name,'이/가')} 무지개다리를 건넜다. ${r.age}살.`,'bad');}
     if(r.type==='연인'&&r.bond<25&&chance(.45)){r.dead=true;r.gone=true;lf(s,'happy',-10);log(s,`${J(r.name,'과/와')} 헤어졌다.`,'bad');}
@@ -2791,7 +2929,7 @@ function yearEnd(s,yr){
   try{worldYear(s,yr);}catch(e){console.error(e);}
   transitions(s);
   // HOF
-  if(s.stage==='retired'&&!s.flags.hof&&s.retiredAge&&a-s.retiredAge>=4&&s.legacy>=190){
+  if(s.stage==='retired'&&!s.flags.hof&&s.retiredAge&&a-s.retiredAge>=4&&s.legacy>=260){
     enqueue(()=>{s.flags.hof=true;lf(s,'fame',15);lf(s,'happy',15);log(s,'농구 명예의 전당에 헌액됐다.','major');
       return {kicker:`${s.year} 명예의 전당`,title:'명예의 전당 헌액',body:`<p>무대 위, 내 이름이 새겨진 동판이 걸렸다. 객석 맨 앞줄에 ${s.relations.some(r=>r.type==='배우자'&&!r.dead)?'가족들이':'옛 동료들이'} 앉아 있었다.</p>`,choices:[{label:'소감을 말한다',primary:true,act:()=>'"농구공 하나로 여기까지 왔습니다."'}]};});
   }
@@ -2961,7 +3099,7 @@ function endingStats(s){
 const ENDINGS=[
   {id:'banned',t:'몰락한 별',hint:'유혹에 넘어가 리그에서 쫓겨난다',ok:(s)=>s.flags.banned,
     story:(s,e)=>[`한때 ${s.name}의 이름은 체육관 전광판에 걸려 있었다. 그러나 단 한 번의 선택이 모든 것을 바꿨다.`,`영구 제명 이후 그는 동네 코트에서 아이들에게만 슛을 가르쳤다. 아무도 그가 누구였는지 묻지 않았다.`]},
-  {id:'goat',t:'코트의 신',hint:'레거시 520 이상, MVP 3회 이상',ok:(s,e)=>s.legacy>=520&&e.mvp>=3,
+  {id:'goat',t:'코트의 신',hint:'NBA·WNBA에서 5시즌 이상 뛰고 레거시 700 이상, MVP 3회 이상',ok:(s,e)=>s.legacy>=700&&e.mvp>=3&&e.top.length>=5,
     story:(s,e)=>[`MVP ${e.mvp}회, 우승 ${e.champ}회. 통계로는 설명되지 않는 선수였다.`,`그가 은퇴한 뒤에도 사람들은 논쟁했다. 누가 역대 최고인가. 그리고 그 논쟁의 끝에는 늘 ${s.name}의 이름이 있었다.`]},
   {id:'olympic',t:'기적의 메달',hint:'올림픽에서 메달을 딴다',ok:s=>s.awards.some(a=>a.key==='olympic'),
     story:s=>[`${s.awards.find(a=>a.key==='olympic').name}. 한국 농구가 수십 년 동안 꿈꾸던 장면이었다.`,`시상대 위에서 들은 애국가를, ${s.name}은 평생 잊지 못했다.`]},
@@ -3598,7 +3736,7 @@ function render(){
           <h3>컨디션</h3>
           <div class="meters">
             ${['happy','health','mental','fame','smarts'].map(k=>`<div class="meter"><label>${SNAP_LIFE[k]}<b>${Math.round(s.life[k])}</b></label><div class="bar"><i style="width:${s.life[k]}%;background:${barColor(k,s.life[k])}"></i></div></div>`).join('')}
-            <div class="meter"><label>레거시<b>${Math.round(s.legacy)}</b></label><div class="bar"><i style="width:${clamp(s.legacy/3,0,100)}%;background:var(--maple)"></i></div></div>
+            <div class="meter"><label>레거시<b>${Math.round(s.legacy)}</b></label><div class="bar"><i style="width:${clamp(s.legacy/7,0,100)}%;background:var(--maple)"></i></div></div>
             <div class="money-row"><span>${s.age<19?'가족 지원 예산':'자산'}</span><b>${fmtMoney(s.age<19?famBudget(s):s.money)}</b></div>
           </div>
         </div>
@@ -3740,7 +3878,7 @@ function peopleHTML(s){
     ${dead.map(r=>`<div class="person gone"><div class="who"><b>故 ${esc(r.name)}</b><span>${r.type}</span></div></div>`).join('')}
   </div>
   ${s.age>=16?`<div class="btn-row"><button class="btn hot" id="btnLove" ${canFind?'':'disabled'}>${partner(s)?'이미 '+partner(s).type+'이 있다':s.flags.relDone.find?'올해는 인연 찾기를 했다':'새로운 인연 찾기'}</button></div>`:''}
-  <p class="sb-note" style="margin-top:10px">각 행동은 사람마다 1년에 한 번. 행동 횟수는 소모하지 않는다. 인연은 오를수록 올리기 어렵고, 가까운 사이일수록 신경 쓰지 않으면 빨리 식는다. <b style="color:var(--chalk)">Lv.5 평생 인연</b>이 되면 그 사람과의 특별한 사건이 생긴다.</p>`;
+  <p class="sb-note" style="margin-top:10px">각 행동은 사람마다 1년에 한 번. 행동 횟수는 소모하지 않는다. 인연 레벨에 따라 그 사람과 생기는 사건이 달라진다. 서먹하면 오해와 갈등이, 가까워지면 부탁과 약속이, <b style="color:var(--chalk)">Lv.5 평생 인연</b>이면 평생 기억할 장면이 찾아온다.</p>`;
 }
 function moneyHTML(s){
   const t=UI.mtab||'own',cf=cashflow(s);
@@ -3922,7 +4060,7 @@ function bindStart(){
 }
 
 /* ================= ending ================= */
-function grade(L){return L>=520?['S+','GOAT']:L>=320?['S','살아있는 전설']:L>=190?['A','명예의 전당']:L>=110?['B','프랜차이즈 스타']:L>=55?['C','꾸준한 프로']:L>=18?['D','코트 위의 노동자']:['F','이루지 못한 꿈'];}
+function grade(L){return L>=700?['S+','GOAT']:L>=450?['S','살아있는 전설']:L>=260?['A','명예의 전당']:L>=140?['B','프랜차이즈 스타']:L>=65?['C','꾸준한 프로']:L>=20?['D','코트 위의 노동자']:['F','이루지 못한 꿈'];}
 function endHTML(s){
   const [g,t]=grade(s.legacy);
   const pro=s.seasons.filter(x=>LG[x.lg].kind==='pro'),gp=pro.reduce((a,x)=>a+x.gp,0);
