@@ -549,6 +549,15 @@ input[type=range]{width:100%;accent-color:var(--leather)}
 .ach-grid div:not(.got){opacity:.55}
 .ach-bar{height:6px;border-radius:3px;background:#0b1527;overflow:hidden;margin:2px 0 10px}
 .ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--maple),var(--led))}
+/* admission guide */
+.admit{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
+.admit div{background:var(--panel-2);border-radius:8px;padding:8px 10px;font-size:12px;min-width:0;border-left:3px solid var(--bad)}
+.admit div.ok{border-left-color:var(--good)}
+.admit b{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:13px}
+.admit b i{font-style:normal;font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+.admit small{display:block;color:var(--chalk);opacity:.9;margin-top:2px}
+.admit span{display:block;color:var(--muted);word-break:keep-all}
+.admit div.ok span{color:var(--good)}
 /* keyboard hint */
 .kbd-hint{font-size:11.5px;color:var(--muted);white-space:nowrap;opacity:.8}
 .kbd-hint kbd{font-family:var(--f-body);font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--chalk)}
@@ -1199,7 +1208,7 @@ function schoolPickChoices(s,stage,list,lg,reqs,onPick){
   const L=LG[lg],o=ovr(s),home=s.home;
   const rows=list.map(([n,c,t])=>({n,c,t,str:schoolStr(L,t)})).sort((a,b)=>(b.c===home)-(a.c===home)||b.t-a.t||b.str-a.str);
   return rows.map(r=>{const req=reqs(r.t,r.n);const ok=req.ok;
-    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`${isHaeun(s)?'프리패스':'서류 통과 · 실기 시험 후 입학'} · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:'예상 역할 '+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
+    return {label:`${r.n}`,sub:`${r.c}${r.c===home?' · 고향':ABROAD[lg]?' · 미국':''} · 전력 ${starStr(teamStars(r.str,lg))} · ${['','재건 중','중위권','전국 강호','월드클래스'][r.t]} · ${r.t===4?`${isHaeun(s)?'프리패스':'서류 통과 · 실기 시험 후 입학'} · 졸업 시 ${LG[topPro(s)].name} 직행 오퍼`:`${req.need&&req.need!=='자유 입단'?'입단 기준 '+req.need:'자유 입단'} · 예상 역할 `+roleLabel(o+(lg==='high'?6:lg==='middle'?8:4),r.str)}`,
       disabled:!ok,reason:`${r.c} · ${req.why}`,act:()=>onPick({name:r.n,league:lg,str:r.str,city:ABROAD[lg]?null:r.c})};});
 }
 function newGame(o){
@@ -2494,23 +2503,24 @@ const moveBonus=(s,kind)=>(s.skills||[]).reduce((a,k)=>a+(MOVES[k]&&MOVES[k].kin
 
 /* ================= world-class entrance exam ================= */
 const WC_EXAM={
-  '장안중':{o:40,pot:80,extra:[['stamina',40,'줄넘기 2단 뛰기 200개 (체력 40)'],['smarts',50,'수학 경시 예선 통과 (학업 50)']],
+  '장안중':{o:44,top:65,extra:[['stamina',40,'줄넘기 2단 뛰기 200개 (체력 40)'],['smarts',50,'수학 경시 예선 통과 (학업 50)']],
     exam:{n:'서재윤 앞 자유투 실기',tries:3,need:2,attr:'shoot',lv:30,btn:'자유투!',lines:['체육관이 조용하다. 1짱 서재윤이 팔짱을 끼고 본다.','두 번째 자유투. 서재윤이 일부러 기침을 했다.','마지막 한 개. 서재윤이 매점 빵을 걸었다.']}},
-  '서현고':{o:58,feeder:54,pot:80,extra:[['smarts',55,'모의고사 3등급 이상 (학업 55)'],['iq',55,'필기 전술 시험 (농구 IQ 55)']],
+  '서현고':{o:60,feeder:56,top:78,extra:[['smarts',55,'모의고사 3등급 이상 (학업 55)'],['iq',55,'필기 전술 시험 (농구 IQ 55)']],
     exam:{n:'슬리퍼 신고 3점 실기',tries:3,need:2,attr:'shoot',lv:46,btn:'슛!',lines:['서현고 전통: 입학 실기는 삼선 슬리퍼를 신고 본다. 박용준이 슬리퍼를 건넸다.','왼쪽 슬리퍼가 벗겨질 것 같다. 집중.','마지막 한 개. 박용준이 응원한다고 소리를 질러서 더 긴장된다.']}},
-  '대진고':{o:58,feeder:54,pot:80,extra:[['mental',60,'선주안 눈싸움 버티기 (멘탈 60)'],['athletic',55,'탄천 계단 왕복 50회 (운동능력 55)']],
+  '대진고':{o:60,feeder:56,top:78,extra:[['mental',60,'선주안 눈싸움 버티기 (멘탈 60)'],['athletic',55,'탄천 계단 왕복 50회 (운동능력 55)']],
     exam:{n:'선주안 앞 덩크 실기',tries:3,need:2,attr:'athletic',lv:46,btn:'점프!',lines:['대진고 1짱 선주안이 림 옆에 섰다. "세 번 중에 두 번. 못 하면 집에 가."','선주안이 림을 툭툭 친다. 더 높아 보인다.','마지막 점프. 선주안이 헤어밴드를 고쳐 쓴다.']}},
 };
 const isHaeun=s=>!!s&&String(s.name||'').replace(/\s/g,'')==='김하은';
 function wcReq(s,stage,name){
   const E=WC_EXAM[name];if(!E)return {ok:true};
-  if(isHaeun(s))return name==='대진고'?{ok:false,why:'절대 입학 불가 · 이유는 대진고만 안다'}:{ok:true};
+  if(isHaeun(s))return name==='대진고'?{ok:false,why:'절대 입학 불가 · 이유는 대진고만 안다',need:'입학 불가'}:{ok:true,need:'프리패스'};
   const o=ovr(s),needO=s.flags.wc&&E.feeder?E.feeder:E.o,miss=[];
   if(o<needO)miss.push(`종합 ${needO} (현재 ${o})`);
-  if(s.pot<E.pot)miss.push(`잠재력 ★★★★ (현재 ${starStr(potStars(s.pot))})`);
+  const bk=ATTRS.reduce((a,k)=>s.attr[k]>s.attr[a]?k:a,ATTRS[0]),bv=Math.round(s.attr[bk]);
+  if(bv<E.top)miss.push(`주특기 ${E.top} (현재 ${ATTR_KO[bk]} ${bv})`);
   E.extra.forEach(([k,v,label])=>{const cur=ATTRS.includes(k)?Math.round(s.attr[k]):Math.round(s.life[k]);if(cur<v)miss.push(`${label.split(' (')[0]} 실패 · ${label.match(/\((.*)\)/)[1]} 필요 (현재 ${cur})`);});
   if(s.flags.wcFail&&s.flags.wcFail[name])miss.unshift('실기 불합격 · 재응시 불가');
-  return {ok:!miss.length,why:`서류 탈락 · ${miss.join(' · ')}`};
+  return {ok:!miss.length,why:`서류 탈락 · ${miss.join(' · ')}`,need:`종합 ${needO} · 주특기 ${E.top} · ${E.extra.map(x=>x[2].match(/\((.*)\)/)[1]).join(' · ')} + 실기`};
 }
 function wcExamCfg(s,stage,team,st){
   const E=WC_EXAM[team.name].exam;const p=clamp(.45+(s.attr[E.attr]-E.lv)*.012,.12,.85);
@@ -2694,20 +2704,52 @@ function labHTML(s){
 }
 
 /* ================= transitions ================= */
+// ---- 입단 테스트: 종합 능력치 + 그 학교가 중시하는 능력치로만 거른다 (잠재력은 보지 않는다) ----
+const SCHOOL_FOCUS=['shoot','defense','athletic','handle','inside','iq','pass','rebound'];
+const FOCUS_OF={}; // 학교별 전형: 같은 지역 목록 안에서 골고루 돌아가며 배정 (강호부터)
+[SCHOOLS.middle,SCHOOLS.high.m,SCHOOLS.high.f,...Object.values(INTL_SCHOOLS).flatMap(c=>[c.middle,c.high])].forEach(l=>
+  l.filter(x=>x[2]>=2&&x[2]<4).sort((a,b)=>b[2]-a[2]).forEach((x,i)=>{if(!FOCUS_OF[x[0]])FOCUS_OF[x[0]]=SCHOOL_FOCUS[i%SCHOOL_FOCUS.length];}));
+function schoolFocus(name){return FOCUS_OF[name]||'shoot';}
+const ADMIT={middle:{3:[40,48],2:[33,40]},high:{3:[54,62],2:[46,53]}};
+function schoolReq(s,stage,t,name){
+  if(t===4)return wcReq(s,stage,name);
+  const A=ADMIT[stage]&&ADMIT[stage][t];if(!A)return {ok:true,need:'자유 입단'};
+  const [no,na]=A,k=schoolFocus(name),o=ovr(s),v=Math.round(s.attr[k]),miss=[];
+  if(o<no)miss.push(`종합 ${no} 필요 (현재 ${o})`);
+  if(v<na)miss.push(`${ATTR_KO[k]} ${na} 필요 (현재 ${v})`);
+  return {ok:!miss.length,why:`입단 테스트 탈락 · ${miss.join(' · ')}`,need:`종합 ${no} · ${ATTR_KO[k]} ${na}`};
+}
+function collegeReq(s,lg,t){
+  const L=LG[lg],o=ovr(s),sm=Math.round(s.life.smarts);
+  if(lg==='ncaa'){const n=t===3?L.level-6:t===2?L.level-11:0;return n?{ok:o>=n,why:`종합 ${n} 필요 (현재 ${o})`,need:`종합 ${n}`}:{ok:true,need:'자유 입단'};}
+  const n=t===3?L.level-5:t===2?L.level-12:0,m=t===3?70:50;
+  return n?{ok:o>=n||sm>=m,why:`종합 ${n} 또는 학업 ${m} 필요 (현재 ${o} · 학업 ${sm})`,need:`종합 ${n} 또는 학업 ${m}`}:{ok:true,need:'자유 입단'};
+}
+const TIER_KO=['','재건 중','중위권','전국 강호','월드클래스'];
+function admitGuideHTML(s){
+  const nx=s.stage==='elem'?'middle':s.stage==='middle'?'high':s.stage==='high'&&ctry(s).zone==='KR'?'uleague':null;if(!nx)return '';
+  const intl=ctry(s).zone!=='KR'&&INTL_SCHOOLS[s.country];
+  const list=nx==='uleague'?SCHOOLS.uleague[s.gender]:intl?INTL_SCHOOLS[s.country][nx]:nx==='middle'?SCHOOLS.middle:SCHOOLS.high[s.gender];
+  const req=(t,n)=>nx==='uleague'?collegeReq(s,'uleague',t):schoolReq(s,nx,t,n);
+  const rows=list.filter(x=>x[2]>=2).sort((a,b)=>b[2]-a[2]||(b[1]===s.home)-(a[1]===s.home)).slice(0,12).map(([n,c,t])=>({n,c,t,r:req(t,n)}));
+  if(!rows.length)return '';
+  const at={middle:13,high:16,uleague:19}[nx],label={middle:'중학교',high:'고등학교',uleague:'대학'}[nx];
+  return `<h3 style="margin-top:18px">진학 준비 <em>${at}세 ${label} 입단 기준 · 잠재력은 보지 않는다 · 재건 중인 학교는 누구나 입단</em></h3>
+  <div class="admit">${rows.map(x=>`<div class="${x.r.ok?'ok':''}"><b>${esc(x.n)}<i>${esc(x.c)} · ${TIER_KO[x.t]}</i></b><small>${esc(x.r.need||'')}</small><span>${x.r.ok?'지금 기준 통과':esc((x.r.why||'').replace(/^(입단 테스트 탈락|서류 탈락) · /,''))}</span></div>`).join('')}</div>`;
+}
 function schoolChoiceSpec(s,stage){
   const L=LG[stage],o=ovr(s);
   const intl=ctry(s).zone!=='KR'&&INTL_SCHOOLS[s.country];
   const list=intl?INTL_SCHOOLS[s.country][stage==='middle'?'middle':'high']:stage==='middle'?SCHOOLS.middle:SCHOOLS.high[s.gender];
   const kname=intl?{middle:'유소년 팀',high:'고교 · 유스 팀'}[stage]:{middle:'중학교',high:'고등학교'}[stage];
   return {kicker:`${s.age}세 · 진학 · 전국 ${list.length}개 학교`,title:intl?`${J(kname,'을/를')} 고르자`:`${kname} 농구부를 고르자`,
-    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 서류(종합·잠재력 ★★★★·학교별 특기 조건)를 통과한 뒤 실기 시험을 본다. 실기에서 떨어지면 그 학교는 재응시할 수 없다. ${stage==='middle'?'장안중: 종합 40 · 체력 40 · 학업 50 → 서재윤 앞 자유투':'서현고: 종합 58 · 학업 55 · 농구 IQ 55 → 슬리퍼 3점 / 대진고: 종합 58 · 멘탈 60 · 운동능력 55 → 선주안 앞 덩크 (장안중 출신은 종합 54)'}</p>`:''}`,
-    choices:schoolPickChoices(s,stage,list,stage,(t,n)=>t===4?wcReq(s,stage,n):t===3?{ok:o>=L.level-8||s.life.fame>=20,why:'스카우트 관심 부족 (종합 '+(L.level-8)+' 또는 인기 20 필요)'}:{ok:true},
+    body:`<p>전국에서 원서를 낼 수 있다. 고향(${esc(s.home||'서울')}) 학교가 맨 위에 있다. 강호는 우승 확률이 높지만 출전 시간 경쟁이 치열하고, 고향을 떠나면 기숙사 생활이 시작된다.</p><p class="sb-note">전국 강호·중위권 학교는 입단 테스트를 본다: 종합 능력치와 그 학교가 중시하는 능력치 하나. 잠재력은 보지 않는다. 재건 중인 학교는 누구나 받아 준다.</p>${list.some(x=>x[2]===4)?`<p class="sb-note">별 7개 월드클래스 학교는 서류(종합·주특기·학교별 조건)를 통과한 뒤 실기 시험을 본다. 실기에서 떨어지면 그 학교는 재응시할 수 없다. ${stage==='middle'?'장안중: 종합 44 · 주특기 65 · 체력 40 · 학업 50 → 서재윤 앞 자유투':'서현고: 종합 60 · 주특기 78 · 학업 55 · 농구 IQ 55 → 슬리퍼 3점 / 대진고: 종합 60 · 주특기 78 · 멘탈 60 · 운동능력 55 → 선주안 앞 덩크 (장안중 출신은 종합 56)'}</p>`:''}`,
+    choices:schoolPickChoices(s,stage,list,stage,(t,n)=>schoolReq(s,stage,t,n),
       team=>WC_SCHOOLS.has(team.name)?(isHaeun(s)?enterSchool(s,stage,team,'프리패스! 서류도 실기도 없이 합격.'):{meter:wcExamCfg(s,stage,team,{i:0,m:0})}):enterSchool(s,stage,team))};
 }
 function collegeChoiceSpec(s,lg){
   const L=LG[lg],o=ovr(s),list=SCHOOLS[lg][s.gender];
-  const reqs=lg==='ncaa'?t=>t===3?{ok:o>=L.level-6,why:`종합 ${L.level-6} 필요`}:t===2?{ok:o>=L.level-11,why:`종합 ${L.level-11} 필요`}:{ok:true}
-    :t=>t===3?{ok:o>=L.level-5||s.life.smarts>=70,why:`종합 ${L.level-5} 또는 학업 70 필요`}:t===2?{ok:o>=L.level-12||s.life.smarts>=50,why:`종합 ${L.level-12} 또는 학업 50 필요`}:{ok:true};
+  const reqs=t=>collegeReq(s,lg,t);
   return {kicker:`${s.age}세 · ${lg==='ncaa'?'NCAA 장학 제안':'대학 진학'}`,title:lg==='ncaa'?'미국 어느 대학으로 갈까':'어느 대학으로 갈까',
     body:`<p>${lg==='ncaa'?'NCAA 디비전1 프로그램들이 장학금을 제시했다.':'U-리그 대학 농구부에서 연락이 왔다. 명문대는 실력이나 성적이 받쳐 줘야 한다.'}</p>`,
     choices:schoolPickChoices(s,lg,list,lg,reqs,team=>{s.stage='college';s.team=team;
@@ -2765,7 +2807,7 @@ function graduateSpec(s){
     choices:[...draftChoices(s,true),{label:'농구를 그만둔다',sub:'학위로 새 인생을 시작한다',act:()=>{goCivil(s);return {text:'졸업장을 받았다.',next:career2Spec(s,true)};}}]};
 }
 function draftSpec(s,lg){
-  const L=LG[lg],o=ovr(s),score=o+(s.pot-o)*.25+s.life.fame*.05+R(-3,3);
+  const L=LG[lg],o=ovr(s),score=o+1+s.life.fame*.05+R(-3,3); // 잠재력은 보지 않는다: 지금 실력 + 인지도
   let round=0,no=0;
   const nT=TEAMS[lg].length;
   if(lg==='nba'){if(score>=L.level-3){round=1;no=clamp(Math.round((L.level+7-score)*2.6)+1,1,30);}else if(score>=L.level-9){round=2;no=clamp(30+Math.round((L.level-3-score)*4.5)+1,31,58);}}
@@ -3006,6 +3048,7 @@ function yearEnd(s,yr){
   {const tu=tierCheck(s);if(tu)enqueue(()=>tu);}
   // stage AP
   s.apMax=AP_BY[s.stage]||3;s.ap=s.apMax;s.flags.yearly={};
+  if((s.stage==='elem'&&a===12)||(s.stage==='middle'&&a===15))log(s,`내년엔 ${s.stage==='elem'?'중학교':'고등학교'} 진학이다. 학교마다 입단 테스트가 있다. 커리어 탭 「진학 준비」에서 기준을 확인하자.`,'good');
   if(s.life.happy<15&&!s.flags.lowWarned){s.flags.lowWarned=1;log(s,'요즘 아무것도 즐겁지 않다. 쉬어야 할 때다.','bad');}
   if(s.life.happy>30)s.flags.lowWarned=0;
   // banned
@@ -4113,6 +4156,7 @@ function careerHTML(s){
     <div><span>프로 통산</span><b>${gp?`${gp}경기 · ${avg('pts')}점 ${avg('reb')}리바 ${avg('ast')}어시`:'—'}</b></div>
   </div>
   ${btns.length?`<div class="btn-row">${btns.join('')}</div>`:''}
+  ${admitGuideHTML(s)}
   ${sigBlock}
   ${rosterHTML(s)}
   <h3 style="margin-top:18px">종합 능력치 추이</h3>
