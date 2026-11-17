@@ -534,8 +534,8 @@ input[type=range]{width:100%;accent-color:var(--leather)}
 .sb-hi{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .sb-hi i{font-style:normal;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(69,211,145,.14);color:var(--good);border:1px solid rgba(69,211,145,.4)}
 /* achievements */
-.ach-pop{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);z-index:70;width:min(420px,calc(100% - 32px));background:linear-gradient(135deg,#2a1d05,#0a1220 70%);border:1px solid var(--led);border-radius:12px;padding:10px 14px 10px 56px;box-shadow:0 18px 40px -16px #000,0 0 24px -6px rgba(255,196,67,.5);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
-.ach-pop.show{transform:translate(-50%,0)}
+.ach-pop{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);opacity:0;visibility:hidden;z-index:70;width:min(420px,calc(100% - 32px));background:linear-gradient(135deg,#2a1d05,#0a1220 70%);border:1px solid var(--led);border-radius:12px;padding:10px 14px 10px 56px;box-shadow:0 18px 40px -16px #000,0 0 24px -6px rgba(255,196,67,.5);transition:transform .35s cubic-bezier(.2,1.3,.4,1),opacity .3s,visibility .35s;pointer-events:none}
+.ach-pop.show{transform:translate(-50%,0);opacity:1;visibility:visible}
 .ach-pop::before{content:"★";position:absolute;left:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--led);color:#3a2600;font-size:16px;line-height:1}
 .ach-pop small{display:block;font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--led)}
 .ach-pop b{display:block;font-size:15px}
@@ -558,6 +558,52 @@ input[type=range]{width:100%;accent-color:var(--leather)}
 .admit small{display:block;color:var(--chalk);opacity:.9;margin-top:2px}
 .admit span{display:block;color:var(--muted);word-break:keep-all}
 .admit div.ok span{color:var(--good)}
+/* challenge mode */
+.mode-seg button{padding:10px 8px;font-size:15px;font-weight:800;line-height:1.25}
+.mode-seg button small{display:block;font-size:11px;font-weight:600;opacity:.75;margin-top:2px;word-break:keep-all}
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.ch-m{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid var(--line);background:#0b1527;border-radius:10px;padding:10px 12px;min-width:0;color:var(--chalk)}
+.ch-m:hover{border-color:var(--maple)}
+.ch-m b{font-size:15px}
+.ch-m small{font-size:12px;color:var(--muted);line-height:1.4;word-break:keep-all}
+.ch-m em{font-style:normal;font-size:11.5px;color:var(--maple);margin-top:auto;padding-top:4px}
+.ch-m[aria-pressed="true"]{border-color:var(--led);background:linear-gradient(135deg,rgba(255,196,67,.16),#0b1527 70%);box-shadow:inset 0 0 0 1px var(--led)}
+.ch-lv{font-size:12px;color:var(--led);letter-spacing:.06em}
+.ch-lv i{font-style:normal;color:#33435f}
+.ch-m.rnd .ch-lv{font-family:var(--f-num);font-size:15px;letter-spacing:.2em}
+.ch-cta{background:linear-gradient(90deg,#b8860b,var(--led));color:#2a1a00;box-shadow:0 14px 30px -12px rgba(255,196,67,.7),inset 0 -3px 0 rgba(0,0,0,.18)}
+.ch-cta:hover{background:linear-gradient(90deg,#c9971c,#ffd36b)}
+.ch-banner{grid-column:1/-1;order:0;display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(255,196,67,.16),rgba(255,196,67,.04));border:1px solid rgba(255,196,67,.45);border-radius:12px;padding:10px 14px;min-width:0}
+.ch-bk{font-family:var(--f-num);font-size:17px;letter-spacing:.12em;color:var(--led);line-height:1;text-align:center;flex:none}
+.ch-bk small{display:block;font-family:var(--f-body);font-size:10px;letter-spacing:0;margin-top:4px}
+.ch-bm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ch-bm b{font-size:15px}
+.ch-bm span{font-size:12.5px;color:var(--muted);word-break:keep-all}
+.ch-bar{height:5px;border-radius:3px;background:#0b1527;overflow:hidden;margin-top:4px}
+.ch-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--maple),var(--led))}
+.ch-banner em{font-style:normal;font-family:var(--f-num);font-size:20px;line-height:1;color:var(--chalk);flex:none;white-space:nowrap}
+.ch-banner em small{font-size:14px;color:var(--muted)}
+.sheet.chreveal .m-kicker,.sheet.chclear .m-kicker{background:linear-gradient(90deg,#5a3d06,#2a1c04);color:var(--led);text-shadow:none;border-bottom-color:#7a5510}
+.ch-goal{font-size:15px;font-weight:700;color:var(--led);margin:0 0 10px;word-break:keep-all}
+.ch-card{display:flex;align-items:center;gap:14px;background:var(--panel-2);border-radius:12px;padding:10px 12px}
+.ch-av{width:84px;height:91px;flex:none;border-radius:10px;background:radial-gradient(circle at 50% 35%,#24406a,#122039)}
+.ch-who{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13px;color:var(--muted);word-break:keep-all}
+.ch-who b{font-family:var(--f-disp);font-weight:400;font-size:24px;color:var(--chalk)}
+.trait.per{border-color:#b9a3ff;color:#d6caff}
+.chc{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.chc-badge{flex:none;font-family:var(--f-num);font-size:28px;letter-spacing:.12em;line-height:1;color:#2a1a00;background:radial-gradient(circle at 35% 30%,#ffe7a3,var(--led) 60%,#a87708);border-radius:12px;padding:12px 14px 7px;box-shadow:0 0 30px rgba(255,196,67,.55);animation:tuIn .8s cubic-bezier(.2,1.5,.4,1) both}
+.chc-m{min-width:0}
+.chc-m b{display:block;font-family:var(--f-disp);font-weight:400;font-size:24px;color:var(--led)}
+.chc-m small{color:var(--muted);font-size:13px;word-break:keep-all}
+.ch-end{border-radius:18px;padding:22px 20px;text-align:center;border:1px solid}
+.ch-end.win{background:linear-gradient(180deg,#2a1d05,var(--panel) 75%);border-color:#7a5510}
+.ch-end.lose{background:linear-gradient(180deg,#2a0c0c,var(--panel) 75%);border-color:#5a1e1e}
+.ch-stamp{display:inline-block;font-family:var(--f-num);font-size:44px;letter-spacing:.16em;line-height:1;padding:8px 18px 2px;border:3px solid;border-radius:10px;transform:rotate(-4deg)}
+.ch-end.win .ch-stamp{color:var(--led);border-color:var(--led);text-shadow:0 0 18px rgba(255,196,67,.5)}
+.ch-end.lose .ch-stamp{color:#ff6b6b;border-color:#ff6b6b}
+.ch-end h2{font-family:var(--f-disp);font-weight:400;font-size:30px;margin:14px 0 4px}
+.ch-end>p{color:var(--muted);margin:0 0 12px;word-break:keep-all}
+.ch-end .kv{text-align:left}
 /* keyboard hint */
 .kbd-hint{font-size:11.5px;color:var(--muted);white-space:nowrap;opacity:.8}
 .kbd-hint kbd{font-family:var(--f-body);font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--chalk)}
@@ -3274,7 +3320,7 @@ const ENDINGS=[
 ];
 function pickEnding(s){const e=endingStats(s);return ENDINGS.find(x=>{try{return x.ok(s,e);}catch(_){return false;}})||ENDINGS[ENDINGS.length-1];}
 function endingsSeen(){try{return JSON.parse(localStorage.getItem(ENDKEY)||'[]');}catch(e){return [];}}
-function recordEnding(s){if(!s.endingId)s.endingId=pickEnding(s).id;const seen=endingsSeen();if(!seen.includes(s.endingId)){seen.push(s.endingId);try{localStorage.setItem(ENDKEY,JSON.stringify(seen));}catch(e){}}return s.endingId;}
+function recordEnding(s){if(!s.endingId)s.endingId=pickEnding(s).id;if(s.challenge)return s.endingId;const seen=endingsSeen();if(!seen.includes(s.endingId)){seen.push(s.endingId);try{localStorage.setItem(ENDKEY,JSON.stringify(seen));}catch(e){}}return s.endingId;}
 
 /* ================= growth: tiers, yearly report, achievements ================= */
 const TIERS=[[0,'농구 꿈나무'],[35,'동네 에이스'],[44,'학교 에이스'],[51,'지역 유망주'],[57,'전국구 유망주'],[63,'프로 지망생'],[68,'프로 주전급'],[73,'리그 정상급'],[78,'월드클래스'],[83,'슈퍼스타'],[88,'MVP급'],[93,'레전드'],[98,'농구의 신'],[106,'규격 외']];
@@ -3452,6 +3498,118 @@ document.addEventListener('keyup',e=>{
 });
 const carryHTML=c=>`<div class="carry"><span class="ck">↳ ${esc(c.title)}</span><p>${esc(c.text)}</p>${c.d||''}</div>`;
 
+/* ================= challenge mode: random character, one mission ================= */
+const CH_REC={m:43000,f:10700};
+const careerPts=(s,lg)=>Math.round(s.seasons.filter(x=>x.lg===lg).reduce((a,x)=>a+x.pts*x.gp,0));
+const topKo=g=>g==='m'?'NBA':g==='f'?'WNBA':'NBA(여자는 WNBA)';
+const CH_MISSIONS=[
+  {id:'dream',n:'꿈의 무대',lv:1,d:g=>`${topKo(g)} 코트를 밟아라`,ok:s=>s.seasons.some(x=>x.lg===topPro(s))},
+  {id:'nat',n:'국가대표',lv:1,d:()=>'성인 국가대표에 발탁돼라',ok:s=>!!s.flags.nat},
+  {id:'champ',n:'우승 반지',lv:2,d:()=>'아무 프로 리그에서나 우승하라',ok:s=>proA(s,'champ')>0},
+  {id:'allstar',n:'올스타 단골',lv:2,d:()=>'프로 올스타에 3번 뽑혀라',prog:s=>[proA(s,'allstar'),3,'회'],ok:s=>proA(s,'allstar')>=3},
+  {id:'mvp',n:'MVP',lv:3,d:()=>'아무 프로 리그에서나 정규리그 MVP를 차지하라',ok:s=>proA(s,'mvp')>0},
+  {id:'olympic',n:'올림픽 메달',lv:3,d:()=>'올림픽 시상대에 서라',ok:s=>s.awards.some(a=>a.key==='olympic')},
+  {id:'rich',n:'100억 자산가',lv:3,d:()=>'순자산 100억을 모아라. 연봉이든 사업이든 상관없다',prog:s=>[Math.max(0,Math.floor(netWorth(s)/10000)),100,'억'],ok:s=>netWorth(s)>=1000000},
+  {id:'topchamp',n:'NBA 우승',nf:'WNBA 우승',lv:4,d:g=>`${topKo(g)} 파이널에서 우승하라`,ok:s=>s.awards.some(a=>a.key==='champ'&&a.lg===topPro(s))},
+  {id:'hof',n:'명예의 전당',lv:4,d:()=>'은퇴 후 명예의 전당에 헌액돼라',ok:s=>!!s.flags.hof},
+  {id:'dynasty',n:'왕조',lv:4,d:()=>'프로 우승 3회',prog:s=>[proA(s,'champ'),3,'회'],ok:s=>proA(s,'champ')>=3},
+  {id:'topmvp',n:'세계 최고의 선수',lv:5,d:g=>`${topKo(g)} 정규리그 MVP를 차지하라`,ok:s=>s.awards.some(a=>a.key==='mvp'&&a.lg===topPro(s))},
+  {id:'record',n:'역대 득점 1위',lv:5,
+    d:g=>g==='m'?`NBA 통산 ${CH_REC.m.toLocaleString('ko-KR')}점 돌파. 르브론 제임스의 역대 1위 기록을 갈아치워라`:g==='f'?`WNBA 통산 ${CH_REC.f.toLocaleString('ko-KR')}점 돌파. 다이애나 타우라시의 역대 1위 기록을 갈아치워라`:`NBA 통산 ${CH_REC.m.toLocaleString('ko-KR')}점(여자는 WNBA ${CH_REC.f.toLocaleString('ko-KR')}점) 돌파. 역대 득점 1위 기록을 갈아치워라`,
+    prog:s=>[careerPts(s,topPro(s)),CH_REC[s.gender],'점'],ok:s=>careerPts(s,topPro(s))>=CH_REC[s.gender]},
+];
+const chM=s=>s&&s.challenge&&CH_MISSIONS.find(m=>m.id===s.challenge.id);
+const mName=(m,g)=>g==='f'&&m.nf?m.nf:m.n;
+function chDone(s){const m=chM(s);if(!m)return false;try{return !!m.ok(s);}catch(e){return false;}}
+const CH_KEY=SAVE_KEY+':ch';
+function chRecs(){try{return JSON.parse(localStorage.getItem(CH_KEY)||'{}')||{};}catch(e){return {};}}
+function chSaveRec(s,ok){const all=chRecs(),id=s.challenge.id,r=all[id]||{clears:0,fails:0};
+  if(ok){r.clears=(r.clears||0)+1;if(!r.best||s.age<r.best.age)r.best={age:s.age,name:s.name,year:s.year};}else r.fails=(r.fails||0)+1;
+  all[id]=r;try{localStorage.setItem(CH_KEY,JSON.stringify(all));}catch(e){}}
+const lvStars=lv=>`${'★'.repeat(lv)}<i>${'★'.repeat(5-lv)}</i>`;
+function chRandomDraft(){
+  const g=chance(.5)?'m':'f',c=pick(Object.keys(COUNTRIES)),look=randomLook(g);
+  if(['NG','US'].includes(c)&&chance(.6))look.skin=pick([3,4]);else if(['RS','LT','ES','FR'].includes(c))look.skin=pick([0,0,1]);
+  const per=randomPersona();
+  return {name:natName(c,g),gender:g,country:c,persona:chance(.5)?per:per.slice(0,1),pos:pick(['PG','SG','SF','PF','C']),number:RI(0,99),gen:rollGenetics(g,c),look,home:pick(HOME_CITIES),
+    startYear:g==='f'?RI(1985,DATA_YEAR):RI(1975,DATA_YEAR)}; // 여자 선수는 WNBA(1997~)를 노릴 수 있는 시대부터
+}
+function startChallenge(id){
+  const mid=CH_MISSIONS.some(m=>m.id===id)?id:pick(CH_MISSIONS).id;
+  S=newGame(chRandomDraft());S.challenge={id:mid,rnd:!CH_MISSIONS.some(m=>m.id===id)};
+  UI.draft=null;UI.tab='act';UI.chPick=id;queue=[];UI.skip=null;UI.carry=null;
+  const m=chM(S);log(S,`챌린지 시작 · ${mName(m,S.gender)}: ${m.d(S.gender)}`,'major');
+  save();render();showModal(chRevealSpec(S));
+}
+function chRevealSpec(s){
+  const m=chM(s),C=ctry(s),g=s.gender;
+  const chip=(t,cls)=>`<span class="trait ${cls||''}">${esc(t)}</span>`;
+  return {cls:'chreveal',kicker:`CHALLENGE · 난이도 ${'★'.repeat(m.lv)}${'☆'.repeat(5-m.lv)}${s.challenge.rnd?' · 랜덤 미션':''}`,title:mName(m,g),
+    body:`<p class="ch-goal">${esc(m.d(g))}</p>
+    <div class="ch-card">${avatarSVG(s.look,{age:20,gender:g,jersey:teamColor('preview'+s.number),number:s.number,cls:'avatar ch-av'})}
+      <div class="ch-who"><b>${esc(s.name)}</b><span>${C.n} · ${g==='m'?'남자':'여자'} 선수 · ${s.pos} ${POS[s.pos].ko} · #${s.number}</span>
+        <span>${s.year}년, 8세 · ${esc(s.home)}에서 시작</span>
+        <span>예상 성인 신장 ${Math.round(s.adultHeight-3)}–${Math.round(s.adultHeight+3)}cm · 잠재력 <b class="stars" style="font-family:var(--f-body);font-size:14px">${starStr(potStars(s.pot))}</b></span></div></div>
+    <div class="traits" style="margin-top:10px">${(s.persona||[]).map(k=>chip(PERSONAS[k].n,'per')).join('')}${s.traits.map(t=>chip(TRAITS[t].ko,TRAITS[t].neg?'neg':'')).join('')}</div>
+    <p class="sb-note" style="margin:10px 0 0">다시 뽑기는 없다. 미션을 이루는 순간 클리어, 이루지 못하고 생을 마치면 실패.</p>`,
+    choices:[{label:'이 몸으로 도전한다',primary:true,act:()=>({spec:firstBallSpec()})},
+      {label:'포기하고 미션 다시 고르기',sub:'이 캐릭터는 사라진다 · 기록에는 남지 않는다',act:()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}queue=[];UI.startMode='ch';closeModal();render();return null;}}]};
+}
+function chProg(s,m){if(!m.prog)return null;try{const [c,g,u]=m.prog(s);return {c,g,u:u||'',pct:clamp(c/g*100,0,100)};}catch(e){return null;}}
+function chBannerHTML(s){
+  const m=chM(s);if(!m)return '';const p=chProg(s,m),f=v=>Number(v).toLocaleString('ko-KR');
+  return `<div class="ch-banner" role="status"><div class="ch-bk">CHALLENGE<small>${'★'.repeat(m.lv)}</small></div><div class="ch-bm"><b>${esc(mName(m,s.gender))}</b><span>${esc(m.d(s.gender))}</span>${p?`<div class="ch-bar"><i style="width:${p.pct.toFixed(1)}%"></i></div>`:''}</div>${p?`<em>${f(Math.min(p.c,p.g))}<small> / ${f(p.g)}${p.u}</small></em>`:''}</div>`;
+}
+function chClearSpec(s){
+  const m=chM(s),r=chRecs()[m.id],prev=r&&r.best?r.best.age:null;
+  return {cls:'chclear',kicker:`CHALLENGE CLEAR · ${s.year}`,title:'미션 클리어!',
+    body:`<div class="chc"><div class="chc-badge">CLEAR</div><div class="chc-m"><b>${esc(mName(m,s.gender))}</b><small>${esc(m.d(s.gender))}</small></div></div>
+      <p>${s.age}세, ${J(s.name,'이/가')} 해냈다. 8살에 처음 공을 잡은 지 ${s.age-8}년.</p>
+      ${prev==null?'<p class="sb-note" style="color:var(--led)">이 미션 첫 클리어!</p>':s.age<prev?`<p class="sb-note" style="color:var(--led)">최단 기록 경신! 이전 기록 ${prev}세</p>`:`<p class="sb-note">이 미션 최단 기록은 ${prev}세</p>`}`,
+    choices:[{label:'결과 보기',primary:true,act:()=>{chFinish(s,true);return null;}}]};
+}
+function chFinish(s,ok){
+  const c=s.challenge;if(!c.recorded){c.recorded=1;chSaveRec(s,ok);}
+  c.result=ok?'clear':'fail';if(ok){c.clearAge=s.age;c.clearYear=s.year;log(s,`챌린지 클리어: ${mName(chM(s),s.gender)}`,'major');}
+  s.deathYear=s.year;s.alive=false;save();
+}
+function chResult(s){const c=s.challenge;if(!c)return null;if(!c.recorded){const ok=chDone(s);c.recorded=1;c.result=ok?'clear':'fail';if(ok){c.clearAge=s.age;c.clearYear=s.year;}chSaveRec(s,ok);save();}return c.result;}
+function chGiveUpSpec(s){const m=chM(s);
+  return {kicker:`CHALLENGE · ${mName(m,s.gender)}`,title:'챌린지를 포기할까?',body:`<p>지금 포기하면 「${esc(mName(m,s.gender))}」 도전은 실패로 기록되고, 이 캐릭터의 이야기도 여기서 끝난다.</p>`,
+    choices:[{label:'계속 도전',primary:true,act:()=>null},{label:'포기한다',sub:'실패로 기록',act:()=>{s.settled=true;s.deathYear=s.year;log(s,`${s.age}세, 챌린지를 포기했다.`,'major');s.alive=false;save();return null;}}]};}
+function chEndHTML(s){
+  const c=s.challenge,m=chM(s),ok=c.result==='clear',r=chRecs()[c.id]||{};
+  return `<section class="ch-end ${ok?'win':'lose'}" aria-label="챌린지 결과"><div class="ch-stamp">${ok?'CLEAR':'FAILED'}</div>
+    <h2>${esc(mName(m,s.gender))}</h2><p>${esc(m.d(s.gender))}</p>
+    <div class="kv"><div><span>결과</span><b>${ok?`${c.clearAge}세에 클리어`:s.settled?`${s.age}세에 포기`:`${s.age}세, 끝내 이루지 못했다`}</b></div>
+      <div><span>도전 기간</span><b class="num">${(ok?c.clearAge:s.age)-8}년</b></div>
+      <div><span>이 미션 최단 기록</span><b>${r.best?`${r.best.age}세 · ${esc(r.best.name)}`:'—'}</b></div>
+      <div><span>이 미션 전적</span><b class="num">${r.clears||0}승 ${r.fails||0}패</b></div></div>
+    <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn hot" id="btnChAgain">같은 미션 · 새 랜덤 캐릭터로 재도전</button><button class="btn" id="btnChMenu">다른 미션 고르기</button></div></section>`;
+}
+function chStartHTML(){
+  const recs=chRecs(),sel=UI.chPick||'random',f=v=>Number(v).toLocaleString('ko-KR');
+  const card=m=>{const r=recs[m.id]||{};return `<button type="button" class="ch-m" data-chm="${m.id}" aria-pressed="${sel===m.id}"><span class="ch-lv">${lvStars(m.lv)}</span><b>${esc(m.n)}</b><small>${esc(m.d(null))}</small><em>${r.best?`최단 ${r.best.age}세 클리어`:r.fails?'아직 클리어 못 함':'첫 도전'}${r.clears||r.fails?` · ${r.clears||0}승 ${r.fails||0}패`:''}</em></button>`;};
+  const wins=Object.values(recs).reduce((a,r)=>a+(r.clears||0),0),done=CH_MISSIONS.filter(m=>recs[m.id]&&recs[m.id].clears).length;
+  return `<div class="panel ch-panel">
+    <h3 style="margin:0 0 6px">챌린지 모드 <em>클리어한 미션 ${done} / ${CH_MISSIONS.length} · 총 ${f(wins)}승</em></h3>
+    <p class="sb-note" style="margin:0 0 12px">미션만 고른다. 이름 · 성별 · 국적 · 포지션 · 키 · 잠재력 · 타고난 특성 · 성격 · 시대는 전부 무작위. 미션을 이루는 순간 클리어하며 게임이 끝나고, 이루지 못한 채 생을 마치거나 포기하면 실패다.</p>
+    <div class="ch-grid">
+      <button type="button" class="ch-m rnd" data-chm="random" aria-pressed="${sel==='random'}"><span class="ch-lv">? ? ?</span><b>랜덤 미션</b><small>미션까지 운에 맡긴다</small><em>시작하면 공개</em></button>
+      ${CH_MISSIONS.map(card).join('')}
+    </div>
+  </div>
+  <button class="cta ch-cta" id="btnChGo">랜덤 캐릭터 뽑고 도전 시작</button>`;
+}
+function bindChStart(){
+  document.querySelectorAll('[data-chm]').forEach(b=>b.onclick=()=>{UI.chPick=b.dataset.chm;render();});
+  $('#btnChGo').onclick=()=>startChallenge(UI.chPick||'random');
+}
+function firstBallSpec(){
+  return {kicker:`${S.year} · 8세`,title:'첫 농구공',body:`<p>아버지가 퇴근길에 낡은 농구공을 사 오셨다. 동네 코트의 림은 그물이 반쯤 찢어져 있다.</p>`,
+    choices:[{label:'해가 질 때까지 슛을 쏜다',act:()=>{at(S,'shoot',2);lf(S,'happy',4);return '백 개 중에 열 개가 들어갔다. 열 개가 전부 기억난다.';}},{label:'드리블하며 동네를 한 바퀴 돈다',act:()=>{at(S,'handle',2);lf(S,'happy',4);return '공이 발에 차여 도랑에 빠질 뻔했다. 그래도 신났다.';}}]};
+}
+
 /* ================= time skip ================= */
 function skipStart(s){return {age:s.age,year:s.year,o:ovr(s),money:netWorth(s),legacy:s.legacy,fame:s.life.fame};}
 function skipMenuSpec(s){
@@ -3618,6 +3776,7 @@ function nextModal(){
   UI.carry=null;
   closeModal();
   if(UI.yearRun){UI.yearRun=false;if(S&&S.alive)finishYear(S);}
+  if(S&&S.alive&&S.challenge&&!S.challenge.result&&chDone(S)){UI.skip=null;save();render();showModal(chClearSpec(S));return;}
   save();render();
   if(UI.skip){
     if(!S||!S.alive){UI.skip=null;return;}
@@ -3641,7 +3800,7 @@ function showModal(spec){
     if(c.primary)b.textContent=c.label;
     else b.innerHTML=`<span class="c-main"><strong>${c.html?c.label:esc(c.label)}</strong>${c.disabled&&c.reason?`<small>${esc(c.reason)}</small>`:c.sub?`<small>${esc(c.sub)}</small>`:''}</span>${c.tag?`<span class="c-tag">${esc(c.tag)}</span>`:''}`;
     b.onclick=()=>{
-      const before=snap(S);
+      const before=S?snap(S):null;
       let r;try{r=c.act();}catch(e){console.error(e);r=null;}
       handleResult(spec,r,before);
     };
@@ -3652,7 +3811,8 @@ function showModal(spec){
   setTimeout(()=>{const f=box.querySelector('button:not(:disabled)');f&&f.focus({preventScroll:true});},30);
 }
 function handleResult(spec,r,before){
-  const d=deltas(before,snap(S));
+  if(!S){closeModal();render();return;}
+  const d=deltas(before||{},snap(S));
   render();
   if(r==null){nextModal();return;}
   const fastOK=SET.fast&&SET.results;
@@ -4029,9 +4189,10 @@ function render(){
   <div class="wrap ${Date.now()<(UI.growAnimUntil||0)?'anim':''}">
     <header class="top">
       <div class="brand">${ballSVG('brand-ball')}<span>버저비터 <b>라이프</b></span></div>
-      <div class="top-right"><span class="chip-led" aria-label="연도">${s.year}</span><button class="ghost icon" id="btnSet" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="ghost" id="btnSave">저장</button><button class="ghost settle" id="btnSettle">인생 정산</button><button class="ghost" id="btnNew">새 인생</button></div>
+      <div class="top-right"><span class="chip-led" aria-label="연도">${s.year}</span><button class="ghost icon" id="btnSet" aria-label="설정" title="설정"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="ghost" id="btnSave">저장</button><button class="ghost settle" id="btnSettle">${s.challenge?'챌린지 포기':'인생 정산'}</button><button class="ghost" id="btnNew">새 인생</button></div>
     </header>
     <div class="grid">
+      ${s.challenge?chBannerHTML(s):''}
       <aside class="rail">
         <div class="card">
           <div class="card-top">
@@ -4231,7 +4392,7 @@ function bindGame(){
   $('#btnSkip').onclick=()=>{if(UI.modalOpen)return;queue=[];showModal(skipMenuSpec(S));};
   $('#btnSave').onclick=saveMenu;
   $('#btnSet').onclick=()=>{if(UI.modalOpen)return;queue=[];showModal(settingsSpec());};
-  $('#btnSettle').onclick=()=>{if(UI.modalOpen)return;const s=S,[g,t]=grade(s.legacy);
+  $('#btnSettle').onclick=()=>{if(UI.modalOpen)return;if(S.challenge){queue=[];showModal(chGiveUpSpec(S));return;}const s=S,[g,t]=grade(s.legacy);
     showModal({kicker:`${s.year} · ${s.age}세`,title:'여기서 인생을 정산할까?',
       body:`<p>지금까지의 기록으로 게임을 끝내고 최종 등급을 매긴다. 정산하면 이 인생은 더 이어갈 수 없다.</p><div class="kv"><div><span>현재 레거시</span><b class="num">${Math.round(s.legacy)}</b></div><div><span>예상 등급</span><b>${g} · ${t}</b></div></div>`,
       choices:[{label:'정산하고 끝내기',act:()=>{s.settled=true;s.deathYear=s.year;recordEnding(s);log(s,`${s.age}세, 인생을 정산했다.`,'major');s.alive=false;save();return null;}},{label:'계속 플레이',act:()=>null}]});};
@@ -4287,7 +4448,7 @@ function startHTML(){
   const d=UI.draft,g=d.gen;
   let saved=null;try{const raw=localStorage.getItem(SAVE_KEY);if(raw)saved=JSON.parse(raw);}catch(e){}
   return `<div class="wrap"><div class="start">
-    ${saved&&saved.name?`<div class="continue"><p>저장된 인생 · <b>${esc(saved.name)}</b> · ${saved.age}세 · ${esc(saved.alive?(saved.team?.name||STAGE_KO[saved.stage]):'생애 종료')}</p><button class="btn hot" id="btnCont">이어하기</button></div>`:''}
+    ${saved&&saved.name?`<div class="continue"><p>${saved.challenge?'진행 중인 챌린지':'저장된 인생'} · <b>${esc(saved.name)}</b> · ${saved.age}세 · ${esc(saved.alive?(saved.team?.name||STAGE_KO[saved.stage]):'생애 종료')}</p><button class="btn hot" id="btnCont">이어하기</button></div>`:''}
     ${[1,2,3].some(i=>readSlot(i))?`<details class="panel loadbox"><summary>세이브 슬롯 · 저장 코드로 불러오기</summary><div class="own-list" id="slotList" style="margin-top:10px">${slotRowsHTML(false)}</div><h3 class="m-sub">코드로 불러오기</h3>${importBoxHTML()}</details>`
       :`<details class="panel loadbox"><summary>저장 코드로 불러오기</summary><div style="margin-top:10px">${importBoxHTML()}</div></details>`}
     <section class="hero">
@@ -4295,7 +4456,8 @@ function startHTML(){
       <h1><span>BUZZER BEATER LIFE</span>버저비터 라이프</h1>
       <p>8살, 처음 잡은 농구공. 진학과 드래프트, FA와 병역, 국가대표와 은퇴 후의 삶까지. 한 사람의 농구 인생을 1년씩 살아 본다.</p>
     </section>
-    <div class="panel era-panel">
+    <div class="seg mode-seg" role="group" aria-label="게임 모드"><button type="button" data-smode="normal" aria-pressed="${UI.startMode!=='ch'}">일반 모드<small>직접 만든 선수로 자유롭게</small></button><button type="button" data-smode="ch" aria-pressed="${UI.startMode==='ch'}">챌린지 모드<small>완전 랜덤 캐릭터로 미션 도전</small></button></div>
+    ${UI.startMode==='ch'?chStartHTML():`<div class="panel era-panel">
       <h3 style="margin:0 0 8px">시대 선택 <em>8살이 되는 해 · 프로 데뷔는 대략 ${d.startYear+12}~${d.startYear+15}년</em></h3>
       <div class="era-row"><input type="range" id="fEra" min="1970" max="2060" step="1" value="${d.startYear}" aria-label="시작 연도"><b class="num era-year" id="eraYear">${d.startYear}</b></div>
       <div class="pct-row" style="margin:6px 0 8px">${ERA_PRESETS.map(([y,l])=>`<button type="button" class="chipb" data-era="${y}" aria-pressed="${d.startYear===y}">${y} · ${l}</button>`).join('')}</div>
@@ -4330,7 +4492,7 @@ function startHTML(){
       <div class="look-wrap"><div class="look-prev">${avatarSVG(d.look,{age:20,gender:d.gender,jersey:teamColor('preview'+d.number),number:d.number,cls:'avatar big-av'})}<button class="btn" id="btnLookR" type="button">랜덤 외모</button></div>
       ${lookEditorHTML(d.look,d.gender,'lk')}</div>
     </div>
-    <button class="cta" id="btnStart">8살, 첫 시즌 시작</button>
+    <button class="cta" id="btnStart">8살, 첫 시즌 시작</button>`}
     <div class="panel how"><b>엔딩 도감 ${endingsSeen().length} / ${ENDINGS.length}</b> · 인생의 갈래마다 다른 엔딩이 기다린다.<br><br><b>플레이 방법</b><br>매년 정해진 <b>행동</b>으로 훈련, 휴식, 공부를 고르고 <b>시즌 진행</b>을 누른다. 시즌 중에는 클러치 순간과 사건이 찾아오고, 고교 졸업 뒤엔 대학 · NCAA · 고졸 드래프트 중 길을 고른다. 프로가 되면 FA 협상과 해외 진출, 남자 선수는 병역(상무 · 아시안게임 금메달 면제)까지 겪는다. 은퇴 후에도 인생은 이어지며, 생을 마치면 레거시 등급이 매겨진다.<br><br><b>직접 하는 것들</b><br>슈팅 챌린지 · 매 시즌 빅매치 4쿼터 지휘 · 클러치 슛 타이밍 · 올스타 3점슛/덩크 콘테스트 · FA 연봉 협상 · 기자회견 · 트레이드 행선지 선택 · 팀 동료와의 케미<br><br><span style="color:var(--dim)">KBL·WKBL·NBA·WNBA·B.리그·W리그 팀과 일부 선수는 실제 이름을 쓴다(2025-26 시즌 기준). 능력치는 게임용 추정치이며 이후 이적과 은퇴는 반영되지 않았다. 각 리그·구단과 무관한 팬 게임이다.</span></div>
   </div></div>`;
 }
@@ -4361,6 +4523,8 @@ function eraStarsHTML(y,g){
   return `<p class="sb-note" style="margin:0 0 6px">${y+14}년 무렵 리그를 이끄는 스타</p><div class="kv">${rows}</div>${notes.length?`<p class="sb-note" style="margin-top:6px">${notes.join(' · ')}</p>`:''}`;
 }
 function bindStart(){
+  document.querySelectorAll('[data-smode]').forEach(b=>b.onclick=()=>{UI.startMode=b.dataset.smode;render();});
+  if(UI.startMode==='ch'){const c=$('#btnCont');if(c)c.onclick=()=>{load();render();};const lb=document.querySelector('.loadbox');if(lb){const refresh=()=>{const l=lb.querySelector('#slotList');if(l){l.innerHTML=slotRowsHTML(false);}bindSlots(lb,refresh);};bindSlots(lb,refresh);}bindChStart();return;}
   const d=UI.draft;
   $('#fName').oninput=e=>d.name=e.target.value;
   $('#fNum').oninput=e=>d.number=clamp(parseInt(e.target.value||'0',10)||0,0,99);
@@ -4383,8 +4547,7 @@ function bindStart(){
   document.querySelectorAll('[data-trait]').forEach(b=>b.onclick=()=>{const k=b.dataset.trait,t=d.gen.traits;const i=t.indexOf(k);if(i>=0)t.splice(i,1);else if(t.length<3&&!traitBlocked(t,k))t.push(k);render();});
   document.querySelectorAll('[data-str]').forEach(b=>b.onclick=()=>{const k=b.dataset.str,t=d.gen.strengths=d.gen.strengths||[];const i=t.indexOf(k);if(i>=0)t.splice(i,1);else if(t.length<3)t.push(k);render();});
   $('#btnStart').onclick=()=>{const name=(d.name||'').trim()||koName(d.gender);S=newGame({...d,name,number:clamp(+d.number||0,0,99)});UI.draft=null;UI.tab='act';save();render();
-    showModal({kicker:`${S.year} · 8세`,title:'첫 농구공',body:`<p>아버지가 퇴근길에 낡은 농구공을 사 오셨다. 동네 코트의 림은 그물이 반쯤 찢어져 있다.</p>`,
-      choices:[{label:'해가 질 때까지 슛을 쏜다',act:()=>{at(S,'shoot',2);lf(S,'happy',4);return '백 개 중에 열 개가 들어갔다. 열 개가 전부 기억난다.';}},{label:'드리블하며 동네를 한 바퀴 돈다',act:()=>{at(S,'handle',2);lf(S,'happy',4);return '공이 발에 차여 도랑에 빠질 뻔했다. 그래도 신났다.';}}]});};
+    showModal(firstBallSpec());};
   const c=$('#btnCont');if(c)c.onclick=()=>{load();render();};
   const lb=document.querySelector('.loadbox');if(lb){const refresh=()=>{const l=lb.querySelector('#slotList');if(l){l.innerHTML=slotRowsHTML(false);}bindSlots(lb,refresh);};bindSlots(lb,refresh);}
 }
@@ -4392,7 +4555,8 @@ function bindStart(){
 /* ================= ending ================= */
 function grade(L){return L>=700?['S+','GOAT']:L>=450?['S','살아있는 전설']:L>=260?['A','명예의 전당']:L>=140?['B','프랜차이즈 스타']:L>=65?['C','꾸준한 프로']:L>=20?['D','코트 위의 노동자']:['F','이루지 못한 꿈'];}
 function endHTML(s){
-  const [g,t]=grade(s.legacy);
+  if(s.challenge)chResult(s);
+  let [g,t]=grade(s.legacy);
   const pro=s.seasons.filter(x=>LG[x.lg].kind==='pro'),gp=pro.reduce((a,x)=>a+x.gp,0);
   const tot=k=>Math.round(pro.reduce((a,x)=>a+x[k]*x.gp,0));
   const cnt=k=>s.awards.filter(a=>a.key===k).length;
@@ -4413,17 +4577,18 @@ function endHTML(s){
   else if(pro.length)ep='짧았지만 프로의 꿈을 이뤘다.';
   else if(s.settled&&['elem','middle','high','college'].includes(s.stage))ep='아직 쓰이지 않은 이야기. 여기서 기록을 멈췄다.';
   else ep='농구 선수의 꿈은 이루지 못했지만, 그 시절의 땀은 남았다.';
+  if(s.challenge&&chM(s)){const ok=s.challenge.result==='clear',m=chM(s);g=ok?'★':'✕';t=ok?'미션 클리어':'미션 실패';ep=ok?`「${mName(m,s.gender)}」 ${s.challenge.clearAge}세, 끝내 해냈다.`:`「${mName(m,s.gender)}」 끝내 닿지 못한 목표.`;}
   const majors=s.log.filter(e=>e.tone==='major'&&!e.text.startsWith('[속보]')).slice(-14);
   const eid=recordEnding(s),E=ENDINGS.find(x=>x.id===eid)||ENDINGS[ENDINGS.length-1],eNo=ENDINGS.indexOf(E)+1;
   let story=[];try{story=E.story(s,endingStats(s));}catch(_){}
   const seen=endingsSeen();
-  const endingBlock=`<section class="ending" aria-label="엔딩"><div class="eno">ENDING ${String(eNo).padStart(2,'0')} / ${ENDINGS.length}</div><h2>${esc(E.t)}</h2>${story.map(p=>`<p>${esc(p)}</p>`).join('')}</section>`;
-  const dex=`<div class="panel"><h3>엔딩 도감 <em>${seen.length} / ${ENDINGS.length} 발견 · 이 브라우저 기준</em></h3><div class="dex">${ENDINGS.map((x,i)=>{const got=seen.includes(x.id);return `<div class="${got?'':'lock'} ${x.id===eid?'now':''}"><b>${String(i+1).padStart(2,'0')} · ${got?esc(x.t):'???'}</b><small>${esc(x.hint)}</small></div>`;}).join('')}</div></div>`;
+  const endingBlock=s.challenge?chEndHTML(s):`<section class="ending" aria-label="엔딩"><div class="eno">ENDING ${String(eNo).padStart(2,'0')} / ${ENDINGS.length}</div><h2>${esc(E.t)}</h2>${story.map(p=>`<p>${esc(p)}</p>`).join('')}</section>`;
+  const dex=s.challenge?'':`<div class="panel"><h3>엔딩 도감 <em>${seen.length} / ${ENDINGS.length} 발견 · 이 브라우저 기준</em></h3><div class="dex">${ENDINGS.map((x,i)=>{const got=seen.includes(x.id);return `<div class="${got?'':'lock'} ${x.id===eid?'now':''}"><b>${String(i+1).padStart(2,'0')} · ${got?esc(x.t):'???'}</b><small>${esc(x.hint)}</small></div>`;}).join('')}</div></div>`;
   return `<div class="wrap"><div class="end">
     <div class="end-hero">
       <div class="end-av">${avatarSVG(s.look,{age:s.age,gender:s.gender,jersey:teamColor((s.flags.lastTeam||{}).name),number:s.number,cls:'avatar end-avatar'})}<div class="grade">${g}</div></div>
       <h1>${esc(s.name)}</h1>
-      <div class="life num">${ctry(s).n} · ${(s.startYear||START_YEAR)-8} – ${s.deathYear||s.year} · ${s.settled?`${s.age}세에 정산`:`향년 ${s.age}세`} · #${s.number} ${s.pos}</div>
+      <div class="life num">${ctry(s).n} · ${(s.startYear||START_YEAR)-8} – ${s.deathYear||s.year} · ${s.challenge&&s.challenge.result==='clear'?`${s.challenge.clearAge}세에 미션 클리어`:s.settled?`${s.age}세에 ${s.challenge?'포기':'정산'}`:`향년 ${s.age}세`} · #${s.number} ${s.pos}</div>
       <div class="title">${t}</div>${s.sig?.nick?`<div class="sb-note" style="margin-top:4px">"${esc(s.sig.nick)}"${s.sig.move?` · 시그니처 「${esc(s.sig.move.name)}」`:''}${s.sig.celeb?` · 세리머니 「${esc(s.sig.celeb)}」`:''}</div>`:''}
       ${s.sig?.shoe?`<div style="margin-top:8px">${shoeSVG(s.sig.shoe,'shoe sm')}<div class="sb-note">${esc(s.sig.shoe.brand)} ${esc(s.sig.shoe.name)} 1~${s.sig.shoe.ver} · 누적 ${fmtMoney(s.sig.shoe.sold||0)}</div></div>`:''}
       <p class="epitaph">${esc(ep)}</p>
@@ -4445,7 +4610,9 @@ function endHTML(s){
     <button class="cta" id="btnAgain">새 인생 시작</button>
   </div></div>`;
 }
-function bindEnd(){$('#btnAgain').onclick=()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}render();};}
+function bindEnd(){$('#btnAgain').onclick=()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}render();};
+  const ca=$('#btnChAgain');if(ca)ca.onclick=()=>{const id=S.challenge.rnd?'random':S.challenge.id;try{localStorage.removeItem(SAVE_KEY);}catch(e){}S=null;startChallenge(id);};
+  const cm=$('#btnChMenu');if(cm)cm.onclick=()=>{S=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}UI.startMode='ch';render();};}
 
 /* ================= persistence ================= */
 function save(){try{if(S)localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
